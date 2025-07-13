@@ -2,7 +2,7 @@
 
 ## Introduction
 
-Welcome to the Bioinformatics Training Course! This two-week intensive program is designed to provide participants with a solid foundation in bioinformatics, with a particular focus on genomic data handling. Whether you are new to the field or looking to enhance your existing skills, this course will equip you with the essential knowledge and practical experience needed to navigate the exciting world of bioinformatics. We will cover a wide range of topics, from fundamental command-line operations and scripting to advanced genomic data analysis, including SNP calling, phylogenetic analysis, and RNA-seq.
+Welcome to the Verdant Bioscience Bioinformatics Training Course! This two-week intensive program is designed to provide a solid foundation in bioinformatics, with a special focus on genomic data handling. Throughout the course, you will acquire essential knowledge and gain hands-on experience to confidently explore the exciting world of bioinformatics. The program covers a wide range of topics, starting with fundamental command-line operations and scripting, and advancing to comprehensive genomic data analysis.
 
 Our goal is to make complex bioinformatics concepts accessible and actionable. We will utilize real-world datasets and hands-on exercises to ensure a practical learning experience. By the end of this course, you will be able to confidently apply bioinformatics tools and techniques to your own research and projects.
 
