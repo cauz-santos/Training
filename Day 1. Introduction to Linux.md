@@ -1,4 +1,4 @@
-# Week 1: Foundations of Bioinformatics and Genomic Data Handling
+## Week 1: Foundations of Bioinformatics and Genomic Data Handling
 
 ### Day 1: Linux, Command Line, and HPC Usage
 
