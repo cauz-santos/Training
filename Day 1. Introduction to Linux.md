@@ -2,8 +2,6 @@
 
 ### Day 1: Linux, Command Line, and HPC Usage
 
-**Morning Session: Introduction to Linux OS & Command Line Basics**
-
 This session will introduce you to the Linux operating system, which is the backbone of most bioinformatics workflows. We will cover the fundamental concepts of Linux, its file system, and how to interact with it using the command line interface (CLI). A strong understanding of the command line is crucial for efficient data manipulation and running bioinformatics tools.
 
 **What is Linux?**
