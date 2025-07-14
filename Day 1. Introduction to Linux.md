@@ -7,7 +7,10 @@ This session will introduce you to the Linux operating system, which is the back
 **What is Linux and why should we use it?**
 
 Linux is a powerful, open-source operating system widely used in scientific computing, including bioinformatics. Its stability, flexibility, and robust command-line tools make it an ideal environment for handling large biological datasets and running computationally intensive analyses.
-Linux is the preferred operating system in bioinformatics primarily because it excels at processing and managing enormous volumes of genomic data—ranging from tens of gigabytes to multiple terabytes, containing millions or even billions of sequencing reads. Bioinformatics tools such as aligners, SNP callers, RNA‑seq pipelines, and variant callers are designed and optimized specifically for Linux/Unix environments, and many simply won’t build or function correctly on other operating systems. This native compatibility ensures reliable performance when analyzing large-scale datasets.
+
+Linux is the preferred operating system in bioinformatics primarily because it excels at processing and managing enormous volumes of genomic data, ranging from tens of gigabytes to multiple terabytes, containing millions or even billions of sequencing reads. 
+
+Bioinformatics tools such as aligners, SNP callers, RNA‑seq pipelines, and variant callers are designed and optimized specifically for Linux/Unix environments, and many simply won’t build or function correctly on other operating systems. This native compatibility ensures reliable performance when analyzing large-scale datasets.
 
 **Why the Command Line?**
 
