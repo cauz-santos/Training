@@ -345,4 +345,5 @@ module unload samtools/1.15
 
 - [Ubuntu: Command Line for Beginners](https://ubuntu.com/tutorials/command-line-for-beginners#1-overview)  
 - [DigitalOcean: Linux Commands](https://www.digitalocean.com/community/tutorials/linux-commands)  
-- [Hostinger: Linux Commands](https://www.hostinger.com/tutorials/linux-commands)  
+- [Hostinger: Linux Commands](https://www.hostinger.com/tutorials/linux-commands)
+- [Shell Genomics](https://datacarpentry.github.io/shell-genomics/)  
