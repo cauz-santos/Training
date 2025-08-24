@@ -115,57 +115,229 @@ Check where you are in the filesystem with pwd (print working directory).
 pwd
 ```
 
-2.  **Creating and Manipulating Files:**
-    *   Inside the `data` directory, create an empty file named `sample_data.txt`.
-    *   Add some text to `sample_data.txt` using the `echo` command and redirection (e.g., `echo "This is a test line." > sample_data.txt`).
-    *   View the content of `sample_data.txt` using `cat` and `less`.
-    *   Copy `sample_data.txt` to `data_backup.txt` within the same directory.
-    *   Move `data_backup.txt` from the `data` directory to the `scripts` directory.
-    *   Rename `data_backup.txt` in the `scripts` directory to `first_script_notes.txt`.
+### Exercise 2: Creating and Manipulating Files
 
-    ```bash
-    cd data
-    touch sample_data.txt
-    echo "This is the first line of sample data." > sample_data.txt
-    echo "This is the second line." >> sample_data.txt
-    cat sample_data.txt
-    less sample_data.txt
-    cp sample_data.txt data_backup.txt
-    mv data_backup.txt ../scripts/
-    cd ../scripts/
-    mv data_backup.txt first_script_notes.txt
-    ls -l
-    ```
+In this exercise, you will learn how to **create**, **edit**, **view**, **copy**, **move**, and **rename** files.  
+These operations are the foundation of working with any dataset in Linux, whether you are handling sequencing reads, annotation files, or analysis outputs.
 
-3.  **Searching and Filtering Text:**
-    *   Create a file named `genomic_sequences.txt` in the `data` directory with some example sequences (e.g., lines starting with `>gene1`, `>gene2`, `ATGCATGC`, `CGTACGTA`).
-    *   Use `grep` to find all lines that start with `>`.
-    *   Use `grep` to find all lines containing `ATGC`.
-    *   Combine `head` and `tail` with pipes (`|`) to view specific parts of a file.
+We will work inside the folder `~/bioinformatics_training/data` created in Exercise 1.
 
-    ```bash
-    cd ../data
-    echo ">gene1\nATGCATGCATGC\n>gene2\nCGTACGTACGTAG\nATGCATGC" > genomic_sequences.txt
-    grep ">" genomic_sequences.txt
-    grep "ATGC" genomic_sequences.txt
-    head -n 1 genomic_sequences.txt | tail -n 1
-    ```
 
-4.  **Introduction to HPC Usage (Conceptual):**
+**Step 1 — Go to the data directory**  
+We first move into the `data` folder where we want to work.  
+The command `cd` means "change directory".
+```bash
+cd ~/bioinformatics_training/data
+```
 
-    While direct hands-on HPC (High-Performance Computing) usage will be covered in more detail later (e.g., Day 5 with Apocrita), it's important to understand the concept from Day 1. HPC clusters are powerful computing resources used for large-scale bioinformatics analyses that require significant computational power and memory. They typically involve:
+Always check where you are with `pwd` (print working directory). *This helps avoid mistakes like creating files in the wrong folder.
+```bash
+pwd
+```
+Expected: `/home/<username>/bioinformatics_training/data`
 
-    *   **Login Nodes:** Where you log in and prepare your jobs.
-    *   **Compute Nodes:** Where your actual analyses run.
-    *   **Job Schedulers (e.g., Slurm, PBS):** Systems that manage and allocate resources for your jobs.
-    *   **Shared File Systems:** Where data is stored and accessed by all nodes.
+**Step 2 — Create an empty file**  
+The command `touch` creates an empty file if it does not exist.
+Here we create a file called sample_data.txt.
+```bash
+touch sample_data.txt
+```
 
-    For this course, we will simulate some HPC interactions using the command line, and later, if applicable, we will connect to a real HPC environment like Apocrita. The commands you learn today are directly transferable to an HPC environment.
+Use `ls -l` to check that the file was created.
+The file will have size 0 since it is empty.
+```bash
+ls -l sample_data.txt
+```
 
-    **Key HPC Concepts:**
-    *   **Batch Jobs:** Submitting scripts to run on compute nodes without direct interaction.
-    *   **Resource Allocation:** Requesting specific CPU cores, memory, and time for your jobs.
-    *   **Modules:** Software management system to load different versions of bioinformatics tools.
+**Step 3 — Add text to the file**  
+The `echo` command prints text. Using `>` sends the text into a file.
+If the file already exists, `>` will overwrite its contents.
+```bash
+echo "This is the first line of sample data." > sample_data.txt
+```
 
-    We will delve deeper into these concepts and practical applications in later sessions, especially when we discuss data quality control and large-scale analyses. For now, focus on mastering the basic Linux commands, as they are the foundation for interacting with any computing environment, including HPCs.
+To add more lines without overwriting, use `>>` (append).
+```bash
+echo "This is the second line." >> sample_data.txt
+```
+
+**Step 4 — View the file contents**  
+`cat` shows the whole file on the screen (good for small files).
+```bash
+cat sample_data.txt
+```
+
+For larger files, `less` is safer: it lets you scroll up and down.
+Press `q` to quit less.
+```bash
+less sample_data.txt
+```
+
+**Step 5 — Copy the file**  
+The command `cp` makes a copy of a file. Here we copy sample_data.txt
+into a new file called data_backup.txt.
+```bash
+cp sample_data.txt data_backup.txt
+```
+
+Verify that both files exist and compare their sizes.
+```bash
+ls -l sample_data.txt data_backup.txt
+```
+
+**Step 6 — Move the copy to the scripts directory**  
+The command `mv` can move a file from one location to another.  
+`..` means "parent directory". So `../scripts/` is the scripts folder
+one level above the current folder.
+```bash
+mv data_backup.txt ../scripts/
+```
+
+Check that the file has indeed moved to scripts.
+```bash
+ls -l ../scripts/
+```
+
+**Step 7 — Rename inside scripts**  
+The same `mv` command is also used to rename files.
+Here we rename data_backup.txt to first_script_notes.txt.
+```bash
+cd ../scripts/
+mv data_backup.txt first_script_notes.txt
+```
+
+Verify the rename worked.
+```bash
+ls -l
+```
+
+**Step 8 — Verify the final state**  
+Finally, check that:
+- The original sample_data.txt is still inside data.
+- The renamed file first_script_notes.txt is inside scripts.
+```bash
+cd ../data
+ls -l
+```
+
+### Exercise 3: Searching and Filtering Text
+
+In this exercise, you will learn how to **search and filter information** inside text files.  
+These skills are essential in bioinformatics because almost all genomic data (FASTA, FASTQ, GFF, VCF, etc.) are stored as plain text.
+
+We will practice with the command `grep` (search patterns in text), and combine `head` and `tail` to extract specific parts of files.
+
+**Step 1 — Go to the data directory**  
+```bash
+cd ~/bioinformatics_training/data
+pwd
+```
+Expected: `/home/<username>/bioinformatics_training/data`
+
+**Step 2 — Create a test file with genomic sequences**  
+We will create a small file called genomic_sequences.txt that looks like a FASTA file.  
+Lines starting with `>` are sequence identifiers, followed by DNA sequences.
+```bash
+echo -e ">gene1\nATGCATGCATGC\n>gene2\nCGTACGTACGTAG\nATGCATGC" > genomic_sequences.txt
+```
+
+Check that the file exists and view it:
+```bash
+ls -l genomic_sequences.txt
+cat genomic_sequences.txt
+```
+
+**Step 3 — Search for sequence identifiers**  
+`grep ">" file` finds all lines that contain `>`.  
+In FASTA files, identifiers always begin with `>`.
+```bash
+grep ">" genomic_sequences.txt
+```
+
+**Step 4 — Search for a DNA motif**  
+Here we search for lines that contain the motif `ATGC`. 
+This simulates searching for specific sequence patterns.
+```bash
+grep "ATGC" genomic_sequences.txt
+```
+Expected output will show lines where ATGC appears.
+
+**Step 5 — Extract a specific line using head and tail**  
+`head -n N` prints the first N lines of a file.  
+`tail -n 1` takes the last line of whatever head printed.
+Combined, we can extract line 1, line 2, etc:
+```bash
+head -n 1 genomic_sequences.txt | tail -n 1
+```
+
+Example: get the 3rd line:
+```bash
+head -n 3 genomic_sequences.txt | tail -n 1
+```
+Expected: the third line ("ATGCATGCATGC")
+
+
+
+---
+## Introduction to HPC Usage 
+
+While direct hands-on HPC (High-Performance Computing) usage will be covered in more detail later (e.g., Day 5 with Apocrita), it's important to understand the concept from Day 1. HPC clusters are powerful computing resources used for large-scale bioinformatics analyses that require significant computational power and memory. They typically involve:
+
+  - **Login Nodes:** Where you log in and prepare your jobs.  
+  - **Compute Nodes:** Where your actual analyses run.  
+  - **Job Schedulers (e.g., Slurm, PBS):** Systems that manage and allocate resources for your jobs.  
+  - **Shared File Systems:** Where data is stored and accessed by all nodes.  
+
+For this course, we will simulate some HPC interactions using the command line, and later, if applicable, we will connect to a real HPC environment like Apocrita. The commands you learn today are directly transferable to an HPC environment.
+
+   **Key HPC Concepts:**  
+  - **Batch Jobs:** Submitting scripts to run on compute nodes without direct interaction.  
+  - **Resource Allocation:** Requesting specific CPU cores, memory, and time for your jobs.  
+  - **Modules:** Software management system to load different versions of bioinformatics tools.  
+
+We will delve deeper into these concepts and practical applications in later sessions, especially when we discuss data quality control and large-scale analyses. For now, focus on mastering the basic Linux commands, as they are the foundation for interacting with any computing environment, including HPCs.
+
+
+### Exercise 4: Introduction to HPC Usage (LISC system, UniVie)
+
+High-Performance Computing (HPC) clusters like **LISC** at the University of Vienna are used for large-scale bioinformatics analyses.  
+Instead of running heavy computations on your laptop, you send jobs to the cluster, which has many powerful compute nodes.
+
+In this exercise, you will learn the **basic commands** to interact with LISC using the **Slurm workload manager**.
+
+
+**Step 1 — Connect to the HPC system**  
+Normally you log in via SSH from your terminal.
+```bash
+ssh <username>@lisc.univie.ac.at
+```
+
+After login, check where you are:
+```bash
+pwd
+```
+Expected: /lisc/scratch/<username> or similar
+
+**Step 2 — Check basic information**  
+Show available resources (queues/partitions):
+```bash
+sinfo
+```
+
+Show your current jobs (none yet):
+```bash
+squeue -u <username>
+```
+
+**Step 3 — Load software with modules**  
+HPC systems don’t have all tools loaded by default.
+Instead, they use "modules" to load specific software.
+```bash
+module avail     # list available modules
+module load samtools/1.15
+samtools --version
+module unload samtools/1.15
+```
+
+### You have completed **Day 1**!
 
