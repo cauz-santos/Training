@@ -38,7 +38,7 @@ DNA -> RNA -> Protein. This fundamental concept describes the flow of genetic in
 
 ![Dogma](https://www.genome.gov/sites/default/files/media/images/2022-05/Central-dogma.jpg)
 ___
-**Afternoon Session: Dot Plot Analysis for Sequence Comparisons (Hands-on in R)**
+## Afternoon Session: Dot Plot Analysis for Sequence Comparisons
 
 Dot plot analysis is a simple yet powerful graphical method for comparing two biological sequences (DNA, RNA, or protein) to identify regions of similarity, repeats, inversions, and deletions. It provides a visual representation of sequence alignment without performing a full, computationally intensive alignment.
 
