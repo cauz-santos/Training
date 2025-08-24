@@ -1,6 +1,6 @@
 ## Week 1: Foundations of Bioinformatics and Genomic Data Handling
 
-### Day 3: Sequence Alignment and Dot Plot Analysis (using R)
+### Day 3: Sequence Alignment and Dot Plot Analysis 
 
 Day 3 will delve into the fundamental concepts of biological sequences and their comparison. Understanding DNA, RNA, and protein sequences is paramount in bioinformatics, as they are the raw data for most analyses. We will then explore how to visualize sequence similarities and differences using dot plot analysis, with a hands-on session in R.
 
