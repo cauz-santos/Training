@@ -18,7 +18,48 @@ Bash (Bourne-Again SHell) is the default command-line interpreter on most Linux 
 4.  **Make the script executable:** Use the `chmod +x my_first_script.sh` command to give the script execute permissions.
 5.  **Run the script:** Execute the script by typing `./my_first_script.sh`.
 
-**Example Bash Script for Automation:**
+
+**1) Example of Basic Bash Script:**
+
+**Step 1: Create a script file**   
+
+We first need to create a new file that will hold our script.    
+Use the `nano` text editor (you can also use `vim` or any other editor):
+
+```bash
+nano hello.sh
+```
+
+**Step 2: Write the script**  
+
+Inside the editor, type the following lines:
+```bash
+#!/bin/bash
+# This is my first Bash script
+# Lines starting with # are comments and not executed
+
+echo "Hello, Bioinformatics World!"
+```
+
+When finished, save and exit:
+
+In `nano`: press `Ctrl + O` → `Enter` → `Ctrl + X`. 
+
+**Step 3: Make the script executable**  
+
+By default, new files are not executable. We need to give it execute permission:  
+```bash
+chmod +x hello.sh
+```
+
+**Step 4: Run the script**  
+
+Now we can run it by calling the file directly:  
+```bash
+./hello.sh
+```
+
+**2) Example Bash Script for Automation:**
 
 Let's create a script that automates the process of creating a new project directory with subdirectories for data, scripts, and results.
 
