@@ -36,6 +36,8 @@ This session will provide a foundational understanding of the different types of
 
 DNA -> RNA -> Protein. This fundamental concept describes the flow of genetic information within a biological system. Bioinformatics plays a critical role in analyzing and understanding each step of this process.
 
+![Dogma](https://www.genome.gov/sites/default/files/media/images/2022-05/Central-dogma.jpg)
+___
 **Afternoon Session: Dot Plot Analysis for Sequence Comparisons (Hands-on in R)**
 
 Dot plot analysis is a simple yet powerful graphical method for comparing two biological sequences (DNA, RNA, or protein) to identify regions of similarity, repeats, inversions, and deletions. It provides a visual representation of sequence alignment without performing a full, computationally intensive alignment.
