@@ -44,6 +44,63 @@ For example:
 ```
 
 
+### Exercise 1: Write a Bash Script to Summarize a Genome FASTA
+
+**Goal:** Learn to write a Bash script that processes the *Elaeis guineensis* reference genome FASTA and reports some simple statistics.
+
+
+### What you will do
+- Create a new Bash script called `genome_stats.sh`.
+- Make it executable and run it on the provided genome FASTA.
+- Learn how to **combine commands** into a reusable workflow.
+
+
+**Step 1: Create the script file**  
+
+Open a new script file:
+
+```bash
+nano genome_stats.sh
+```
+
+**Step 2: Add this content**  
+```bash
+#!/bin/bash
+# Simple Bash script to summarize a genome FASTA file
+
+# Usage: ./genome_stats.sh <genome.fasta>
+
+FASTA=$1
+
+echo "Analyzing genome file: $FASTA"
+echo "-----------------------------------"
+
+# Count the number of sequences (headers start with ">")
+echo -n "Number of sequences: "
+grep -c "^>" "$FASTA"
+
+# Count the total number of bases (ignore header lines)
+echo -n "Total bases: "
+grep -v "^>" "$FASTA" | tr -d '\n' | wc -c
+
+# Report the first 3 sequence names
+echo "First 3 sequence IDs:"
+grep "^>" "$FASTA" | head -n 3
+```
+
+**Step 3: Make it executable**
+```bash
+chmod +x genome_stats.sh
+```
+
+**Step 4: Run the script**
+```bash
+./genome_stats.sh data/Elaeis_guineensis.fasta
+```
+*Please check the basic statistics from the output  
+
+
+
 **Introduction to Python for Bioinformatics**
 
 Python is a versatile, high-level programming language that has become a cornerstone of bioinformatics due to its readability, extensive libraries (like Biopython), and powerful data analysis capabilities. We will cover the absolute basics to get you started.
