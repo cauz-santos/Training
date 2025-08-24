@@ -339,5 +339,10 @@ samtools --version
 module unload samtools/1.15
 ```
 
-### You have completed **Day 1**!
+## You have completed **Day 1**!
 
+### Useful Linux Command Tutorials
+
+- [Ubuntu: Command Line for Beginners](https://ubuntu.com/tutorials/command-line-for-beginners#1-overview)  
+- [DigitalOcean: Linux Commands](https://www.digitalocean.com/community/tutorials/linux-commands)  
+- [Hostinger: Linux Commands](https://www.hostinger.com/tutorials/linux-commands)  
