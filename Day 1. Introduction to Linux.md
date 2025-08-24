@@ -52,30 +52,68 @@ We will start with the most essential commands that you will use daily:
 *   `>`: Redirects output to a file (overwrites).
 *   `>>`: Appends output to a file.
 
+---
+## Afternoon Session: Practice Session on Linux
 
-### Day 1: Linux, Command Line, and HPC Usage (Continued)
+This hands-on session will allow you to apply the basic Linux commands learned in the morning.  
+We will work step by step through practical exercises to strengthen your understanding of:
 
-**Afternoon Session: Practice Session on Linux**
+- **File system navigation**
+- **File and directory creation**
+- **Moving between paths**
 
-This hands-on session will allow you to apply the basic Linux commands learned in the morning. We will work through a series of exercises designed to solidify your understanding of file system navigation, file manipulation, and basic text processing. The goal is to build your confidence and proficiency in using the command line, which is fundamental for all subsequent bioinformatics tasks.
+The goal is to become comfortable with the Linux environment, since it is the foundation for all subsequent bioinformatics analyses.
 
-**Practice Exercises:**
 
-1.  **Navigating the File System:**
-    *   Create a new directory named `bioinformatics_training` in your home directory.
-    *   Navigate into this new directory.
-    *   Inside `bioinformatics_training`, create two subdirectories: `data` and `scripts`.
-    *   Navigate into the `data` directory.
-    *   Return to the `bioinformatics_training` directory.
+### Exercise 1: Navigating the File System
 
-    ```bash
-    mkdir ~/bioinformatics_training
-    cd ~/bioinformatics_training
-    mkdir data scripts
-    cd data
-    cd ..
-    pwd
-    ```
+In this first exercise, you will create a working environment for the training and learn how to move between directories.
+
+**Step 1 — Check your current location**  
+Always begin by checking where you are in the filesystem with `pwd` (print working directory). This tells you your starting point.  
+```bash
+pwd
+```
+
+**Step 2 — Create a new directory**  
+Create a folder called 'bioinformatics_training' inside your home directory (~).
+This will be the main folder where we will store all practice files.
+```bash
+mkdir ~/bioinformatics_training
+```
+
+**Step 3 — Enter the new directory**  
+Move into the new folder using cd (change directory).
+```bash
+cd ~/bioinformatics_training
+```
+
+**Step 4 — Create subdirectories**  
+Inside this folder, create two subfolders:  
+`data`    → where we will keep files and datasets  
+`scripts` → where we will write small shell scripts later
+
+```bash
+mkdir data scripts
+```
+
+**Step 5 — Navigate into a subdirectory**  
+Enter the 'data' directory.
+```bash
+cd data
+```
+
+**Step 6 — Return to the parent directory**  
+Use cd .. to go one level up and return to 'bioinformatics_training'.
+```bash
+cd ..
+```
+
+**Step 7 — Confirm your location**  
+Check where you are in the filesystem with pwd (print working directory).
+```bash
+pwd
+```
 
 2.  **Creating and Manipulating Files:**
     *   Inside the `data` directory, create an empty file named `sample_data.txt`.
