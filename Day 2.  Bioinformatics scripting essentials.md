@@ -38,6 +38,12 @@ echo "Project directory
 
 To run this script, you would save it as `create_project.sh`, make it executable (`chmod +x create_project.sh`), and then run it with a project name as an argument: `./create_project.sh my_new_project`.
 
+For example:
+```bash
+./create_project.sh my_new_project Test
+```
+
+
 **Introduction to Python for Bioinformatics**
 
 Python is a versatile, high-level programming language that has become a cornerstone of bioinformatics due to its readability, extensive libraries (like Biopython), and powerful data analysis capabilities. We will cover the absolute basics to get you started.
