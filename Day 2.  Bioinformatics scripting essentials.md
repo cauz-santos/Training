@@ -157,6 +157,10 @@ if __name__ == '__main__':
 
 This script demonstrates key Python concepts: functions, file handling, loops, and string manipulation. During the hands-on session, you will write and run this script, and we will explore how to modify it to perform other tasks, such as calculating GC content or searching for specific motifs in the sequences.
 
-By the end of Day 2, you will have a foundational understanding of how to automate bioinformatics workflows using both Bash and Python, with a practical focus on parsing one of the most common data formats in genomics.
+By the end of Day 2, you will have a foundational understanding of how to automate bioinformatics workflows using both Bash and Python,with a practical focus on parsing one of the most common data formats in genomics.
 
+### Useful Scripting Tutorials
+
+- [DataCamp: Bash script tutorial](https://www.datacamp.com/tutorial/how-to-write-bash-script-tutorial) 
+- [Geeksforgeeks: Bash scripting](https://www.geeksforgeeks.org/linux-unix/bash-scripting-introduction-to-bash-and-bash-scripting/)  
 
