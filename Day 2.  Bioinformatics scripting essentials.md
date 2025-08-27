@@ -346,5 +346,7 @@ After saving the file, run in the terminal with `python filter_samples.py`.
 ### Useful Scripting Tutorials
 
 - [DataCamp: Bash script tutorial](https://www.datacamp.com/tutorial/how-to-write-bash-script-tutorial) 
-- [Geeksforgeeks: Bash scripting](https://www.geeksforgeeks.org/linux-unix/bash-scripting-introduction-to-bash-and-bash-scripting/)  
+- [Geeksforgeeks: Bash scripting](https://www.geeksforgeeks.org/linux-unix/bash-scripting-introduction-to-bash-and-bash-scripting/)
+- [Python for Biologists](https://pythonforbiologists.com/tutorial.html)
+- [Biopython Tutorial](https://biopython.org/docs/latest/Tutorial/index.html)
 
