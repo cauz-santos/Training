@@ -81,3 +81,12 @@ The file has a header (lines starting with #) followed by variant entries with c
 chr1     10583   rs1     G       A       29      PASS    .
 chr1     10611   rs2     C       T       67      PASS    .
 ```
+
+## You have completed **Day 3**!
+
+### Useful Linux Command Tutorials
+
+- [NCBI Databases Overview](https://www.ncbi.nlm.nih.gov/guide/all/)  
+- [Entrez Direct User Guide](https://www.ncbi.nlm.nih.gov/books/NBK179288/)  
+- [EBI Databases](https://www.ebi.ac.uk/services/)
+- [Ensembl Genome Browser](https://www.ensembl.org/index.html)  
