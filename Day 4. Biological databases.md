@@ -189,7 +189,7 @@ Repeat to:
 - Which palm species has the highest number of **reviewed proteins**?  
 - What does this suggest about the **confidence in protein function annotations** for oil palm compared to its relatives?  
 
-## Useful Resources
+### Useful Resources
 
 - [NCBI Gene](https://www.ncbi.nlm.nih.gov/gene/)  
 - [NCBI Nucleotide](https://www.ncbi.nlm.nih.gov/nucleotide/)  
