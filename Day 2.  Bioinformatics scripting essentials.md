@@ -139,8 +139,8 @@ for file in *_cleaned.txt; do
 done
 
 echo "Summary Report:"
-echo "✅ Files with Status: OK → $OK_COUNT"
-echo "❌ Files with Status: FAIL → $FAIL_COUNT"
+echo "Files with Status: OK → $OK_COUNT"
+echo "Files with Status: FAIL → $FAIL_COUNT"
 ```
 
 To run this script, you would save it and make it executable (`chmod +x summarize_status.sh`), and then run it typing in the terminal: `./summarize_status.sh`.
