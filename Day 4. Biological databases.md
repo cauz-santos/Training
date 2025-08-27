@@ -178,7 +178,7 @@ In this exercise you will check **how many proteins are reviewed (Swiss-Prot) an
 
 
 Go to [UniProt](https://www.uniprot.org/) and enter these queries in the search bar:
-- *Elaeis guineensis* (American oil palm)  
+- *Elaeis guineensis* 
 
 Repeat to:
 - *Elaeis oleifera* (American oil palm)  
@@ -187,7 +187,38 @@ Repeat to:
 
 **Reflection**
 - Which palm species has the highest number of **reviewed proteins**?  
-- What does this suggest about the **confidence in protein function annotations** for oil palm compared to its relatives?  
+- What does this suggest about the **confidence in protein function annotations** for oil palm compared to its relatives?
+
+
+### Part 4 – Exploring the Oil Palm Genome in Ensembl Plants
+
+**Task 2: Browse the genome**  
+1. Go to [Ensembl Plants – Oil Palm](https://plants.ensembl.org/Elaeis_guineensis/Info/Index).  
+2. Explore the genome assembly page:  
+   - What is the assembly name and version?  
+   - How many chromosomes/scaffolds are present?  
+   - What is the total genome size?  
+3. Use the **Genome Browser** to locate the **EgFAD2 gene** on its chromosome.  
+
+**Reflection:** Why is having a complete reference genome important for SNP discovery and marker development?  
+
+
+### Part 5 – Exploring the Sequence Read Archive (SRA)
+
+The **NCBI SRA (Sequence Read Archive)** stores raw sequencing reads from published experiments.  
+
+**Task 3: Search for oil palm datasets**  
+1. Go to [NCBI SRA](https://www.ncbi.nlm.nih.gov/sra).  
+2. Search for: 
+- *Elaeis guineensis* 
+
+3. Identify one dataset that looks interesting for breeding (e.g., RNA-seq from developing mesocarp or any type of stress).
+
+**Reflection**
+- What different **data types** did you see linked to oil palm in SRA (e.g., whole-genome resequencing, transcriptomics, long-read assemblies)?  
+- Which of these data types might be **most useful for breeders**?  
+- Why is it important to know whether data is **raw (SRA)** or **curated (annotations, proteins, variants)**?  
+
 
 ### Useful Resources
 
