@@ -1,8 +1,8 @@
 ## Week 1: Foundations of Bioinformatics and Genomic Data Handling
 
-### Day 5: Data QC, Experimental Design, and Review
+## Day 4: Experimental Design, Sequencing and Data QC 
 
-Day 5 is crucial for understanding the importance of data quality in bioinformatics and how experimental design impacts downstream analysis. We will also have a challenging hands-on session to apply our Linux and HPC knowledge.
+Day 4 is crucial for understanding the importance of data quality in bioinformatics and how experimental design impacts downstream analysis. We will also have a challenging hands-on session to apply our Linux and HPC knowledge.
 
 **Morning Session 1: Integrative Discussion on Experimental Design and Its Impact on SNP Analysis and RNA-seq**
 
