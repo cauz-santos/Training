@@ -254,13 +254,13 @@ This >>> prompt means Python is ready for commands.
 Let's type some basic commands:
 
 Exercise 1: Print a Welcome Message  
-Type the following in the Python prompt:
+Type the following commands in the Python prompt:
 
 ```bash
 print("Welcome to Bioinformatics with Python!")
 ```
 
-Exercise 2: Do Basic Math with Variables
+Exercise 2: Do Basic Math with Variables:
 ```bash
 x = 5
 y = 10
@@ -268,14 +268,14 @@ print("Sum:", x + y)
 print("Product:", x * y)
 ```
 
-Exercise 3: Create and Print a List
+Exercise 3: Create and Print a List:
 ```bash
 samples = ["Sample1", "Sample2", "Sample3"]
 print("Total samples:", len(samples))
 print("First sample:", samples[0])
 ```
 
-Exercise 5: Define and Use a Function
+Exercise 5: Define and Use a Function:
 ```bash
 def gc_content(sequence):
     gc = sequence.count("G") + sequence.count("C")
@@ -284,6 +284,8 @@ def gc_content(sequence):
 seq = "ATGCGCGTAGCTAGC"
 print("GC content:", gc_content(seq), "%")
 ```
+
+Next, we explore some Python scripts for automating tasks...
 
 ### Example 1: Filtering a List of Gene Names  
 
