@@ -235,6 +235,56 @@ This section includes **two beginner-friendly exercises** to practice essential 
 | `type()`            | Returns the data type of a variable.                                       |
 
 
+### Open the Python Interpreter
+
+In your terminal, type:
+
+```bash
+python3
+```
+
+You should see something like:
+```bash
+Python 3.10.12 (default, ...)
+>>>
+```
+This >>> prompt means Python is ready for commands.
+
+
+Let's type some basic commands:
+
+Exercise 1: Print a Welcome Message  
+Type the following in the Python prompt:
+
+```bash
+print("Welcome to Bioinformatics with Python!")
+```
+
+Exercise 2: Do Basic Math with Variables
+```bash
+x = 5
+y = 10
+print("Sum:", x + y)
+print("Product:", x * y)
+```
+
+Exercise 3: Create and Print a List
+```bash
+samples = ["Sample1", "Sample2", "Sample3"]
+print("Total samples:", len(samples))
+print("First sample:", samples[0])
+```
+
+Exercise 5: Define and Use a Function
+```bash
+def gc_content(sequence):
+    gc = sequence.count("G") + sequence.count("C")
+    return gc / len(sequence) * 100
+
+seq = "ATGCGCGTAGCTAGC"
+print("GC content:", gc_content(seq), "%")
+```
+
 ### Example 1: Filtering a List of Gene Names  
 
 **Goal:** Print only gene names that start with `"ABC"` from a predefined list.
