@@ -115,11 +115,11 @@ By the end of the session you should be able to:
 
 
 **Task 3: Retrieve another gene**
-1. Search for **"Elaeis guineensis DGAT1"** (diacylglycerol acyltransferase 1, also involved in oil biosynthesis).  
+1. Search for **"Elaeis guineensis STAD"** (Stearoyl-acyl-carrier-protein, also involved in oil biosynthesis).  
 2. Repeat the steps above to download the FASTA sequence.  
-3. Save it as `EgDGAT1.fasta`.  
+3. Save it as `EgSTAD.fasta`.  
 
-**Reflection:** Why might FAD2 and DGAT1 be important candidate genes in oil palm breeding?  
+**Reflection:** Why might FAD2 and STAD be important candidate genes in oil palm breeding?  
 
 
 
@@ -127,7 +127,7 @@ By the end of the session you should be able to:
 
 **Task 4: Search for the protein**
 1. Go to [UniProt](https://www.uniprot.org/).  
-2. Search for **"Elaeis guineensis FAD2"**.  
+2. Search for **"Elaeis guineensis STAD"**.  
 3. Click on the reviewed entry (if available) or the best hit.  
 
 **Questions:**  
@@ -137,7 +137,7 @@ By the end of the session you should be able to:
 
 **Task 5: Download the protein sequence**
 1. Download the protein sequence in FASTA format.  
-2. Save it as `EgFAD2_protein.fasta`.  
+2. Save it as `EgSTAD_protein.fasta`.  
 
 **Challenge:** Compare the nucleotide sequence from NCBI with the amino acid sequence from UniProt. How are they related?  
 
