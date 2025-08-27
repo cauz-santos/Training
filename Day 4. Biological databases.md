@@ -35,10 +35,10 @@ TTGACTGACTGACTGACTGACTGACTGACTG
 
 ### FASTQ Format  
 Stores raw reads from sequencing machines. Each entry has 4 lines:  
-`@` → sequence identifier
-The nucleotide sequence
-`+` → separator (optionally repeats identifier)
-Quality scores (ASCII-encoded, one per base)
+- `@` → sequence identifier  
+- The nucleotide sequence  
+- `+` → separator (optionally repeats identifier)  
+- Quality scores (ASCII-encoded, one per base)  
 
 ```text
 # FASTQ example
