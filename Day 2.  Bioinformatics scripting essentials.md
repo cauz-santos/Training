@@ -1,8 +1,6 @@
 ## Week 1: Foundations of Bioinformatics and Genomic Data Handling
 
-### Day 2: Bioinformatics Scripting Essentials (Bash, Python)
-
-**Session: Writing Bioinformatics Scripts (Parsing FASTA Files, Automation)**
+## Day 2: Bioinformatics Scripting Essentials (Bash, Python)
 
 On Day 2, we transition from using individual commands to combining them into scripts. Scripting is the key to automating repetitive tasks, creating reproducible workflows, and handling large datasets efficiently. We will cover the fundamentals of scripting in two powerful languages for bioinformatics: Bash and Python.
 
