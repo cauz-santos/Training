@@ -68,7 +68,7 @@ Let's create a script that automates the process of creating a new project direc
 #!/bin/bash
 
 # ============================================
-# 📁 Bioinformatics Project Structure Creator
+# Bioinformatics Project Structure Creator
 # ============================================
 # Usage:
 #   ./create_project.sh <project_name>
