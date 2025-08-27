@@ -147,7 +147,7 @@ echo "❌ Files with Status: FAIL → $FAIL_COUNT"
 
 To run this script, you would save it and make it executable (`chmod +x summarize_status.sh`), and then run it typing in the terminal: `./summarize_status.sh`.
 
-### Exercise 1: Write a Bash Script to Summarize a Genome FASTA
+### Exercise: Write a Bash Script to Summarize a Genome FASTA
 
 **Goal:** Learn to write a Bash script that processes the *Elaeis guineensis* reference genome FASTA and reports some simple statistics.
 
@@ -216,7 +216,28 @@ This section includes **two beginner-friendly exercises** to practice essential 
 - String manipulation
 
 
-**Example 1: Filtering a List of Gene Names**
+**Python Vocabulary: Key Concepts to Get Started**
+
+| Concept             | Description                                                                 |
+|---------------------|-----------------------------------------------------------------------------|
+| `print()`           | Displays output on the screen.                                              |
+| **Variable**        | A name used to store a value (e.g., `x = 5`).                               |
+| **String**          | Text data, written in quotes (e.g., `"ATGCGT"`).                            |
+| **Integer / Float** | Whole numbers (`int`) or decimals (`float`).                               |
+| **List**            | An ordered collection of values (e.g., `[1, 2, 3]`).                        |
+| **Dictionary**      | A collection of key-value pairs (e.g., `{"gene": "ATG"}`).                 |
+| `for` loop          | Repeats an action for each item in a list or range.                        |
+| `if` statement      | Executes code only if a condition is true.                                 |
+| `def`               | Used to define a **function** — a reusable block of code.                  |
+| `import`            | Loads external libraries or modules.                                       |
+| `open()`            | Opens a file for reading or writing.                                       |
+| `readline()` / `readlines()` | Reads data from a file.                                     |
+| `len()`             | Returns the number of elements in a list or characters in a string.        |
+| `range()`           | Generates a sequence of numbers, often used in loops.                      |
+| `type()`            | Returns the data type of a variable.                                       |
+
+
+### Example 1: Filtering a List of Gene Names  
 
 **Goal:** Print only gene names that start with `"ABC"` from a predefined list.
 
@@ -241,7 +262,7 @@ for gene in genes:
 
 After saving the file, run in the terminal with `python gene_filter.py`.
 
-**Example 2: Reading a Sample Metadata Table and Filtering Rows**
+### Example 2: Reading a Sample Metadata Table and Filtering Rows 
 We’ll now work with a simplified sample_metadata.tsv file, formatted like a real metadata table:
 
 **Goal**: Read a file with tabular data and print only the samples with yield values > 15.0.
@@ -270,6 +291,7 @@ for line in data_lines:
 After saving the file, run in the terminal with `python filter_samples.py`.
 
 
+## You have completed **Day 2**!
 
 ### Useful Scripting Tutorials
 
