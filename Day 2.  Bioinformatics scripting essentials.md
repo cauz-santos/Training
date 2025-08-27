@@ -207,7 +207,7 @@ Before moving to Python, let’s explore a few essential Unix tools that make wo
 These are often used inside **pipes (`|`)**, which pass the output of one command as input to the next.
 
 
-### 1. Pipes (`|`)  
+**1. Pipes ( | )**  
 Pipes allow you to **combine commands** into a single workflow.
 
 ```bash
@@ -217,7 +217,7 @@ ls *.txt | wc -l
 - ls *.txt lists all .txt files.
 - wc -l counts the number of lines.
 
-### 2. head and tail  
+**2. head and tail**  
 `head` shows the first lines of a file, while `tail` shows the last lines.
 
 ```bash
@@ -228,7 +228,7 @@ head -5 sample_metadata.tsv
 tail -5 sample_metadata.tsv
 ```
 
-### 3. grep  
+**3. grep**  
 `grep` searches for patterns in text files.
 
 ```bash
@@ -241,7 +241,7 @@ grep -c "Status: FAIL" *_cleaned.txt
 - grep "pattern" file prints lines containing that pattern.
 - -c counts matches instead of printing them.
 
-### 4. cut  
+**4. cut**  
 `cut` extracts columns from tabular data.  
 By default, it assumes the file is tab-delimited (\t).
 
