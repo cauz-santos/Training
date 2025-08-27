@@ -65,7 +65,7 @@ We will work step by step through practical exercises to strengthen your underst
 The goal is to become comfortable with the Linux environment, since it is the foundation for all subsequent bioinformatics analyses.
 
 
-**Understanding the Command Prompt**
+**Understanding the Command Prompt**  
 When using the terminal, you’ll see a **command prompt** that looks something like:
 
 ```bash
@@ -77,7 +77,7 @@ Where:
 - `~`: shorthand for your home directory
 - `$`: indicates the terminal is ready for your input
 
-**Home Directory: `~` vs `$HOME`**
+**Home Directory: `~` vs `$HOME`**  
 To go to your home directory, you can use either:
 
 `cd ~`
