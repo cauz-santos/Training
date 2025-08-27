@@ -6,7 +6,7 @@
 
 On Day 2, we transition from using individual commands to combining them into scripts. Scripting is the key to automating repetitive tasks, creating reproducible workflows, and handling large datasets efficiently. We will cover the fundamentals of scripting in two powerful languages for bioinformatics: Bash and Python.
 
-**Introduction to Bash Scripting**
+## Introduction to Bash Scripting
 
 Bash (Bourne-Again SHell) is the default command-line interpreter on most Linux systems. A Bash script is simply a text file containing a series of commands that are executed sequentially. It's an excellent tool for automating command-line workflows.
 
@@ -202,65 +202,74 @@ chmod +x genome_stats.sh
 ```
 *Please check the basic statistics from the output  
 
+___
 
-
-**Introduction to Python for Bioinformatics**
+## Introduction to Python for Bioinformatics
 
 Python is a versatile, high-level programming language that has become a cornerstone of bioinformatics due to its readability, extensive libraries (like Biopython), and powerful data analysis capabilities. We will cover the absolute basics to get you started.
 
-**Python Fundamentals:**
+This section includes **two beginner-friendly exercises** to practice essential skills like:
 
-*   **Data Types:** We will introduce fundamental data types such as strings (for sequences), integers, floats, lists (for storing collections of items), and dictionaries (for key-value pairs).
-*   **Loops:** Loops are essential for iterating over data. We will cover `for` loops, which are used to iterate over a sequence (like a list or a string).
-*   **File Handling:** A crucial skill in bioinformatics is reading from and writing to files. We will learn how to open files, read their content line by line, and write results to new files.
+- Lists and loops
+- File reading and filtering
+- Conditional logic
+- String manipulation
 
-**Parsing FASTA Files with Python:**
 
-FASTA is a common text-based format for representing nucleotide or peptide sequences. A FASTA file can contain one or more sequences, each with a header line starting with `>` followed by the sequence data on subsequent lines.
+**Example 1: Filtering a List of Gene Names**
 
-Here is a simple Python script to parse a FASTA file and print the header and sequence for each entry:
+**Goal:** Print only gene names that start with `"ABC"` from a predefined list.
+
+**Concepts Covered:**
+- Lists
+- For loops
+- String methods (`startswith`)
+- Conditional statements
+
+Open a file with `vi gene_filter.py`, copy and paste:
 
 ```python
-# fasta_parser.py
+# gene_filter.py
 
-def parse_fasta(filename):
-    """Parses a FASTA file and yields header, sequence pairs."""
-    with open(filename, 'r') as f:
-        header = ''
-        sequence = ''
-        for line in f:
-            line = line.strip() # Remove leading/trailing whitespace
-            if line.startswith('>'):
-                if header: # If we have a previous sequence, yield it
-                    yield header, sequence
-                header = line[1:] # Remove the '>'
-                sequence = ''
-            else:
-                sequence += line
-        if header: # Yield the last sequence in the file
-            yield header, sequence
+genes = ["ATG5", "ABC1", "NBS1", "ATP6", "COX3", "ABC2", "PPR1"]
 
-# Example usage:
-if __name__ == '__main__':
-    fasta_file = 'example.fasta' # Assume this file exists
-    # Create a dummy fasta file for the example
-    with open(fasta_file, 'w') as f:
-        f.write('>gene1 description of gene1\n')
-        f.write('ATGCATGCATGC\n')
-        f.write('GATTACAGATTACA\n')
-        f.write('>gene2 description of gene2\n')
-        f.write('CGTACGTACGTACG\n')
-
-    for header, sequence in parse_fasta(fasta_file):
-        print(f'Header: {header}')
-        print(f'Sequence: {sequence}')
-        print(f'Sequence Length: {len(sequence)}\n')
-
+print("Genes starting with 'ABC':")
+for gene in genes:
+    if gene.startswith("ABC"):
+        print(f" - {gene}")
 ```
 
-This script demonstrates key Python concepts: functions, file handling, loops, and string manipulation. During the hands-on session, you will write and run this script, and we will explore how to modify it to perform other tasks, such as calculating GC content or searching for specific motifs in the sequences.
+After saving the file, run in the terminal with `python gene_filter.py`.
 
-By the end of Day 2, you will have a foundational understanding of how to automate bioinformatics workflows using both Bash and Python,with a practical focus on parsing one of the most common data formats in genomics.
+**Example 2: Reading a Sample Metadata Table and Filtering Rows**
+We’ll now work with a simplified sample_metadata.tsv file, formatted like a real metadata table:
+
+**Goal**: Read a file with tabular data and print only the samples with yield values > 15.0.
+
+Open a file with `vi filter_samples.py`, copy and paste:
+
+```python
+# filter_samples.py
+
+# Read the file
+with open("sample_metadata.tsv", "r") as infile:
+    lines = infile.readlines()
+
+header = lines[0].strip().split("\t")  # Extract column names
+data_lines = lines[1:]  # Skip header
+
+print("Samples with treatment = Treated and yield > 15.0:\n")
+
+for line in data_lines:
+    parts = line.strip().split("\t")
+    sample_id, treatment, yield_val = parts[0], parts[1], float(parts[2])
+
+    if treatment == "Treated" and yield_val > 15.0:
+        print(f"{sample_id}: Yield = {yield_val}")
+```
+After saving the file, run in the terminal with `python filter_samples.py`.
+
+
 
 ### Useful Scripting Tutorials
 
