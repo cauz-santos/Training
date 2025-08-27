@@ -82,9 +82,125 @@ chr1     10583   rs1     G       A       29      PASS    .
 chr1     10611   rs2     C       T       67      PASS    .
 ```
 
+___
+## Exercise – Exploring Biological Databases and Using BLAST
+
+Today we will learn how to **search, retrieve, and explore sequences** using major biological databases.  
+We will practice with *Elaeis guineensis* (oil palm), an important crop for breeding and oil production.  
+
+By the end of the session you should be able to:  
+- Search for genes and proteins in **NCBI** and **UniProt**.  
+- Retrieve sequences in **FASTA format**.  
+- Use **BLAST** to find homologous sequences in other species.  
+- Interpret BLAST results in the context of breeding and comparative genomics.  
+
+
+### Part 1 – Searching in NCBI Gene and Nucleotide 
+
+**Task 1: Find a gene of interest**
+1. Go to [NCBI Gene](https://www.ncbi.nlm.nih.gov/gene/).  
+2. Search for **"Elaeis guineensis FAD2"** (fatty acid desaturase 2, involved in oil composition).  
+3. Explore the result page:  
+   - What is the **Gene ID**?  
+   - On which **chromosome** is it located?  
+   - Which types of sequences are linked (genomic DNA, mRNA, protein)?  
+
+
+**Task 2: Retrieve the nucleotide sequence**
+1. From the Gene page, click the **NCBI Nucleotide** link.  
+2. Download the **mRNA sequence** in FASTA format.  
+3. Save it locally as `EgFAD2.fasta`.  
+
+**Question:** What does the header line (the line starting with `>`) tell you about the sequence?  
+
+
+**Task 3: Retrieve another gene**
+1. Search for **"Elaeis guineensis DGAT1"** (diacylglycerol acyltransferase 1, also involved in oil biosynthesis).  
+2. Repeat the steps above to download the FASTA sequence.  
+3. Save it as `EgDGAT1.fasta`.  
+
+**Reflection:** Why might FAD2 and DGAT1 be important candidate genes in oil palm breeding?  
+
+
+
+### Part 2 – Exploring Proteins in UniProt 
+
+**Task 4: Search for the protein**
+1. Go to [UniProt](https://www.uniprot.org/).  
+2. Search for **"Elaeis guineensis FAD2"**.  
+3. Click on the reviewed entry (if available) or the best hit.  
+
+**Questions:**  
+- What is the **UniProt accession number**?  
+- What information does UniProt provide that is not present in NCBI?  
+
+
+**Task 5: Download the protein sequence**
+1. Download the protein sequence in FASTA format.  
+2. Save it as `EgFAD2_protein.fasta`.  
+
+**Challenge:** Compare the nucleotide sequence from NCBI with the amino acid sequence from UniProt. How are they related?  
+
+
+
+### Part 3 – BLAST Analysis 
+
+We will now use BLAST (Basic Local Alignment Search Tool) to explore sequence similarity.
+
+**Task 6: BLASTn with FAD2 nucleotide**
+1. Open [NCBI BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi).  
+2. Select **nucleotide BLAST (blastn)**.  
+3. Paste the sequence from `EgFAD2.fasta`.  
+4. Database: **nt (nucleotide collection)**  
+5. Organism filter: **Viridiplantae (green plants)**  
+6. Run the search.  
+
+**Questions:**  
+- What is the top hit?  
+- Which species show the highest similarity to oil palm FAD2?  
+- What is the **percent identity** and **E-value** of the alignment?  
+
+
+**Task 7: BLASTp with FAD2 protein**
+1. Select **protein BLAST (blastp)**.  
+2. Paste the sequence from `EgFAD2_protein.fasta`.  
+3. Database: **nr (non-redundant protein sequences)**.  
+4. Run the search.  
+
+**Questions:**  
+- Which oilseed crops (soybean, sunflower, rapeseed) appear in the results?  
+- Why is protein BLAST often more informative than nucleotide BLAST for distant species?  
+
+
+### Bonus Practical — UniProt Curation Check (Swiss-Prot vs TrEMBL) for Palm Species
+
+In this exercise you will check **how many proteins are reviewed (Swiss-Prot) and unreviewed (TrEMBL)** in UniProt for oil palm and related palm species. This helps understand how well protein data is curated for breeding applications.
+
+
+Go to [UniProt](https://www.uniprot.org/) and enter these queries in the search bar:
+- *Elaeis guineensis* (American oil palm)  
+
+Repeat to:
+- *Elaeis oleifera* (American oil palm)  
+- *Phoenix dactylifera* (Date palm)
+- *Cocos nucifera* (Coconut)   
+
+**Reflection**
+- Which palm species has the highest number of **reviewed proteins**?  
+- What does this suggest about the **confidence in protein function annotations** for oil palm compared to its relatives?  
+
+## Useful Resources
+
+- [NCBI Gene](https://www.ncbi.nlm.nih.gov/gene/)  
+- [NCBI Nucleotide](https://www.ncbi.nlm.nih.gov/nucleotide/)  
+- [NCBI BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi)  
+- [UniProt](https://www.uniprot.org/)  
+- [Ensembl Plants – Oil Palm](https://plants.ensembl.org/Elaeis_guineensis/Info/Index)  
+
+
 ## You have completed **Day 3**!
 
-### Useful Linux Command Tutorials
+### Useful Database Tutorials
 
 - [NCBI Databases Overview](https://www.ncbi.nlm.nih.gov/guide/all/)  
 - [Entrez Direct User Guide](https://www.ncbi.nlm.nih.gov/books/NBK179288/)  
