@@ -65,6 +65,30 @@ We will work step by step through practical exercises to strengthen your underst
 The goal is to become comfortable with the Linux environment, since it is the foundation for all subsequent bioinformatics analyses.
 
 
+**Understanding the Command Prompt**
+When using the terminal, you’ll see a **command prompt** that looks something like:
+
+```bash
+[username@server ~]$
+```
+Where:
+- `username`: your login name
+- `server`: the name of the machine you're logged into
+- `~`: shorthand for your home directory
+- `$`: indicates the terminal is ready for your input
+
+**Home Directory: `~` vs `$HOME`**
+To go to your home directory, you can use either:
+
+`cd ~`
+
+or
+
+`cd $HOME`
+
+Both commands work the same. `$HOME` is an environment variable that always stores the path to your home directory. This becomes very useful when writing portable scripts.
+
+
 ### Exercise 1: Navigating the File System
 
 In this first exercise, you will create a working environment for the training and learn how to move between directories.
