@@ -190,11 +190,12 @@ Repeat to:
 - What does this suggest about the **confidence in protein function annotations** for oil palm compared to its relatives?
 
 
-### Part 4 – Exploring the Oil Palm Genome in Ensembl Plants
+### Part 4 – Exploring the Oil Palm Genome 
 
 **Task 2: Browse the genome**  
-1. Go to [Ensembl Plants – Oil Palm](https://plants.ensembl.org/Elaeis_guineensis/Info/Index).  
-2. Explore the genome assembly page:  
+1. Go to [NCBI – Genome database](https://www.ncbi.nlm.nih.gov/datasets/genome/).
+2. Search for *Elaeis guineensis* 
+3. Explore the genome assembly page:  
    - What is the assembly name and version?  
    - How many chromosomes/scaffolds are present?  
    - What is the total genome size?  
