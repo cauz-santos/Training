@@ -19,7 +19,7 @@ Bash (Bourne-Again SHell) is the default command-line interpreter on most Linux 
 5.  **Run the script:** Execute the script by typing `./my_first_script.sh`.
 
 
-### 1) Example of Basic Bash Script:**
+### 1) Example of Basic Bash Script:
 
 **Step 1: Create a script file**   
 
@@ -59,7 +59,7 @@ Now we can run it by calling the file directly:
 ./hello.sh
 ```
 
-### 2) Example Bash Script for Automation:**
+### 2) Example Bash Script for Automation:
 
 **Step 1 – Create directories**
 Let's create a script that automates the process of creating a new project directory with subdirectories for data, scripts, and results.
