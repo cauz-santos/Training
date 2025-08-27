@@ -31,4 +31,19 @@ The most common way to store **DNA, RNA, or protein sequences**.
 ATGCGTACGTAGCTAGCTAGCTAGCTAGCTA
 >gene2 hypothetical protein
 TTGACTGACTGACTGACTGACTGACTGACTG
+```
 
+### FASTQ Format  
+Stores raw reads from sequencing machines. Each entry has 4 lines:  
+`@` → sequence identifier
+The nucleotide sequence
+`+` → separator (optionally repeats identifier)
+Quality scores (ASCII-encoded, one per base)
+
+```text
+# FASTQ example
+@SEQ_ID
+GATTTGGGGTTTAAAGGG
++
+!''*((((***+))%%%++)(%%%%).1***-+*''))**
+```
