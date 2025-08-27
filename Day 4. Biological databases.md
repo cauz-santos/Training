@@ -47,3 +47,20 @@ GATTTGGGGTTTAAAGGG
 +
 !''*((((***+))%%%++)(%%%%).1***-+*''))**
 ```
+
+### GFF (General Feature Format)  
+Stores genome annotations, like gene positions, exons, and regulatory features. Each row corresponds to a feature along the genome.  
+
+Columns typically include:  
+- Chromosome  
+- Source  
+- Feature type (gene, exon, CDS…)  
+- Start and end positions  
+- Strand (+/-)  
+- Additional info (IDs, parent features, etc.)  
+
+```text
+# GFF example
+chr1    TAIR10  gene    3631    5899    .    +    .    ID=AT1G01010
+chr1    TAIR10  exon    3631    3913    .    +    .    Parent=AT1G01010
+```
