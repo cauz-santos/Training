@@ -61,20 +61,37 @@ Now we can run it by calling the file directly:
 
 **2) Example Bash Script for Automation:**
 
+## Step 1 – Create directories
 Let's create a script that automates the process of creating a new project directory with subdirectories for data, scripts, and results.
 
 ```bash
 #!/bin/bash
 
-# This script creates a new project directory structure
+# ============================================
+# 📁 Bioinformatics Project Structure Creator
+# ============================================
+# Usage:
+#   ./create_project.sh <project_name>
+#
+# Example:
+#   ./create_project.sh my_bio_project
+# ============================================
 
-PROJECT_NAME=$1 # Get the project name from the command line
+# Check if the user provided a name
+if [ -z "$1" ]; then
+  echo "Error: No project name supplied."
+  echo "Usage: ./create_project.sh <project_name>"
+  exit 1
+fi
 
-mkdir $PROJECT_NAME
-cd $PROJECT_NAME
-mkdir data scripts results
+PROJECT_NAME=$1
 
-echo "Project directory 
+echo "Creating project: $PROJECT_NAME"
+
+mkdir -p "$PROJECT_NAME"/{raw_data,processed_data,scripts,results,logs}
+
+echo "Structure created:"
+tree "$PROJECT_NAME"
 ```
 
 To run this script, you would save it as `create_project.sh`, make it executable (`chmod +x create_project.sh`), and then run it with a project name as an argument: `./create_project.sh my_new_project`.
@@ -82,6 +99,38 @@ To run this script, you would save it as `create_project.sh`, make it executable
 For example:
 ```bash
 ./create_project.sh my_new_project Test
+```
+
+## Step 2 – Rename Files from _raw.txt to _cleaned.txt
+Let’s rename all raw input files to mark them as cleaned.
+
+```bash
+#!/bin/bash
+
+for file in *_raw.txt; do
+    newname=$(echo "$file" | sed 's/_raw/_cleaned/')
+    mv "$file" "$newname"
+    echo "Renamed $file → $newname"
+done
+```
+
+
+## Step 3 – Extract the Treatment Column from a Table
+Given a tab-delimited file (table.tsv) with columns like Sample, Treatment, Yield, we extract the second column.
+
+```bash
+#!/bin/bash
+
+cut -f2 table.tsv | tail -n +2
+```
+
+## Step 4 – Count How Many Files Contain “Status: OK”
+We now check how many cleaned files contain the phrase Status: OK.
+
+```bash
+#!/bin/bash
+
+grep -c "Status: OK" sample_*_cleaned.txt
 ```
 
 
