@@ -64,3 +64,20 @@ Columns typically include:
 chr1    TAIR10  gene    3631    5899    .    +    .    ID=AT1G01010
 chr1    TAIR10  exon    3631    3913    .    +    .    Parent=AT1G01010
 ```
+
+### VCF (Variant Call Format)  
+Stores genetic variants such as SNPs, insertions, or deletions.  
+
+The file has a header (lines starting with #) followed by variant entries with columns such as:  
+- Chromosome (`CHROM`)  
+- Position (`POS`)  
+- Reference allele (`REF`)  
+- Alternative allele (`ALT`)  
+- Quality scores and filters  
+
+```text
+# VCF example
+#CHROM   POS     ID      REF     ALT     QUAL    FILTER  INFO
+chr1     10583   rs1     G       A       29      PASS    .
+chr1     10611   rs2     C       T       67      PASS    .
+```
