@@ -1,8 +1,8 @@
 ## Week 1: Foundations of Bioinformatics and Genomic Data Handling
 
-### Day 4: Biological Databases, Genomic Data Formats, and Data Retrieval
+## Day 3: Biological Databases, Genomic Data Formats, and Data Retrieval
 
-Day 4 will focus on the vast world of biological databases, understanding common genomic data formats, and practical methods for retrieving data. Accessing and managing biological data efficiently is a cornerstone of bioinformatics.
+Day 3 will focus on the vast world of biological databases, understanding common genomic data formats, and practical methods for retrieving data. Accessing and managing biological data efficiently is a cornerstone of bioinformatics.
 
 **Biological Databases:**
 
