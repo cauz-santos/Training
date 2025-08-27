@@ -216,7 +216,7 @@ This section includes **two beginner-friendly exercises** to practice essential 
 - String manipulation
 
 
-**Python Vocabulary: Key Concepts to Get Started**
+**Table. Python Vocabulary: Key Concepts to Get Started**
 
 | Concept             | Description                                                                 |
 |---------------------|-----------------------------------------------------------------------------|
