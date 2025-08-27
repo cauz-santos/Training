@@ -61,8 +61,10 @@ Now we can run it by calling the file directly:
 
 **2) Example Bash Script for Automation:**
 
-## Step 1 – Create directories
+### Step 1 – Create directories
 Let's create a script that automates the process of creating a new project directory with subdirectories for data, scripts, and results.
+
+Please create a file typing `vi create_project.sh`in the terminal, and then copy the following content:
 
 ```bash
 #!/bin/bash
@@ -101,8 +103,8 @@ For example:
 ./create_project.sh my_new_project Test
 ```
 
-## Step 2 – Rename Files from _raw.txt to _cleaned.txt
-Let’s rename all raw input files to mark them as cleaned.
+### Step 2 – Rename Files from _raw.txt to _cleaned.txt
+Let’s rename all raw input files to mark them as cleaned. Please create a file typing `vi rename_files.sh`in the terminal, and then copy and paste the following content:
 
 ```bash
 #!/bin/bash
@@ -114,25 +116,36 @@ for file in *_raw.txt; do
 done
 ```
 
+To run this script, you would save it and make it executable (`chmod +x rename_files.sh`), and then run it typing in the terminal: `./rename_files.sh`.
 
-## Step 3 – Extract the Treatment Column from a Table
-Given a tab-delimited file (table.tsv) with columns like Sample, Treatment, Yield, we extract the second column.
-
-```bash
-#!/bin/bash
-
-cut -f2 table.tsv | tail -n +2
-```
-
-## Step 4 – Count How Many Files Contain “Status: OK”
-We now check how many cleaned files contain the phrase Status: OK.
+### Step 3 – Count Files Containing “Status: OK” or “Status: FAIL”
+Let’s analyze the content of the cleaned files and summarize how many contain "Status: OK" or "Status: FAIL"  
+Create the file script using `vi summarize_status.sh`
 
 ```bash
 #!/bin/bash
 
-grep -c "Status: OK" sample_*_cleaned.txt
+# ============================================
+# Status Summary Report
+# ============================================
+
+OK_COUNT=0
+FAIL_COUNT=0
+
+for file in *_cleaned.txt; do
+    if grep -q "Status: OK" "$file"; then
+        OK_COUNT=$((OK_COUNT + 1))
+    elif grep -q "Status: FAIL" "$file"; then
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
+done
+
+echo "Summary Report:"
+echo "✅ Files with Status: OK → $OK_COUNT"
+echo "❌ Files with Status: FAIL → $FAIL_COUNT"
 ```
 
+To run this script, you would save it and make it executable (`chmod +x summarize_status.sh`), and then run it typing in the terminal: `./summarize_status.sh`.
 
 ### Exercise 1: Write a Bash Script to Summarize a Genome FASTA
 
