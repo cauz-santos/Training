@@ -19,7 +19,7 @@ Bash (Bourne-Again SHell) is the default command-line interpreter on most Linux 
 5.  **Run the script:** Execute the script by typing `./my_first_script.sh`.
 
 
-**1) Example of Basic Bash Script:**
+### 1) Example of Basic Bash Script:**
 
 **Step 1: Create a script file**   
 
@@ -59,9 +59,9 @@ Now we can run it by calling the file directly:
 ./hello.sh
 ```
 
-**2) Example Bash Script for Automation:**
+### 2) Example Bash Script for Automation:**
 
-### Step 1 – Create directories
+**Step 1 – Create directories**
 Let's create a script that automates the process of creating a new project directory with subdirectories for data, scripts, and results.
 
 Please create a file typing `vi create_project.sh`in the terminal, and then copy the following content:
@@ -103,7 +103,7 @@ For example:
 ./create_project.sh my_new_project Test
 ```
 
-### Step 2 – Rename Files from _raw.txt to _cleaned.txt
+**Step 2 – Rename Files from _raw.txt to _cleaned.txt**
 Let’s rename all raw input files to mark them as cleaned. Please create a file typing `vi rename_files.sh`in the terminal, and then copy and paste the following content:
 
 ```bash
@@ -118,7 +118,7 @@ done
 
 To run this script, you would save it and make it executable (`chmod +x rename_files.sh`), and then run it typing in the terminal: `./rename_files.sh`.
 
-### Step 3 – Count Files Containing “Status: OK” or “Status: FAIL”
+**Step 3 – Count Files Containing “Status: OK” or “Status: FAIL”**
 Let’s analyze the content of the cleaned files and summarize how many contain "Status: OK" or "Status: FAIL"  
 Create the file script using `vi summarize_status.sh`
 
@@ -163,7 +163,7 @@ To run this script, you would save it and make it executable (`chmod +x summariz
 Open a new script file:
 
 ```bash
-nano genome_stats.sh
+vi genome_stats.sh
 ```
 
 **Step 2: Add this content**  
