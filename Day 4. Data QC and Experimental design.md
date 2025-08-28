@@ -509,17 +509,11 @@ Finally, open the report in your web browser by double-clicking it.
 ###  Useful Tutorials on Sequencing & Data Quality
 
 - [FastQC Documentation](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) – Official user guide with explanations of each module and how to interpret plots.  
-- [MultiQC Documentation](https://multiqc.info/docs/) – Learn how to aggregate QC results from multiple samples and tools.  
+- [MultiQC Documentation](https://multiqc.info/docs/) – Learn how to aggregate QC results from multiple samples and tools.
+- [MultiQC – Quick Start](https://docs.seqera.io/multiqc/getting_started/quick_start) — how to run MultiQC and read the consolidated report.   
 - [Trimmomatic Manual](http://www.usadellab.org/cms/?page=trimmomatic) – Detailed explanation of trimming steps and parameters.
-
-  
-- [FastQC (official site)](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) — docs, downloads, and module explanations.  
-- [MultiQC – Quick Start](https://docs.seqera.io/multiqc/getting_started/quick_start) — how to run MultiQC and read the consolidated report.  
-- [FASTQ Format (NYU GenCore)](https://learn.gencore.bio.nyu.edu/ngs-file-formats/fastq-format/) — clear intro to FASTQ and quality scores.  
 - [Galaxy Training: Quality Control (FastQC/Cutadapt/MultiQC)](https://training.galaxyproject.org/training-material/topics/sequence-analysis/tutorials/quality-control/tutorial.html) — hands-on QC workflow.  
 - [HBC Training: QC of Raw NGS Data with FastQC](https://hbctraining.github.io/Training-modules/planning_successful_rnaseq/lessons/QC_raw_data.html) — interpreting FastQC modules & flags.  
-- [Trimmomatic Manual (PDF)](https://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/TrimmomaticManual_V0.32.pdf) — parameter definitions (ILLUMINACLIP, SLIDINGWINDOW, MINLEN, etc.).  
-- [EBI: Data Preprocessing & QC Overview](https://www.ebi.ac.uk/training/online/courses/investigating-antimicrobial-resistance/analysing-genomic-data-from-pathogens/data-preprocessing/) — short overview of QC concepts and tools.  
 - [Wrangling Genomics: Trimming & Filtering](https://bookdown.org/ggiaever/wrangling-genomics/trimming-and-filtering.html) — didactic walkthrough of Trimmomatic options with examples.
  
 
