@@ -507,7 +507,6 @@ After the job completes, you should have:
 - What problems might arise if we allow variants with too much missing data?
 - Why is filtering out variants with very low MAF important for downstream analyses like PCA or GWAS?
 
----
 
 ## Conclusion
 
@@ -516,3 +515,46 @@ Congratulations! You have completed the genome mapping and variant calling workf
 This is a foundational workflow in genomics, and the skills you have learned today will be applicable to many different types of sequencing data analysis.
 
 
+## Additional Tools for Mapping and Variant Calling
+
+While in this training we used **BWA + Samtools + BCFtools**, other tools exist with different strengths, optimizations, and features.  
+Here are some commonly used alternatives:
+
+### Mapping Tools
+- **Bowtie2** – very fast, suited for short reads and large genomes.  
+  [Manual](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml)  
+
+- **HISAT2** – fast and memory-efficient, often used for both DNA and RNA-seq alignment.  
+  [HISAT2 Documentation](https://daehwankimlab.github.io/hisat2/)  
+
+- **STAR** – very fast spliced aligner, primarily for RNA-seq data.  
+  [STAR GitHub](https://github.com/alexdobin/STAR)  
+
+- **Minimap2** – the go-to aligner for long reads (PacBio, Nanopore).  
+  [Minimap2 Paper + GitHub](https://github.com/lh3/minimap2)  
+
+
+### Variant Calling Tools
+- **GATK (Genome Analysis Toolkit)** – industry standard for germline and somatic variant calling, with extensive best-practice pipelines.  
+  [GATK Best Practices](https://gatk.broadinstitute.org/hc/en-us)  
+
+- **FreeBayes** – haplotype-based variant detector, works well with pooled samples.  
+  [FreeBayes GitHub](https://github.com/freebayes/freebayes)  
+
+- **VarScan2** – robust for low-frequency variants and cancer studies.  
+  [VarScan2 Manual](http://varscan.sourceforge.net/)  
+
+- **DeepVariant** – Google’s deep learning-based variant caller, very accurate but computationally heavy.  
+  [DeepVariant GitHub](https://github.com/google/deepvariant)  
+
+---
+
+## You have completed the 1st Week!
+
+## Useful Tutorials and Resources
+
+- [Samtools Tutorial (Galaxy Training)](https://training.galaxyproject.org/training-material/topics/sequence-analysis/tutorials/mapping/tutorial.html)  
+- [BWA + SAMtools Practical Guide (Cornell)](https://biohpc.cornell.edu/doc/VariantCalling.pdf)  
+- [Broad Institute GATK Best Practices for Variant Discovery](https://gatk.broadinstitute.org/hc/en-us/articles/360035535912-Germline-short-variant-discovery-SNPs-Indels)  
+- [FreeBayes Variant Calling Tutorial (UC Davis Bioinformatics)](https://angus.readthedocs.io/en/2019/freebayes.html)  
+- [Minimap2 + Long-Read Variant Calling (Oxford Nanopore Guide)](https://nanoporetech.github.io/medaka/variant.html)  
