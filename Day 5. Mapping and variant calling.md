@@ -165,8 +165,8 @@ The main steps are:
 5. **Indexing (Samtools index)** → creates a `.bai` index file so tools can quickly access specific regions of the BAM.  
 6. **Cleanup** → intermediate files (unsorted BAMs) are deleted to save space.
 
-|**⚠️ Important note**: Duplicate removal is useful for SNP/variant calling.|
-|But in other applications (e.g., RNA-seq or ChIP-seq), duplicates may carry biological information and should not be removed.|
+**⚠️ Important note**: Duplicate removal is useful for SNP/variant calling.
+But in other applications (e.g., RNA-seq or ChIP-seq), duplicates may carry biological information and should not be removed.
 
 
 **Create a file named `map_reads.sh` using `vi`:**
