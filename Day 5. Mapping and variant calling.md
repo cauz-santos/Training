@@ -37,7 +37,7 @@ We will be working with a set of up to 10 single-end FASTQ files and a reference
 
 ---
 
-### Part 1: Setting up the Environment and Data
+### Section 1: Setting up the Environment and Data
 
 Before we start, let's make sure our environment is set up correctly on the HPC cluster.
 
@@ -66,7 +66,7 @@ Before we start, let's make sure our environment is set up correctly on the HPC 
 
 
 
-### Part 2: Reference Genome Indexing
+### Section 2: Reference Genome Indexing
 
 **Why do we index the reference genome?**
 
@@ -141,7 +141,7 @@ Once the job is complete, you will see several new files in your directory with 
 
 
 
-### Part 3: Read Mapping and Post-processing
+### Section 3: Read Mapping and Post-processing
 
 Now that we have our indexed genome, we can align our FASTQ reads. We will create a single Slurm script that uses a `for` loop to process all our FASTQ files.
 
@@ -208,7 +208,7 @@ sbatch map_reads.sh
 
 
 
-### Part 4: Alignment Quality Control
+### Section 4: Alignment Quality Control
 
 After mapping, it's crucial to assess the quality of our alignments. We'll check two key metrics: **mapping rate** and **coverage**.
 
@@ -280,7 +280,7 @@ Navigate to a specific region by pressing `g` and entering the coordinates (e.g.
 
 
 
-### Part 5: Variant Calling
+### Section 5: Variant Calling
 
 Now that we have high-quality alignments, we can proceed to variant calling. This process identifies positions where the aligned reads consistently differ from the reference genome.
 
@@ -335,7 +335,7 @@ sbatch variant_calling.sh
 
 
 
-### Part 6: VCF File Inspection and Statistics
+### Section 6: VCF File Inspection and Statistics
 
 A VCF (Variant Call Format) file contains information about the identified variants. It's important to understand its structure and to check some basic statistics.
 
@@ -386,7 +386,7 @@ This command shows the proportion of missing genotypes, the number of missing sa
 
 
 
-### Part 7: Variant Filtering
+### Section 7: Variant Filtering
 
 Raw variant calls often contain false positives due to sequencing errors, mapping errors, or other artifacts. Filtering is a critical step to increase the confidence in your variant set.
 
