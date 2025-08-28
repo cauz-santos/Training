@@ -315,7 +315,6 @@ Then open them in your browser to inspect the results.
 
 
 **Step 3.3 – Trim Reads with Trimmomatic**  
-
 Trimmomatic is a fast, multithreaded tool that removes adapters, trims poor-quality bases, and filters short reads. It works with both single-end and paired-end reads, and can handle compressed files (.gz).
 
 **Common Trimmomatic Parameters:**
@@ -332,7 +331,16 @@ Trimmomatic is a fast, multithreaded tool that removes adapters, trims poor-qual
 | `MINLEN` | Discards the read if shorter than the threshold length. |
 | `AVGQUAL` | Drops the read if its average quality is below the threshold. |
 
-Create a file `trim_job.sh`:
+Create a file `trim_job.sh`, with the text editor `vi`:
+
+```bash
+vi trim_job.sh
+```
+
+When the file opens, you are in command mode.
+To start typing, press the `i` key (this puts you in insert mode).
+
+Now copy and paste the following script into the file::
 
 ```bash
 #!/bin/bash
