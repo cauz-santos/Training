@@ -61,7 +61,7 @@ Similarly, read types such as **single-end, paired-end, long, and ultra-long** e
 
 In this section, we summarize the most common **sequencing technologies** and **types of reads**, highlighting their advantages, limitations, and typical use cases in bioinformatics and plant breeding.
 
-**Table. Types of Sequencing and Reads**
+**Table 1. Types of Sequencing and Reads**
 
 | Sequencing Type        | Description                                                                 | Typical Applications                          | Read Types & Lengths                |
 |------------------------|-----------------------------------------------------------------------------|-----------------------------------------------|--------------------------------------|
@@ -73,7 +73,7 @@ In this section, we summarize the most common **sequencing technologies** and **
 | **10x Genomics (Linked-Reads)** | Uses barcoding to connect short Illumina reads to long molecules. | Phasing, haplotyping, structural variation.   | Short reads (~150 bp) but linked across long DNA molecules (~50–100 kb) |
 
 
-**Table. Types of Reads:**
+**Table 2. Types of Reads:**
 
 | Read Type        | Description                                                                 | Example Use Case                             |
 |------------------|-----------------------------------------------------------------------------|---------------------------------------------|
@@ -317,7 +317,7 @@ Then open them in your browser to inspect the results.
 **Step 3.3 – Trim Reads with Trimmomatic**  
 Trimmomatic is a fast, multithreaded tool that removes adapters, trims poor-quality bases, and filters short reads. It works with both single-end and paired-end reads, and can handle compressed files (.gz).
 
-**Common Trimmomatic Parameters:**
+**Table 3. Common Trimmomatic Parameters:**
 
 | Parameter | Description |
 |---|---|
