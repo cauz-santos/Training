@@ -514,7 +514,7 @@ Congratulations! You have completed the genome mapping and variant calling workf
 
 This is a foundational workflow in genomics, and the skills you have learned today will be applicable to many different types of sequencing data analysis.
 
-## You have completed the 1st Week!
+## You have completed the 1st Week! 
 
 ___
 ## Additional Tools for Mapping and Variant Calling
