@@ -360,8 +360,7 @@ ___
 
 ### Optional Exercise: Inspecting Alignments with Qualimap  
 
-While `samtools flagstat` and `samtools coverage` give good summary statistics, sometimes it’s useful to generate more detailed reports with graphs and summaries.  
-For this, we can use **Qualimap**.  
+While `samtools flagstat` and `samtools coverage` give good summary statistics, sometimes it’s useful to generate more detailed reports with graphs and summaries. For this, we can use **Qualimap**.  
 
 Qualimap provides detailed statistics about the mapping quality, coverage distribution, GC bias, and more.  
 This is optional, but a great way to visually confirm the quality of your alignments.  
