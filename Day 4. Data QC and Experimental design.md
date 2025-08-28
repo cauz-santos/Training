@@ -52,7 +52,7 @@ Similarly, read types such as **single-end, paired-end, long, and ultra-long** e
 
 In this section, we summarize the most common **sequencing technologies** and **types of reads**, highlighting their advantages, limitations, and typical use cases in bioinformatics and plant breeding.
 
-**Types of Sequencing and Reads**
+**Table. Types of Sequencing and Reads**
 
 | Sequencing Type        | Description                                                                 | Typical Applications                          | Read Types & Lengths                |
 |------------------------|-----------------------------------------------------------------------------|-----------------------------------------------|--------------------------------------|
@@ -64,7 +64,7 @@ In this section, we summarize the most common **sequencing technologies** and **
 | **10x Genomics (Linked-Reads)** | Uses barcoding to connect short Illumina reads to long molecules. | Phasing, haplotyping, structural variation.   | Short reads (~150 bp) but linked across long DNA molecules (~50–100 kb) |
 
 
-**Types of Reads**
+**Table. Types of Reads:**
 
 | Read Type        | Description                                                                 | Example Use Case                             |
 |------------------|-----------------------------------------------------------------------------|---------------------------------------------|
