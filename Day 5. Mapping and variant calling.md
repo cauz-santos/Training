@@ -225,11 +225,23 @@ sbatch map_reads.sh
 
 
 **Quick Inspection of the SAM File** 
+By default, our pipeline writes alignments directly into compressed BAM files.
+However, sometimes it’s useful to look at the raw SAM format to understand what’s happening under the hood.
 
-Before we compress into `.bam` and sort, it’s useful to look at what a raw **SAM (Sequence Alignment/Map)** file looks like.  
-SAM is a tab-delimited text format describing each read’s alignment to the reference genome.  
+The SAM (Sequence Alignment/Map) format is a plain-text, tab-delimited file that describes how each read aligns to the reference genome.
+It contains a header section (starting with @) and an alignment section (one line per read).
 
-Let’s quickly create and inspect one:  
+To generate a .sam file for inspection, we can run BWA without piping into Samtools:
+
+**Run BWA directly in the command line and save alignments as SAM text file**  
+```bash
+bwa mem GCF_000442705.2_EG11_genomic.fna DRR070477.fastq.gz > DRR070477.sam
+```
+
+This will create a human-readable file DRR070477.sam in your working directory.
+Because SAM files are very large, we don’t usually keep them — they are mainly for demonstration or debugging.
+
+Let’s look at the first few lines:
 
 ```bash
 # Look at the first 30 lines (you’ll see headers + alignments)
