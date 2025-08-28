@@ -422,7 +422,7 @@ Create a new file called `multiqc_job.sh`:
 vi multiqc_job.sh
 ```
 
-Press i to enter insert mode and paste the script:
+Press `i` to enter insert mode and paste the script:
 
 ```bash
 #!/bin/bash
@@ -446,7 +446,7 @@ Submit the job:
 sbatch multiqc_job.sh
 ```
 
-**Step 3.6 – Copy the MultiQC report to your local computer**
+**Step 3.6 – Copy the MultiQC report to your local computer**  
 On your laptop, create a folder for results:
 
 ```bash
@@ -467,12 +467,41 @@ Finally, open the report in your web browser by double-clicking it.
 
 ### Reflection Questions:
 
-*   How many reads were removed after trimming?
-*   Did the average base quality improve?
+*   How many reads were removed after trimming? Was trimming too aggressive (discarding too many reads)? How would you adjust parameters (e.g., SLIDINGWINDOW or MINLEN) if needed?
+*   Did the average base quality changed?
 *   Were adapters successfully removed?
 *   Why does read length distribution change after trimming?
 *   Why is QC important before mapping or SNP calling?
 
+
+## 📝 Final Tips for Sequencing Data QC
+
+- **Always keep raw data untouched**  
+  Store original FASTQ files in a separate folder. Perform QC and trimming on *copies*, so you can always go back to the raw data.
+
+- **Check sequencing depth early**  
+  Knowing how many reads you have (and their length) helps decide if coverage is sufficient for your project (e.g., SNP discovery, RNA-seq, genome assembly).
+
+- **Interpret FastQC, don’t just run it**  
+  The red ❌ or orange ⚠️ are only flags. Ask yourself: *Does this affect my analysis?* (e.g., adapter contamination matters for SNP calling, but GC bias may not).
+
+- **Trim carefully**  
+  Over-trimming can discard too many reads, while under-trimming leaves poor-quality data. Adjust parameters like `SLIDINGWINDOW` and `MINLEN` to balance quality and read retention.
+
+- **Always re-check after trimming**  
+  Run FastQC again (or MultiQC for summaries) to confirm quality improvements and ensure adapters/low-quality bases were removed.
+
+- **Use MultiQC for comparisons**  
+  Instead of opening dozens of reports, use MultiQC to get a single overview. This is especially important in projects with many samples.
+
+- **Document everything**  
+  Keep a log of the commands, parameters, and versions of software used. This ensures reproducibility and helps troubleshoot issues later.
+
+- **QC before analysis**  
+  Poor QC can lead to false SNPs, biased expression levels, or failed assemblies. High-quality input is the foundation for reliable downstream analyses.
+
+---
+💡 **Remember:** Good experimental design and rigorous QC save time, money, and frustration in the long run. Treat this step as *essential*, not optional.
 
 
 ## You have completed **Day 4**!
