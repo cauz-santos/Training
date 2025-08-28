@@ -348,7 +348,7 @@ You can view the contents of a gzipped VCF file using `zless` or `bcftools view`
 
 ```bash
 # View the header and first few variant lines
-bcftools view sample1.vcf.gz | head -n 50
+bcftools view joint_variants.vcf.gz | head -n 50
 ```
 
 **The VCF file has two main parts:**
@@ -363,31 +363,58 @@ bcftools view sample1.vcf.gz | head -n 50
 `bcftools stats` provides a wealth of information about your VCF file, including the number of SNPs and indels, transition/transversion ratio, and more.
 
 ```bash
-bcftools stats sample1.vcf.gz > sample1.vcf.stats
+bcftools stats joint_variants.vcf.gz > joint_variants.vcf.stats
 ```
 
 You can then view the generated statistics file:
 
 ```bash
-less sample1.vcf.stats
+less joint_variants.vcf.stats
 ```
 
 **❓ Question:** What is the transition/transversion (Ts/Tv) ratio, and why is it a useful quality metric for SNP calls?
 
-**6.3: Checking for Missing Data**
+**6.3: Checking Missing Data (per sample)**
 
-Missing data (genotypes that could not be confidently called) can be an issue in population genetic analyses. We can use `bcftools` to quantify missing data.
+Missing genotypes can bias downstream population analyses. Let’s quantify **percent missing per sample** on the *joint VCF*.
+
+We’ll use **VCFtools**
 
 ```bash
-# Calculate the frequency of missing genotypes per site
-bcftools query -f 
-'[%MISSING\t%N_MISS\t%N_SAMPLES\n]
-' sample1.vcf.gz | head
+#First load the module
+module load vcftools
+
+# Compute per-individual missingness
+vcftools --gzvcf joint_variants.vcf.gz --missing-indv --out qc_missing
+```
+This creates `qc_missing.imiss` with columns:
+- INDV — sample name
+- N_DATA — sites with non-missing genotype calls
+- N_GENOTYPES_FILTERED — sites filtered out for this sample
+- N_MISS — missing genotype calls
+- F_MISS — fraction missing (= N_MISS / (N_DATA + N_MISS))
+
+Quick look at the table:
+```bash
+head qc_missing.imiss
 ```
 
-This command shows the proportion of missing genotypes, the number of missing samples, and the total number of samples for each variant.
+Convert **fraction** to **percent** and list the worst samples (highest missing first):
+```bash
+# Tabular, percent missing, sorted descending
+awk 'NR>1 {printf "%s\t%.2f\n", $1, $5*100}' qc_missing.imiss | sort -k2,2nr | column -t | head
+```
 
+Optional: compute the **mean missingness** across samples:
+```bash
+awk 'NR>1 {sum+=$5; n++} END {printf "Mean missing (%%): %.2f\n", (sum/n)*100}' qc_missing.imiss
+```
 
+**❓Questions (Missingness)**  
+- Which sample has the highest missing rate? What is its percent missing?
+- What threshold would you choose to exclude samples? (e.g., >10–20% missing)
+- Are there samples that are outliers compared to the cohort mean?
+- If one or two samples are very poor, what could be the causes (low coverage, library issues, contamination, wrong reference)?
 
 ### Section 7: Variant Filtering
 
