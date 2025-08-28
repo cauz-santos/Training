@@ -2,13 +2,11 @@
 
 ## Day 5: Genome mapping and variant calling 
 
-## Day 5: Genome Mapping and Variant Calling
-
 Welcome to Day 5 of our bioinformatics training! Today, we'll delve into the core of genomic analysis: mapping sequencing reads to a reference genome and identifying genetic variations. This is a hands-on session designed for a high-performance computing (HPC) cluster environment using the Slurm workload manager.
 
 ### Learning Objectives
 
-By the end of session, you will be able to:
+By the end of this session, you will be able to:
 
 *   **Understand the principles** of read mapping and its importance.
 *   **Prepare a reference genome** for alignment.
@@ -32,14 +30,14 @@ We will be working with a set of up to 10 single-end FASTQ files and a reference
 6.  **Variant Calling:** Identify genetic variants from the aligned reads.
 7.  **Variant Filtering and Annotation:** Filter raw variants to improve accuracy and interpret the results.
 
-## The Data
+### The Data
 
-*   **Reference Genome:** `GCF_000442705.2_EG11_genomic.fna` (Size: 1.8 GB)
-*   **Input Reads:** Up to 10 single-end FASTQ files (e.g., `sample1.fastq.gz`, `sample2.fastq.gz`, etc.)
+*   **Reference Genome of *Elaeis guineensis*:** `GCF_000442705.2_EG11_genomic.fna` (Size: 1.8 GB)
+*   **Input Reads:** 12 single-end FASTQ files (e.g., `DRR070477.fastq.gz`, `DRR070483.fastq.gz`, `DRR070491.fastq.gz`, `DRR070494.fastq.gz`, `DRR070497.fastq.gz`, `SRR14510793.fastq.gz`, `SRR14510807.fastq.gz`, `DRR070482.fastq.gz`, `DRR070488.fastq.gz`, `DRR070492.fastq.gz`, `DRR070496.fastq.gz`, `DRR070498.fastq.gz`, `SRR14510795.fastq.gz`)
 
 ---
 
-## Part 1: Setting up the Environment and Data
+### Part 1: Setting up the Environment and Data
 
 Before we start, let's make sure our environment is set up correctly on the HPC cluster.
 
@@ -66,9 +64,9 @@ Before we start, let's make sure our environment is set up correctly on the HPC 
 
 4.  **Data:** Ensure your FASTQ files and the reference genome are in your working directory or accessible via a path.
 
----
 
-## Part 2: Reference Genome Indexing
+
+### Part 2: Reference Genome Indexing
 
 **Why do we index the reference genome?**
 
@@ -76,7 +74,38 @@ Aligning reads to a large reference genome (1.8 GB in our case) is computational
 
 We will create a Slurm job script to perform the indexing.
 
-**Create a file named `index_genome.sh`:**
+**Creating and Editing Shell Scripts with `vi`**
+
+Throughout this training, we are creating and editing shell scripts. We will use the `vi` editor as in the previous days, a powerful text editor available on most UNIX-like systems. Here's a quick guide:
+
+1.  **Open or Create a File:**
+    To create a new file or open an existing one, type:
+    ```bash
+    vi <filename>
+    ```
+    For example, to create `index_genome.sh`:
+    ```bash
+    vi index_genome.sh
+    ```
+
+2.  **Insert Mode:**
+    When `vi` opens, you are in **command mode**. To start typing, you need to enter **insert mode**. Press the `i` key.
+    You should see `-- INSERT --` at the bottom of your terminal.
+
+3.  **Type your content:**
+    Now you can type or paste the script content.
+
+4.  **Exit Insert Mode:**
+    Once you are done typing, press the `Esc` key to return to **command mode**.
+
+5.  **Save and Quit:**
+    In command mode, type `:wq` (write and quit) and press `Enter`.
+    *   `:w` saves the file.
+    *   `:q` quits `vi`.
+    *   `:wq` saves and quits.
+    *   `:q!` quits without saving (use with caution!).
+
+Now, let's create the `index_genome.sh` file:
 
 ```bash
 #!/bin/bash
@@ -110,13 +139,13 @@ sbatch index_genome.sh
 
 Once the job is complete, you will see several new files in your directory with extensions like `.amb`, `.ann`, `.bwt`, `.pac`, and `.sa`. These are the BWA index files.
 
----
 
-## Part 3: Read Mapping and Post-processing
+
+### Part 3: Read Mapping and Post-processing
 
 Now that we have our indexed genome, we can align our FASTQ reads. We will create a single Slurm script that uses a `for` loop to process all our FASTQ files.
 
-**Create a file named `map_reads.sh`:**
+**Create a file named `map_reads.sh` using `vi`:**
 
 ```bash
 #!/bin/bash
@@ -177,19 +206,19 @@ sbatch map_reads.sh
 *   What is the difference between a SAM and a BAM file? Why do we prefer BAM?
 *   Why is sorting the BAM file a necessary step?
 
----
 
-## Part 4: Alignment Quality Control
+
+### Part 4: Alignment Quality Control
 
 After mapping, it's crucial to assess the quality of our alignments. We'll check two key metrics: **mapping rate** and **coverage**.
 
-### 4.1: Checking Mapping Rate
+**4.1: Checking Mapping Rate**  
 
 The mapping rate tells us what percentage of our reads successfully aligned to the reference genome. A low mapping rate could indicate problems with the sequencing data, the reference genome, or contamination.
 
 We can use `samtools flagstat` to get a summary of mapping statistics.
 
-**Run `samtools flagstat` for each sample:**
+**Run `samtools flagstat` for each sample:**  
 
 You can do this in a `for` loop on the command line:
 
@@ -209,7 +238,7 @@ done
 
 good mapping rate? What might be the cause of a low mapping rate?
 
-### 4.2: Checking Coverage
+**4.2: Checking Coverage**  
 
 Coverage (or read depth) is the number of reads that align to, or "cover," a specific position in the genome. Adequate coverage is essential for confident variant calling. Low coverage can lead to false negatives (missing real variants), while extremely high coverage might indicate PCR duplicates or repetitive regions.
 
@@ -236,7 +265,7 @@ samtools coverage sample1.sorted.bam
 
 **❓ Question:** What is the difference between breadth of coverage and depth of coverage? Why are both important?
 
-### 4.3: Inspecting Alignments Visually
+**4.3: Inspecting Alignments Visually**
 
 Sometimes, it's helpful to look at the alignments in a specific region, especially if you have a gene of interest. `samtools tview` provides a text-based alignment viewer directly in your terminal.
 
@@ -249,9 +278,9 @@ Navigate to a specific region by pressing `g` and entering the coordinates (e.g.
 
 **❓ Question:** What do the different characters and colors in the `tview` output represent?
 
----
 
-## Part 5: Variant Calling
+
+### Part 5: Variant Calling
 
 Now that we have high-quality alignments, we can proceed to variant calling. This process identifies positions where the aligned reads consistently differ from the reference genome.
 
@@ -260,7 +289,7 @@ We will use `bcftools mpileup` and `bcftools call`.
 *   `bcftools mpileup`: Summarizes the base calls of aligned reads at each position in the genome.
 *   `bcftools call`: Calls SNPs and indels from the `mpileup` output.
 
-**Create a Slurm script named `variant_calling.sh`:**
+**Create a Slurm script named `variant_calling.sh` using `vi`:**
 
 ```bash
 #!/bin/bash
@@ -304,13 +333,13 @@ sbatch variant_calling.sh
 
 **❓ Question:** What do the `-mv` options in `bcftools call` stand for? Why might you choose to call only multiallelic sites or only biallelic sites?
 
----
 
-## Part 6: VCF File Inspection and Statistics
+
+### Part 6: VCF File Inspection and Statistics
 
 A VCF (Variant Call Format) file contains information about the identified variants. It's important to understand its structure and to check some basic statistics.
 
-### 6.1: Inspecting a VCF file
+**6.1: Inspecting a VCF file**
 
 You can view the contents of a gzipped VCF file using `zless` or `bcftools view`.
 
@@ -326,7 +355,7 @@ bcftools view sample1.vcf.gz | head -n 50
 
 **❓ Question:** What is the difference between the `INFO` and `FORMAT` fields in a VCF file?
 
-### 6.2: VCF Statistics
+**6.2: VCF Statistics**
 
 `bcftools stats` provides a wealth of information about your VCF file, including the number of SNPs and indels, transition/transversion ratio, and more.
 
@@ -342,7 +371,7 @@ less sample1.vcf.stats
 
 **❓ Question:** What is the transition/transversion (Ts/Tv) ratio, and why is it a useful quality metric for SNP calls?
 
-### 6.3: Checking for Missing Data
+**6.3: Checking for Missing Data**
 
 Missing data (genotypes that could not be confidently called) can be an issue in population genetic analyses. We can use `bcftools` to quantify missing data.
 
@@ -355,9 +384,9 @@ bcftools query -f
 
 This command shows the proportion of missing genotypes, the number of missing samples, and the total number of samples for each variant.
 
----
 
-## Part 7: Variant Filtering
+
+### Part 7: Variant Filtering
 
 Raw variant calls often contain false positives due to sequencing errors, mapping errors, or other artifacts. Filtering is a critical step to increase the confidence in your variant set.
 
@@ -397,4 +426,3 @@ bcftools filter -e 'MQ < 40 || SB > 0.1' -Oz -o sample1.advanced_filtered.vcf.gz
 Congratulations! You have completed the genome mapping and variant calling workflow. You have learned how to take raw sequencing reads, align them to a reference genome, and identify genetic variants. You have also learned how to perform these tasks efficiently on an HPC cluster using Slurm and `for` loops.
 
 This is a foundational workflow in genomics, and the skills you have learned today will be applicable to many different types of sequencing data analysis.
-
