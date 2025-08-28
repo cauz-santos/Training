@@ -383,7 +383,7 @@ Create `fastqc_trimmed_job.sh`:
 #SBATCH -o fastqc_trimmed.out
 #SBATCH -e fastqc_trimmed.err
 
-module load fastqc/0.11.9
+module load fastqc
 
 mkdir -p fastqc_trimmed_reports
 
@@ -399,6 +399,16 @@ Submit the job:
 ```bash
 sbatch fastqc_trimmed_job.sh
 ```
+
+Inspect the results:
+
+Download the reports to your local machine (as in Section 2):
+
+```bash
+scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_trimmed_reports/*.html ~/bioinformatics_training/day4/
+```
+
+Open the `.html` files in your browser.
 
 **Step 2.3.4 – Summarize with MultiQC**
 
