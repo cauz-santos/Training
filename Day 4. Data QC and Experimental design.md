@@ -370,7 +370,7 @@ Submit the job:
 sbatch trim_job.sh
 ```
 
-**Step 3.4 – Run FastQC again on trimmed data**
+**Step 3.4 – Run FastQC again on trimmed data**  
 Create `fastqc_trimmed_job.sh`:
 
 ```bash
@@ -409,7 +409,7 @@ scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_trimmed_reports/*.ht
 
 Open the `.html` files in your browser.
 
-**Step 3.5 – Summarize with MultiQC**
+**Step 3.5 – Summarize with MultiQC**  
 After running FastQC on both **raw reads** and **trimmed reads**, you now have multiple `.html` reports (one per file).  
 Opening them one by one is time-consuming and makes it difficult to compare.  
 
