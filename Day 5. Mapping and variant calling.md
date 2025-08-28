@@ -514,7 +514,9 @@ Congratulations! You have completed the genome mapping and variant calling workf
 
 This is a foundational workflow in genomics, and the skills you have learned today will be applicable to many different types of sequencing data analysis.
 
+## You have completed the 1st Week!
 
+___
 ## Additional Tools for Mapping and Variant Calling
 
 While in this training we used **BWA + Samtools + BCFtools**, other tools exist with different strengths, optimizations, and features.  
@@ -547,11 +549,8 @@ Here are some commonly used alternatives:
 - **DeepVariant** – Google’s deep learning-based variant caller, very accurate but computationally heavy.  
   [DeepVariant GitHub](https://github.com/google/deepvariant)  
 
----
 
-## You have completed the 1st Week!
-
-## Useful Tutorials and Resources
+### Useful Tutorials and Resources
 
 - [Samtools Tutorial (Galaxy Training)](https://training.galaxyproject.org/training-material/topics/sequence-analysis/tutorials/mapping/tutorial.html)  
 - [BWA + SAMtools Practical Guide (Cornell)](https://biohpc.cornell.edu/doc/VariantCalling.pdf)  
