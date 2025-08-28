@@ -224,7 +224,9 @@ scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fa
 scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fastqc.zip .
 ```
 
-Replace `/path/to/fastqc_reports/` with the actual path where the results were created on the cluster.  
+Replace:
+`your_username` with your cluster username.
+`/path/to/fastqc_reports/` with the actual path where the results were created on the cluster.  
 You can find the correct path by navigating to the folder in the cluster and typing:
 
 ```bash
@@ -252,14 +254,22 @@ Open the .html file by double-clicking it or dragging it into your browser.
 *   Why does FastQC give a warning message here?
 *   Could this be related to adapters or PCR duplicates?
 
-
+___
 ### Section 3: Moving to the Cluster (Slurm Jobs with For Loops)
 
 Now we will repeat the steps on the cluster using Slurm. Instead of running files one by one, we will use `for` loops to process them all.
 
 **Step 2.3.1 – Run FastQC on all files**
+Open a new file called `fastqc_job.sh` with the text editor `vi`:
 
-Create a file `fastqc_job.sh`:
+```bash
+vi fastqc_job.sh
+```
+
+When the file opens, you are in command mode.
+To start typing, press the `i` key (this puts you in insert mode).
+
+Now copy and paste the following script into the file:
 
 ```bash
 #!/bin/bash
@@ -270,7 +280,7 @@ Create a file `fastqc_job.sh`:
 #SBATCH -o fastqc.out
 #SBATCH -e fastqc.err
 
-module load fastqc/0.11.9
+module load fastqc
 
 mkdir -p fastqc_reports
 
@@ -281,11 +291,15 @@ do
 done
 ```
 
-Submit the job:
+Save and exit (`ESC`, then type `:wq` and press `ENTER`).
+
+Submit the job typing:
 
 ```bash
 sbatch fastqc_job.sh
 ```
+
+This will run FastQC on all `.fastq.gz` files in the current directory and save the output reports (.html and .zip) in the folder `fastqc_reports/.`
 
 **Step 2.3.2 – Trim Reads with Trimmomatic**
 
