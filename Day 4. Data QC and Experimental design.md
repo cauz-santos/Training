@@ -4,7 +4,7 @@
 
 Day 4 is crucial for understanding the importance of data quality in bioinformatics and how experimental design impacts downstream analysis. We will also have a challenging hands-on session to apply our Linux and HPC knowledge.
 
-**Morning Session 1: Integrative Discussion on Experimental Design and Its Impact on SNP Analysis and RNA-seq**
+### Integrative Discussion on Experimental Design and Its Impact on SNP Analysis and RNA-seq
 
 Before diving into data analysis, it is paramount to understand the principles of good experimental design. A well-designed experiment ensures that the data collected is robust, reliable, and capable of answering the biological questions posed. Poor experimental design can lead to biased results, false conclusions, and wasted resources.
 
@@ -40,7 +40,43 @@ For RNA-seq (RNA sequencing), experimental design considerations include:
 *   Discuss the challenges of experimental design in real-world biological research.
 *   How can bioinformatics tools help identify issues related to experimental design post-data collection?
 
-**Morning Session 2: Quality Control Tools (e.g., FastQC, MultiQC, Trimmomatic)**
+---
+
+### Understanding Sequencing Technologies and Read Types
+
+Modern genomics relies on different sequencing platforms, each producing data with unique characteristics.  
+Choosing the right sequencing technology and read type is critical because it directly impacts the quality of downstream analyses such as **SNP discovery, genome assembly, or transcriptomics**.  
+
+Some technologies produce **short but highly accurate reads** (e.g., Illumina), while others generate **very long reads** that can span complex regions (e.g., PacBio, Oxford Nanopore).  
+Similarly, read types such as **single-end, paired-end, long, and ultra-long** each provide different levels of information about the genome or transcriptome.  
+
+In this section, we summarize the most common **sequencing technologies** and **types of reads**, highlighting their advantages, limitations, and typical use cases in bioinformatics and plant breeding.
+
+**Types of Sequencing and Reads**
+
+| Sequencing Type        | Description                                                                 | Typical Applications                          | Read Types & Lengths                |
+|------------------------|-----------------------------------------------------------------------------|-----------------------------------------------|--------------------------------------|
+| **Sanger Sequencing**  | First-generation sequencing, low throughput but very accurate.              | Small gene fragments, validation, cloning.    | Single reads, ~500–1000 bp           |
+| **Illumina (NGS)**     | Short-read sequencing with high accuracy and throughput.                    | WGS, RNA-seq, SNP genotyping, metagenomics.   | Paired-end (2 × 50–300 bp) or single-end |
+| **Ion Torrent**        | Short-read sequencing, detects pH changes during DNA synthesis.             | Small genomes, targeted sequencing.           | Single or paired-end, up to ~400 bp  |
+| **PacBio (HiFi/CLR)**  | Long-read sequencing; HiFi reads combine length with high accuracy.         | Genome assembly, isoform sequencing, SVs.     | Continuous Long Reads (up to 50 kb) or HiFi (~10–25 kb, >99% accurate) |
+| **Oxford Nanopore (ONT)** | Portable, real-time long-read sequencing.                               | Structural variants, genome assembly, direct RNA sequencing. | Reads from kb to Mb (very long), lower raw accuracy but improving with new chemistries |
+| **10x Genomics (Linked-Reads)** | Uses barcoding to connect short Illumina reads to long molecules. | Phasing, haplotyping, structural variation.   | Short reads (~150 bp) but linked across long DNA molecules (~50–100 kb) |
+
+
+**Types of Reads**
+
+| Read Type        | Description                                                                 | Example Use Case                             |
+|------------------|-----------------------------------------------------------------------------|---------------------------------------------|
+| **Single-end**   | Each DNA fragment is sequenced only from one end.                           | RNA-seq with high depth, simple quantification. |
+| **Paired-end**   | Both ends of a fragment are sequenced, providing more context and accuracy. | SNP discovery, structural variant detection. |
+| **Long reads**   | Reads spanning thousands of bases, useful for repetitive or complex regions.| De novo genome assembly, isoform detection. |
+| **HiFi reads**   | PacBio high-fidelity reads: long and highly accurate.                       | Reference-quality genomes, variant calling. |
+| **Ultra-long reads** | Nanopore reads that can span >1 Mb.                                    | Telomere-to-telomere (T2T) assemblies.      |
+
+---
+
+### Quality Control Tools (e.g., FastQC, MultiQC, Trimmomatic)
 
 Once raw sequencing data is generated, the first critical step is Quality Control (QC). QC assesses the quality of the raw reads and identifies potential issues that could affect downstream analysis. Poor quality data can lead to inaccurate alignments, incorrect variant calls, and misleading expression quantification.
 
