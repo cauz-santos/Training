@@ -146,11 +146,8 @@ Remember:
 FASTQ files are the standard format for storing raw sequencing data. Each read in a FASTQ file consists of four lines:
 
 1.    **Sequence Identifier**: Starts with @ and includes metadata.
-
 2.    **Nucleotide Sequence**: The sequence of DNA bases (A, T, G, C).
-
 3.    **Separator Line**: Starts with + and may repeat the identifier.
-
 4.    **Quality Scores**: ASCII-encoded quality values corresponding to each base in the sequence.
 ![image](https://github.com/user-attachments/assets/5ffbd3ff-adb8-4fb0-81bc-4c66609771bd)
 
