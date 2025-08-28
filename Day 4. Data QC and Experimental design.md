@@ -224,10 +224,10 @@ scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fa
 scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fastqc.zip .
 ```
 
-Replace:
-`your_username` with your cluster username.
+Replace:  
+`your_username` with your cluster username.  
 `/path/to/fastqc_reports/` with the actual path where the results were created on the cluster.  
-You can find the correct path by navigating to the folder in the cluster and typing:
+You can find the correct path by navigating to the folder in the cluster and typing:  
 
 ```bash
 pwd
@@ -259,7 +259,7 @@ ___
 
 Now we will repeat the steps on the cluster using Slurm. Instead of running files one by one, we will use `for` loops to process them all.
 
-**Step 2.3.1 – Run FastQC on all files**
+**Step 3.1 – Run FastQC on all files**
 Open a new file called `fastqc_job.sh` with the text editor `vi`:
 
 ```bash
@@ -300,6 +300,15 @@ sbatch fastqc_job.sh
 ```
 
 This will run FastQC on all `.fastq.gz` files in the current directory and save the output reports (.html and .zip) in the folder `fastqc_reports/.`
+
+**Step 3.2 – View results on your laptop**  
+Just like in Section 2, copy the results to your computer:
+
+```bash
+scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/*.html ~/bioinformatics_training/day4/
+```
+
+Then open them in your browser to inspect the results.
 
 **Step 2.3.2 – Trim Reads with Trimmomatic**
 
