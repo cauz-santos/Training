@@ -224,7 +224,7 @@ sbatch map_reads.sh
 `sample.sorted.bam.bai`
 
 
-**Quick Inspection of the SAM File** 
+**Quick Inspection of the SAM File**    
 By default, our pipeline writes alignments directly into compressed BAM files.
 However, sometimes it’s useful to look at the raw SAM format to understand what’s happening under the hood.
 
@@ -233,7 +233,7 @@ It contains a header section (starting with @) and an alignment section (one lin
 
 To generate a .sam file for inspection, we can run BWA without piping into Samtools:
 
-**Run BWA directly in the command line and save alignments as SAM text file**  
+1) Run BWA directly in the command line and save alignments as SAM text file 
 ```bash
 bwa mem GCF_000442705.2_EG11_genomic.fna DRR070477.fastq.gz > DRR070477.sam
 ```
@@ -241,7 +241,7 @@ bwa mem GCF_000442705.2_EG11_genomic.fna DRR070477.fastq.gz > DRR070477.sam
 This will create a human-readable file DRR070477.sam in your working directory.
 Because SAM files are very large, we don’t usually keep them — they are mainly for demonstration or debugging.
 
-Let’s look at the first few lines:
+2) Let’s look at the first few lines:
 
 ```bash
 # Look at the first 30 lines (you’ll see headers + alignments)
