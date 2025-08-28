@@ -115,21 +115,22 @@ Trimmomatic is a flexible and high-performance tool for trimming and cropping Il
 *   **MINLEN:** Removes reads shorter than a specified length.
 
 ---
-# Exercises: Sequencing Data Analysis
+## Exercises: Sequencing Data Analysis
 
 This repository contains practical exercises to explore and analyze sequencing data, focusing on FASTQ files and UNIX command-line tools.
 
 
-## Section 1: Exploring FASTQ Files with UNIX Commands
+### Section 1: Exploring FASTQ Files with UNIX Commands
 
 In this section, you will learn to use basic UNIX commands to inspect and understand the FASTQ format, as well as perform preliminary quality analyses.
 
-### Exercise 1: Inspecting a FASTQ file
+**Exercise 1: Inspecting a FASTQ file**
 
 Use the `less` command (or `zless` for compressed files) to inspect a FASTQ file. Observe the file structure and identify the initial header characters for each read.
 
+
 ```bash
-zless /anvil/projects/x-bio240351/shared_data/fastq/SRR957824_500K_R1.fastq.gz
+zless /data/fastq/SRR957824_500K_R1.fastq.gz
 ```
 
 **Question:** What are the initial header characters for all reads?
@@ -185,6 +186,8 @@ ls -lh
 ```
 
 **Exercise 1.1: Inspect a FASTQ file**
+Use the `less` command (or `zless` for compressed files) to inspect a FASTQ file. Observe the file structure and identify the initial header characters for each read.
+
 
 ```bash
 zless DRR070477.fastq.gz
@@ -193,6 +196,9 @@ zless DRR070477.fastq.gz
 **Questions:**
 *   What character does each read start with?
 *   How many lines per read?
+
+Remember:
+![image](https://github.com/user-attachments/assets/5ffbd3ff-adb8-4fb0-81bc-4c66609771bd)
 
 **Exercise 1.2: Count number of reads**
 
