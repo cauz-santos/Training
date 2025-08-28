@@ -509,8 +509,7 @@ Finally, open the report in your web browser by double-clicking it.
 ###  Useful Tutorials on Sequencing & Data Quality
 
 - [FastQC Documentation](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) – Official user guide with explanations of each module and how to interpret plots.  
-- [MultiQC Documentation](https://multiqc.info/docs/) – Learn how to aggregate QC results from multiple samples and tools.
-- [MultiQC – Quick Start](https://docs.seqera.io/multiqc/getting_started/quick_start) — how to run MultiQC and read the consolidated report.   
+- [MultiQC Documentation](https://multiqc.info/docs/) – Learn how to aggregate QC results from multiple samples and tools.  
 - [Trimmomatic Manual](http://www.usadellab.org/cms/?page=trimmomatic) – Detailed explanation of trimming steps and parameters.
 - [Galaxy Training: Quality Control (FastQC/Cutadapt/MultiQC)](https://training.galaxyproject.org/training-material/topics/sequence-analysis/tutorials/quality-control/tutorial.html) — hands-on QC workflow.  
 - [HBC Training: QC of Raw NGS Data with FastQC](https://hbctraining.github.io/Training-modules/planning_successful_rnaseq/lessons/QC_raw_data.html) — interpreting FastQC modules & flags.  
