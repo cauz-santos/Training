@@ -246,10 +246,8 @@ done
 
 **Look for the line that says `... + ... mapped (...%)`.** This is your overall mapping rate.
 
-**❓ Question:** What would you consider a 
+**❓ Question:** What would you consider a good mapping rate? What might be the cause of a low mapping rate?
 
-
-good mapping rate? What might be the cause of a low mapping rate?
 
 **4.2: Checking Coverage**  
 
