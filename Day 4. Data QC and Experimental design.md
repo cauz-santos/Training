@@ -119,6 +119,7 @@ Trimmomatic is a flexible and high-performance tool for trimming and cropping Il
 
 This repository contains practical exercises to explore and analyze sequencing data, focusing on FASTQ files and UNIX command-line tools.
 
+
 ### Section 1: Exploring FASTQ Files with UNIX Commands  
 
 In this section, you will learn to use basic UNIX commands to inspect and understand the FASTQ format, as well as perform preliminary quality analyses.
@@ -129,6 +130,7 @@ Navigate to your training data folder:
 cd /media/uni/data2/Training/data/RADseq
 ls -lh
 ```
+
 
 **Exercise 1.1: Inspect a FASTQ file**  
 Use the `less` command (or `zless` for compressed files) to inspect a FASTQ file. Observe the file structure and identify the initial header characters for each read.
@@ -145,11 +147,12 @@ zless DRR070477.fastq.gz
 Remember:
 FASTQ files are the standard format for storing raw sequencing data. Each read in a FASTQ file consists of four lines:
 
-1.    **Sequence Identifier**: Starts with @ and includes metadata.
-2.    **Nucleotide Sequence**: The sequence of DNA bases (A, T, G, C).
-3.    **Separator Line**: Starts with + and may repeat the identifier.
-4.    **Quality Scores**: ASCII-encoded quality values corresponding to each base in the sequence.
+1.    **Sequence Identifier**: Starts with @ and includes metadata.  
+2.    **Nucleotide Sequence**: The sequence of DNA bases (A, T, G, C).  
+3.    **Separator Line**: Starts with + and may repeat the identifier.  
+4.    **Quality Scores**: ASCII-encoded quality values corresponding to each base in the sequence.  
 ![image](https://github.com/user-attachments/assets/5ffbd3ff-adb8-4fb0-81bc-4c66609771bd)
+
 
 **Exercise 1.2: Count number of reads**  
 Determine the number of reads in a FASTQ file using the `zgrep` command. The command below counts lines that start with the specified header characters (`@SR`).
@@ -157,6 +160,7 @@ Determine the number of reads in a FASTQ file using the `zgrep` command. The com
 ```bash
 zgrep -c "^@SR" DRR070477.fastq.gz 
 ```
+
 
 **Exercise 1.3: Check read length distribution**  
 This `awk` command processes a compressed FASTQ file to analyze the distribution of read lengths. It first decompresses the file using `zcat`, then uses `awk` to extract the sequence lines (every 4th line, starting with the second). For each sequence line, it calculates the length of the sequence. The resulting lengths are then sorted and counted using `sort` and `uniq -c`, respectively, providing a summary of how many reads have each specific length.
