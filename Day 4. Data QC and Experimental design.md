@@ -203,8 +203,8 @@ fastqc DRR070477.fastq.gz -o fastqc_reports
 ```
 
 This will create two output files inside fastqc_reports/:  
-`DRR070477_fastqc.html` → open in a browser
-`DRR070477_fastqc.zip` → contains all raw QC data
+`DRR070477_fastqc.html` → open in a browser  
+`DRR070477_fastqc.zip` → contains all raw QC data  
 
 **Viewing the Results on Your Laptop**  
 The cluster does not have a graphical interface, so you cannot open the .html report directly there.
@@ -222,7 +222,7 @@ cd ~/bioinformatics_training/day4
 ```bash
 scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fastqc.html .
 scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fastqc.zip .
-```bash
+```
 
 Replace `/path/to/fastqc_reports/` with the actual path where the results were created on the cluster.  
 You can find the correct path by navigating to the folder in the cluster and typing:
