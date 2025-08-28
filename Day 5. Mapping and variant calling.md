@@ -74,7 +74,6 @@ Before we start, let's make sure our environment is set up correctly on the HPC 
 4.  **Data:** Ensure your FASTQ files and the reference genome are in your working directory or accessible via a path.
 
 
-
 ### Section 2: Reference Genome Indexing
 
 **Why do we index the reference genome?**
@@ -152,7 +151,23 @@ ___
 
 ### Section 3: Read Mapping and Post-processing
 
-Now that we have our indexed genome, we can align our FASTQ reads. We will create a single Slurm script that uses a `for` loop to process all our FASTQ files.
+
+Now that we have our indexed genome, we can align our FASTQ reads.  
+This step takes the **raw reads** and transforms them into **clean, analysis-ready alignment files**.  
+
+The main steps are:  
+
+1. **Read Mapping (BWA-MEM)** → aligns each read to the reference genome.  
+2. **SAM → BAM conversion (Samtools view)** → compresses the large SAM text file into a smaller binary BAM file.  
+3. **Sorting (Samtools sort)** → orders the reads by their position in the genome (required for many tools).  
+4. **Duplicate Removal (Samtools markdup)** → removes PCR duplicates that can bias variant calling.  
+   - We use the flag `-r` to **remove** duplicates instead of just marking them.  
+5. **Indexing (Samtools index)** → creates a `.bai` index file so tools can quickly access specific regions of the BAM.  
+6. **Cleanup** → intermediate files (unsorted BAMs) are deleted to save space.
+
+|**⚠️ Important note**: Duplicate removal is useful for SNP/variant calling.|
+|But in other applications (e.g., RNA-seq or ChIP-seq), duplicates may carry biological information and should not be removed.|
+
 
 **Create a file named `map_reads.sh` using `vi`:**
 
@@ -175,32 +190,27 @@ GENOME="GCF_000442705.2_EG11_genomic.fna"
 # Loop through all FASTQ files in the current directory
 for fq in *.fastq.gz
 do
-    # Get the base name of the file for output naming
     base=$(basename "$fq" .fastq.gz)
-
     echo "Processing sample: $base"
 
     # 1. Align reads with BWA-MEM
-    # The output is piped directly to samtools to convert to BAM
-    echo "  Aligning reads..."
     bwa mem -t 8 $GENOME "$fq" | samtools view -bS - > "${base}.bam"
 
-    # 2. Sort the BAM file
-    # Sorting is required for many downstream tools, including variant calling
-    echo "  Sorting BAM file..."
+    # 2. Sort BAM file
     samtools sort "${base}.bam" -o "${base}.sorted.bam"
 
-    # 3. Index the sorted BAM file
-    # Indexing allows for fast random access to the alignment data
-    echo "  Indexing sorted BAM file..."
-    samtools index "${base}.sorted.bam"
+    # 3. Mark and remove PCR duplicates
+    samtools markdup -r "${base}.sorted.bam" "${base}.sorted.dedup.bam"
+
+    # 4. Index the deduplicated BAM
+    samtools index "${base}.sorted.dedup.bam"
 
     # Clean up intermediate files
-    rm "${base}.bam"
+    rm "${base}.bam" "${base}.sorted.bam"
 
 done
 
-echo "All samples processed."
+echo "All samples processed with duplicates removed."
 ```
 
 **Submit the job:**
