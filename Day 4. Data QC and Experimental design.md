@@ -351,7 +351,7 @@ Now copy and paste the following script into the file::
 #SBATCH -o trim.out
 #SBATCH -e trim.err
 
-module load trimmomatic/0.39
+module load trimmomatic
 
 for fq in *.fastq.gz
 do
