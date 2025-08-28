@@ -265,7 +265,6 @@ The **NCBI SRA (Sequence Read Archive)** stores raw sequencing reads from publis
 - [NCBI Nucleotide](https://www.ncbi.nlm.nih.gov/nucleotide/)  
 - [NCBI BLAST](https://blast.ncbi.nlm.nih.gov/Blast.cgi)  
 - [UniProt](https://www.uniprot.org/)  
-- [Ensembl Plants – Oil Palm](https://plants.ensembl.org/Elaeis_guineensis/Info/Index)  
 
 
 ## You have completed **Day 3**!
