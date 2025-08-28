@@ -553,7 +553,7 @@ Here are some commonly used alternatives:
 ### Useful Tutorials and Resources
 
 - [Samtools Tutorial (Galaxy Training)](https://training.galaxyproject.org/training-material/topics/sequence-analysis/tutorials/mapping/tutorial.html)  
-- [BWA + SAMtools Practical Guide (Cornell)](https://biohpc.cornell.edu/doc/VariantCalling.pdf)  
-- [Broad Institute GATK Best Practices for Variant Discovery](https://gatk.broadinstitute.org/hc/en-us/articles/360035535912-Germline-short-variant-discovery-SNPs-Indels)  
-- [FreeBayes Variant Calling Tutorial (UC Davis Bioinformatics)](https://angus.readthedocs.io/en/2019/freebayes.html)  
-- [Minimap2 + Long-Read Variant Calling (Oxford Nanopore Guide)](https://nanoporetech.github.io/medaka/variant.html)  
+- [A practical introduction to GATK 4](https://hpc.nih.gov/training/gatk_tutorial/)  
+- [Variant calling with GATK](https://www.melbournebioinformatics.org.au/tutorials/tutorials/variant_calling_gatk1/variant_calling_gatk1/)
+- [NGS Analysis](https://learn.gencore.bio.nyu.edu/variant-calling/)
+- [Genome mapping](https://genomics.sschmeier.com/ngs-mapping/))    
