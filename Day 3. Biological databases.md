@@ -2,7 +2,45 @@
 
 ## Day 3: Biological Databases, Genomic Data Formats, and Data Retrieval
 
-Day 3 will focus on the vast world of biological databases, understanding common genomic data formats, and practical methods for retrieving data. Accessing and managing biological data efficiently is a cornerstone of bioinformatics.
+Day 3 will focus on the vast world of **biological databases**, the **fundamental concepts of DNA, RNA, and protein sequences**, and practical methods for retrieving and handling these data.  
+Accessing and managing biological data efficiently is a cornerstone of bioinformatics, since these sequences are the raw material for most analyses.  
+
+We will also learn how to compare biological sequences and explore how to visualize similarities and differences using **dot plot analysis**, with a hands-on session in **R**.  
+
+
+**Morning Session: Basics of DNA, RNA, and Protein Sequences**
+
+This session will provide a foundational understanding of the different types of biological sequences and their significance in molecular biology and genomics.
+
+**DNA (Deoxyribonucleic Acid): The Blueprint of Life**
+
+*   **Structure:** DNA is a double-stranded helix composed of nucleotides. Each nucleotide consists of a deoxyribose sugar, a phosphate group, and one of four nitrogenous bases: Adenine (A), Guanine (G), Cytosine (C), and Thymine (T).
+*   **Base Pairing:** A always pairs with T, and C always pairs with G (Chargaff\'s rules). This complementary base pairing is crucial for DNA replication and repair.
+*   **Function:** DNA carries the genetic instructions used in the growth, development, functioning, and reproduction of all known living organisms and many viruses. It serves as the long-term storage of genetic information.
+*   **Representation in Bioinformatics:** DNA sequences are typically represented as strings of A, T, C, G characters.
+
+**RNA (Ribonucleic Acid): The Messenger and More**
+
+*   **Structure:** RNA is typically single-stranded and contains ribose sugar instead of deoxyribose. It has Uracil (U) instead of Thymine (T), so A pairs with U, and C pairs with G.
+*   **Types and Functions:**
+    *   **mRNA (messenger RNA):** Carries genetic information from DNA to ribosomes for protein synthesis.
+    *   **tRNA (transfer RNA):** Carries specific amino acids to the ribosome during protein synthesis.
+    *   **rRNA (ribosomal RNA):** A structural component of ribosomes, where protein synthesis occurs.
+    *   **Non-coding RNAs (ncRNAs):** A diverse group of RNAs with regulatory and catalytic functions (e.g., microRNAs, long non-coding RNAs).
+*   **Representation in Bioinformatics:** RNA sequences are represented as strings of A, U, C, G characters.
+
+**Proteins: The Workhorses of the Cell**
+
+*   **Structure:** Proteins are complex macromolecules made up of chains of amino acids linked by peptide bonds. There are 20 common amino acids, each with a unique side chain.
+*   **Levels of Structure:** Proteins fold into specific three-dimensional structures (primary, secondary, tertiary, and quaternary) that determine their function.
+*   **Function:** Proteins perform a vast array of functions within organisms, including catalyzing metabolic reactions (enzymes), DNA replication, responding to stimuli, and transporting molecules.
+*   **Representation in Bioinformatics:** Protein sequences are represented as strings of single-letter amino acid codes (e.g., A for Alanine, L for Leucine).
+
+**The Central Dogma of Molecular Biology:**
+
+DNA -> RNA -> Protein. This fundamental concept describes the flow of genetic information within a biological system. Bioinformatics plays a critical role in analyzing and understanding each step of this process.
+
+![Dogma](https://www.genome.gov/sites/default/files/media/images/2022-05/Central-dogma.jpg)
 
 **Biological Databases:**
 
