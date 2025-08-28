@@ -149,7 +149,7 @@ By the end of the session you should be able to:
 2. Download the **mRNA sequence** in FASTA format.  
 3. Save it locally as `EgFAD2.fasta`.  
 
-**Question:** What does the header line (the line starting with `>`) tell you about the sequence?  
+**❓ Question:** What does the header line (the line starting with `>`) tell you about the sequence?  
 
 
 **Task 3: Retrieve another gene**
@@ -168,7 +168,7 @@ By the end of the session you should be able to:
 2. Search for **"Elaeis guineensis STAD"**.  
 3. Click on the reviewed entry (if available) or the best hit.  
 
-**Questions:**  
+**❓ Questions:**  
 - What is the **UniProt accession number**?  
 - What information does UniProt provide that is not present in NCBI?  
 
@@ -193,7 +193,7 @@ We will now use BLAST (Basic Local Alignment Search Tool) to explore sequence si
 5. Organism filter: **Viridiplantae (green plants)**  
 6. Run the search.  
 
-**Questions:**  
+**❓ Questions:**  
 - What is the top hit?  
 - Which species show the highest similarity to oil palm FAD2?  
 - What is the **percent identity** and **E-value** of the alignment?  
@@ -205,7 +205,7 @@ We will now use BLAST (Basic Local Alignment Search Tool) to explore sequence si
 3. Database: **nr (non-redundant protein sequences)**.  
 4. Run the search.  
 
-**Questions:**  
+**❓ Questions:**  
 - Which oilseed crops (soybean, sunflower, rapeseed) appear in the results?  
 - Why is protein BLAST often more informative than nucleotide BLAST for distant species?  
 
