@@ -259,7 +259,7 @@ ___
 
 Now we will repeat the steps on the cluster using Slurm. Instead of running files one by one, we will use `for` loops to process them all.
 
-**Step 3.1 – Run FastQC on all files**
+**Step 3.1 – Run FastQC on all files**  
 Open a new file called `fastqc_job.sh` with the text editor `vi`:
 
 ```bash
@@ -301,6 +301,8 @@ sbatch fastqc_job.sh
 
 This will run FastQC on all `.fastq.gz` files in the current directory and save the output reports (.html and .zip) in the folder `fastqc_reports/.`
 
+
+
 **Step 3.2 – View results on your laptop**  
 Just like in Section 2, copy the results to your computer:
 
@@ -310,7 +312,9 @@ scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/*.html ~/bio
 
 Then open them in your browser to inspect the results.
 
-**Step 2.3.2 – Trim Reads with Trimmomatic**
+
+
+**Step 3.3 – Trim Reads with Trimmomatic**  
 
 Trimmomatic is a fast, multithreaded tool that removes adapters, trims poor-quality bases, and filters short reads. It works with both single-end and paired-end reads, and can handle compressed files (.gz).
 
