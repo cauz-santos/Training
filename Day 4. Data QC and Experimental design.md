@@ -2,7 +2,16 @@
 
 ## Day 4: Experimental Design, Sequencing and Data QC 
 
-Day 4 is crucial for understanding the importance of data quality in bioinformatics and how experimental design impacts downstream analysis. We will also have a challenging hands-on session to apply our Linux and HPC knowledge.
+Understanding how sequencing experiments are designed, executed, and validated is fundamental in bioinformatics.  
+Poor experimental design or low-quality data can undermine even the most advanced analyses, leading to biased results or false discoveries.  
+
+In this session, we will:  
+- Explore the principles of **experimental design** and their impact on SNP and RNA-seq studies.  
+- Compare different **sequencing technologies** and **read types**, discussing their strengths and limitations.  
+- Learn about essential **quality control tools** (FastQC, Trimmomatic, MultiQC) to ensure reliable data.  
+- Gain hands-on experience running QC workflows in a **High-Performance Computing (HPC)** environment.  
+
+By the end of Day 4, you will understand not just **how sequencing works**, but also how to critically assess the **quality and reliability of sequencing data** — a crucial step for all downstream genomic analyses.
 
 ### Integrative Discussion on Experimental Design and Its Impact on SNP Analysis and RNA-seq
 
