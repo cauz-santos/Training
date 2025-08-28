@@ -185,3 +185,11 @@ Your challenge will be to take a provided raw sequencing dataset, perform qualit
 By the end of Week 1, you will have a strong foundation in the computational aspects of bioinformatics, including command-line proficiency, basic scripting, understanding of biological sequences and databases, and critical skills in data quality control and HPC usage. This knowledge will be essential as we move into more applied genomic analyses in Week 2.
 
 
+## You have completed **Day 4**!
+
+### Useful Database Tutorials
+
+- [NCBI Databases Overview](https://www.ncbi.nlm.nih.gov/guide/all/)  
+- [Entrez Direct User Guide](https://www.ncbi.nlm.nih.gov/books/NBK179288/)  
+- [EBI Databases](https://www.ebi.ac.uk/services/)
+- [Ensembl Genome Browser](https://www.ensembl.org/index.html)  
