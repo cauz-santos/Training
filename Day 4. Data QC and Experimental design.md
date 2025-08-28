@@ -140,7 +140,7 @@ Use the `less` command (or `zless` for compressed files) to inspect a FASTQ file
 zless DRR070477.fastq.gz
 ```
 
-**Questions:**
+**❓ Questions:**
 *   What character does each read start with?
 *   How many lines per read?
 
@@ -235,7 +235,7 @@ pwd
 
 Open the .html file by double-clicking it or dragging it into your browser.
 
-**Questions to Guide FastQC Interpretation:**
+**❓ Questions to Guide FastQC Interpretation:**
 
 **Basic Statistics:**
 *   How many sequences are there?
@@ -465,7 +465,7 @@ Replace `/path/to/multiqc_summary/` with the actual path on the cluster (check w
 Finally, open the report in your web browser by double-clicking it.
 
 
-### Reflection Questions:
+###❓ Questions:
 
 *   How many reads were removed after trimming? Was trimming too aggressive (discarding too many reads)? How would you adjust parameters (e.g., SLIDINGWINDOW or MINLEN) if needed?
 *   Did the average base quality changed?
