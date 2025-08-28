@@ -465,7 +465,7 @@ Replace `/path/to/multiqc_summary/` with the actual path on the cluster (check w
 Finally, open the report in your web browser by double-clicking it.
 
 
-###❓ Questions:
+### ❓ Questions:
 
 *   How many reads were removed after trimming? Was trimming too aggressive (discarding too many reads)? How would you adjust parameters (e.g., SLIDINGWINDOW or MINLEN) if needed?
 *   Did the average base quality changed?
