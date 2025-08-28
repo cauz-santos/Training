@@ -474,7 +474,7 @@ Finally, open the report in your web browser by double-clicking it.
 *   Why is QC important before mapping or SNP calling?
 
 
-## 📝 Final Tips for Sequencing Data QC
+## Final Tips for Sequencing Data QC
 
 - **Always keep raw data untouched**  
   Store original FASTQ files in a separate folder. Perform QC and trimming on *copies*, so you can always go back to the raw data.
@@ -506,9 +506,7 @@ Finally, open the report in your web browser by double-clicking it.
 
 ## You have completed **Day 4**!
 
-### Useful Database Tutorials
-
-### 📚 Useful Tutorials on Sequencing & Data Quality
+###  Useful Tutorials on Sequencing & Data Quality
 
 - [FastQC Documentation](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) – Official user guide with explanations of each module and how to interpret plots.  
 - [MultiQC Documentation](https://multiqc.info/docs/) – Learn how to aggregate QC results from multiple samples and tools.  
