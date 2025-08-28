@@ -201,18 +201,39 @@ Remember:
 ![image](https://github.com/user-attachments/assets/5ffbd3ff-adb8-4fb0-81bc-4c66609771bd)
 
 **Exercise 1.2: Count number of reads**
+Determine the number of reads in a FASTQ file using the `zgrep` command. The command below counts lines that start with the specified header characters (`@SR`).
 
 ```bash
-zcat DRR070477.fastq.gz | wc -l
+zgrep -c "^@SR" DRR070477.fastq.gz 
 ```
 
-(Remember: 4 lines = 1 read)
-
 **Exercise 1.3: Check read length distribution**
+This `awk` command processes a compressed FASTQ file to analyze the distribution of read lengths. It first decompresses the file using `zcat`, then uses `awk` to extract the sequence lines (every 4th line, starting with the second). For each sequence line, it calculates the length of the sequence. The resulting lengths are then sorted and counted using `sort` and `uniq -c`, respectively, providing a summary of how many reads have each specific length.
 
 ```bash
 zcat DRR070477.fastq.gz | awk '(NR%4==2){print length($0)}' | sort | uniq -c
 ```
+
+**Exercise 1.4: Getting familiar with quality values** 
+
+Quality values in FASTQ files are encoded using the Phred format. To convert an ASCII quality character to a numerical Phred value, you can use the ASCII table and subtract 33 (for Phred+33).
+
+Use the ASCII table below to get the numerical value for the ASCII character `*`.
+
+![image](https://github.com/user-attachments/assets/d86910fc-c7f7-4208-b8d4-9991678686f9)
+
+It is 42. The convention is to subtract 33 (phred33 encoded), which makes 9. Is this a good quality? To find out the `p` value, calculate:
+
+![image](https://github.com/user-attachments/assets/43dab0bc-eda2-4ec2-9ec0-dc5498ea4c4d)
+
+Now that you know how to convert quality values, fill out the following table:
+
+| Quality in fastq | Q in decimal | p |
+|---|---|---|
+| * | 9 | 0.1259 |
+| I | 40 | |
+
+---
 
 ### 2.2: Run FastQC Locally
 
