@@ -213,6 +213,51 @@ sbatch map_reads.sh
 `sample.sorted.bam`
 `sample.sorted.bam.bai`
 
+
+**Quick Inspection of the SAM File** 
+
+Before we compress into `.bam` and sort, it’s useful to look at what a raw **SAM (Sequence Alignment/Map)** file looks like.  
+SAM is a tab-delimited text format describing each read’s alignment to the reference genome.  
+
+Let’s quickly create and inspect one:  
+
+```bash
+# Look at the first 30 lines (you’ll see headers + alignments)
+head -n 30 DRR070477.sam
+```
+
+**Example line of a mapped read:**  
+```bash
+SRR123456.1    99    NC_012345.1    10468    60    76M    =    10550    158    ACTG...    IIII...
+```
+
+Here:
+- `QNAME` = SRR123456.1 → read name
+- `FLAG` = 99 → paired, properly mapped (bitwise decoded)
+- `RNAME` = NC_012345.1 → reference sequence
+- `POS` = 10468 → starting coordinate
+- `MAPQ` = 60 → high mapping quality
+- `CIGAR` = 76M → 76 bases matched
+- `SEQ` and `QUAL` → the actual read and base qualities
+
+**Table 2. The SAM file format fields**
+
+| Col | Field   | Description |
+|-----|---------|-------------|
+| 1   | **QNAME** | Query (read) name |
+| 2   | **FLAG**  | Bitwise flag encoding read properties (mapped, paired, etc.) |
+| 3   | **RNAME** | Reference sequence name (chromosome/contig) |
+| 4   | **POS**   | 1-based leftmost position of the read on the reference |
+| 5   | **MAPQ**  | Mapping quality (Phred-scaled) |
+| 6   | **CIGAR** | Encodes alignment (matches, insertions, deletions) |
+| 7   | **MRNM**  | Mate reference sequence name (`=` if same as RNAME) |
+| 8   | **MPOS**  | Mate position |
+| 9   | **ISIZE** | Inferred insert size |
+| 10  | **SEQ**   | Read sequence |
+| 11  | **QUAL**  | Quality string (ASCII-encoded Phred scores) |
+| 12  | **OPT**   | Optional fields (e.g., NM:i:1 = edit distance) |
+
+
 **❓ Questions:**
 
 *   Why do we pipe the output of `bwa mem` directly to `samtools view`? What is the advantage of this approach?
