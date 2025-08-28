@@ -189,7 +189,7 @@ Now that you know how to convert quality values, fill out the following table:
 | I | 40 | |
 
 
-
+__
 ### Section 2: Run FastQC Locally  
 
 Run FastQC on one file:
