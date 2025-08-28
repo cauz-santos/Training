@@ -148,7 +148,7 @@ sbatch index_genome.sh
 
 Once the job is complete, you will see several new files in your directory with extensions like `.amb`, `.ann`, `.bwt`, `.pac`, and `.sa`. These are the BWA index files.
 
-
+___
 
 ### Section 3: Read Mapping and Post-processing
 
@@ -289,7 +289,7 @@ Navigate to a specific region by pressing `g` and entering the coordinates (e.g.
 
 **❓ Question:** What do the different characters and colors in the `tview` output represent?
 
-
+___
 
 ### Section 5: Variant Calling
 
@@ -416,38 +416,96 @@ awk 'NR>1 {sum+=$5; n++} END {printf "Mean missing (%%): %.2f\n", (sum/n)*100}' 
 - Are there samples that are outliers compared to the cohort mean?
 - If one or two samples are very poor, what could be the causes (low coverage, library issues, contamination, wrong reference)?
 
-### Section 7: Variant Filtering
 
-Raw variant calls often contain false positives due to sequencing errors, mapping errors, or other artifacts. Filtering is a critical step to increase the confidence in your variant set.
+### Section 7: Variant Filtering (with VCFtools)
 
-We will use `bcftools filter` to apply some common filters.
+After variant calling, the VCF file may contain many raw variants, including sequencing errors, rare artifacts, or positions with too much missing data.  
+Filtering is a key step to obtain a **clean, high-confidence set of variants**.
 
-**Example of filtering:**
 
-Let's filter for variants with a quality score greater than 30 and a read depth of at least 10.
+#### Common Filters Explained
+
+- **MAF (Minor Allele Frequency)**  
+  - Definition: the frequency of the *less common allele* at a site.  
+  - Example: If in 100 samples, 95 have allele A and 5 have allele G → MAF = 0.05 (5%).  
+  - Why filter? Variants with very low MAF are often sequencing errors or not informative for population analyses.  
+  - Typical threshold: **MAF ≥ 0.01 (1%)** or **MAF ≥ 0.05 (5%)**, depending on the project.  
+
+- **Biallelic sites only**  
+  - Many analyses assume only **two alleles** (reference and alternate).  
+  - Multiallelic sites (more than 2 alleles) can complicate downstream analyses.  
+  - Filter: `--min-alleles 2 --max-alleles 2`.
+
+- **Missing data filter**  
+  - If too many samples have missing genotypes at a variant, it may not be reliable.  
+  - Example: `--max-missing 0.8` keeps only sites genotyped in at least 80% of samples.  
+
+- **Remove indels**  
+  - Indels (insertions/deletions) are harder to call reliably compared to SNPs.  
+  - For training, we will focus on SNPs only.  
+
+
+**7.1 Create a filtering job script**
+
+Open a new file `vcf_filter.sh` with **vi**:
 
 ```bash
-bcftools filter -i 'QUAL > 30 && DP > 10' -Oz -o sample1.filtered.vcf.gz sample1.vcf.gz
+vi vcf_filter.sh
 ```
 
-**Explanation of the filter expression:**
-
-*   `-i '...'`: Includes sites for which the expression is true.
-*   `QUAL > 30`: Selects variants with a quality score above 30.
-*   `DP > 10`: Selects variants where the read depth is greater than 10.
-
-**❓ Question:** What other filtering criteria might be useful? Think about strand bias, mapping quality, and other fields available in the VCF file.
-
-**Advanced Filtering:**
-
-You can create more complex filtering rules. For example, to filter based on attributes in the `INFO` field:
+Press `i` to enter insert mode and paste:
 
 ```bash
-# Example: Filter based on mapping quality bias (MQ) and strand bias (SB)
-bcftools filter -e 'MQ < 40 || SB > 0.1' -Oz -o sample1.advanced_filtered.vcf.gz sample1.filtered.vcf.gz
+#!/bin/bash
+#SBATCH --job-name=vcf_filter
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=4G
+#SBATCH --time=00:30:00
+#SBATCH -o vcf_filter.out
+#SBATCH -e vcf_filter.err
+
+module load vcftools
+module load bcftools
+
+# Input joint VCF file (created earlier)
+IN_VCF="joint_variants.vcf.gz"
+
+# Apply filtering with VCFtools
+vcftools --gzvcf $IN_VCF \
+  --remove-indels \
+  --min-alleles 2 --max-alleles 2 \
+  --maf 0.01 \
+  --max-missing 0.9 \
+  --recode --recode-INFO-all \
+  --out joint_variants.filtered
+
+# Compress and index the filtered VCF
+bgzip -f joint_variants.filtered.recode.vcf
+bcftools index -t joint_variants.filtered.recode.vcf.gz
+
+# Get new summary statistics
+bcftools stats joint_variants.filtered.recode.vcf.gz > filtered_stats.txt
 ```
 
-*   `-e '...'`: Excludes sites for which the expression is true.
+Save and exit (`ESC`, then `:wq`).
+
+Submit the job:
+
+```bash
+sbatch vcf_filter.sh
+```
+
+**📍 Checkpoint:**  
+After the job completes, you should have:
+`joint_variants.filtered.recode.vcf.gz` → the filtered VCF file
+`joint_variants.filtered.recode.vcf.gz.tbi` → index file
+`filtered_stats.txt` → summary statistics after filtering
+
+**❓Questions**  
+- How many SNPs were present before filtering, and how many remain after?
+- Which filter (MAF, missing data, indels, biallelic) do you think removed the most variants?
+- What problems might arise if we allow variants with too much missing data?
+- Why is filtering out variants with very low MAF important for downstream analyses like PCA or GWAS?
 
 ---
 
@@ -456,3 +514,5 @@ bcftools filter -e 'MQ < 40 || SB > 0.1' -Oz -o sample1.advanced_filtered.vcf.gz
 Congratulations! You have completed the genome mapping and variant calling workflow. You have learned how to take raw sequencing reads, align them to a reference genome, and identify genetic variants. You have also learned how to perform these tasks efficiently on an HPC cluster using Slurm and `for` loops.
 
 This is a foundational workflow in genomics, and the skills you have learned today will be applicable to many different types of sequencing data analysis.
+
+
