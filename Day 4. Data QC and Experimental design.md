@@ -114,78 +114,273 @@ Trimmomatic is a flexible and high-performance tool for trimming and cropping Il
 *   **SLIDINGWINDOW:** Performs a sliding window quality trim.
 *   **MINLEN:** Removes reads shorter than a specified length.
 
-**Workflow Example: QC and Trimming**
+---
+# Exercises: Sequencing Data Analysis
 
-1.  **Run FastQC on raw FASTQ files:**
-    ```bash
-    fastqc raw_reads_R1.fastq.gz raw_reads_R2.fastq.gz -o fastqc_reports
-    ```
-2.  **Run Trimmomatic to clean reads:**
-    ```bash
-    java -jar /path/to/trimmomatic.jar PE -phred33 \
-        raw_reads_R1.fastq.gz raw_reads_R2.fastq.gz \
-        trimmed_R1_paired.fastq.gz trimmed_R1_unpaired.fastq.gz \
-        trimmed_R2_paired.fastq.gz trimmed_R2_unpaired.fastq.gz \
-        ILLUMINACLIP:adapters.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
-    ```
-    *Note: Replace `/path/to/trimmomatic.jar` and `adapters.fa` with actual paths.*
+This repository contains practical exercises to explore and analyze sequencing data, focusing on FASTQ files and UNIX command-line tools.
 
-3.  **Run FastQC again on trimmed reads to assess improvement:**
-    ```bash
-    fastqc trimmed_R1_paired.fastq.gz trimmed_R2_paired.fastq.gz -o fastqc_trimmed_reports
-    ```
-4.  **Run MultiQC to summarize all FastQC reports:**
-    ```bash
-    multiqc fastqc_reports fastqc_trimmed_reports -o multiqc_summary
-    ```
 
-**Afternoon Session: Linux & Apocrita [Queen Mary’s HPC] Hands-on Challenge**
+## Section 1: Exploring FASTQ Files with UNIX Commands
 
-This session will be a practical challenge where you will apply your accumulated Linux command-line skills and get a taste of working in an HPC environment. We will use a simulated or actual HPC environment (like Queen Mary University of London\\'s Apocrita cluster, if access is provided and configured) to perform a basic bioinformatics task, emphasizing job submission and resource management.
+In this section, you will learn to use basic UNIX commands to inspect and understand the FASTQ format, as well as perform preliminary quality analyses.
 
-**HPC Environment Overview (Apocrita Example):**
+### Exercise 1: Inspecting a FASTQ file
 
-*   **Login:** Accessing the cluster via SSH.
-*   **File Transfer:** Moving data to and from the cluster (e.g., using `scp` or `rsync`).
-*   **Modules:** Loading necessary software (e.g., `module load FastQC`).
-*   **Job Submission:** Writing and submitting a job script to the scheduler (e.g., Slurm).
+Use the `less` command (or `zless` for compressed files) to inspect a FASTQ file. Observe the file structure and identify the initial header characters for each read.
 
-**Example Slurm Job Script (`my_fastqc_job.sh`):**
+```bash
+zless /anvil/projects/x-bio240351/shared_data/fastq/SRR957824_500K_R1.fastq.gz
+```
+
+**Question:** What are the initial header characters for all reads?
+
+### Exercise 2: Counting the number of reads
+
+Determine the number of reads in a FASTQ file using the `zgrep` command. The command below counts lines that start with the specified header characters (`@SR`).
+
+```bash
+zgrep -c "^@SR" /anvil/projects/x-bio240351/shared_data/fastq/SRR957824_500K_R1.fastq.gz
+```
+
+### Exercise 3: Checking read length
+
+This `awk` command processes a compressed FASTQ file to analyze the distribution of read lengths. It first decompresses the file using `zcat`, then uses `awk` to extract the sequence lines (every 4th line, starting with the second). For each sequence line, it calculates the length of the sequence. The resulting lengths are then sorted and counted using `sort` and `uniq -c`, respectively, providing a summary of how many reads have each specific length.
+
+```bash
+zcat /anvil/projects/x-bio240351/shared_data/fastq/SRR957824_500K_R1.fastq.gz | awk '(NR%4==2) {print length($0)}' | sort | uniq -c
+```
+
+### Exercise 4: Getting familiar with quality values
+
+Quality values in FASTQ files are encoded using the Phred format. To convert an ASCII quality character to a numerical Phred value, you can use the ASCII table and subtract 33 (for Phred+33).
+
+Use the ASCII table below to get the numerical value for the ASCII character `*`.
+
+![image](https://github.com/user-attachments/assets/d86910fc-c7f7-4208-b8d4-9991678686f9)
+
+It is 42. The convention is to subtract 33 (phred33 encoded), which makes 9. Is this a good quality? To find out the `p` value, calculate:
+
+![image](https://github.com/user-attachments/assets/43dab0bc-eda2-4ec2-9ec0-dc5498ea4c4d)
+
+Now that you know how to convert quality values, fill out the following table:
+
+| Quality in fastq | Q in decimal | p |
+|---|---|---|
+| * | 9 | 0.1259 |
+| I | 40 | |
+
+---
+
+## Section 2: Sequencing Data Quality (RAD-seq)
+
+This section covers the quality analysis of RAD-seq sequencing data, including FASTQ structure inspection, quality assessment with FastQC, read trimming with Trimmomatic, and results summarization with MultiQC.
+
+### 2.1: Exploring FASTQ Files (local practice)
+
+Navigate to your training data folder:
+
+```bash
+cd /media/uni/data2/Training/data/RADseq
+ls -lh
+```
+
+**Exercise 1.1: Inspect a FASTQ file**
+
+```bash
+zless DRR070477.fastq.gz
+```
+
+**Questions:**
+*   What character does each read start with?
+*   How many lines per read?
+
+**Exercise 1.2: Count number of reads**
+
+```bash
+zcat DRR070477.fastq.gz | wc -l
+```
+
+(Remember: 4 lines = 1 read)
+
+**Exercise 1.3: Check read length distribution**
+
+```bash
+zcat DRR070477.fastq.gz | awk '(NR%4==2){print length($0)}' | sort | uniq -c
+```
+
+### 2.2: Run FastQC Locally
+
+Run FastQC on one file:
+
+```bash
+mkdir -p fastqc_reports
+fastqc DRR070477.fastq.gz -o fastqc_reports
+```
+
+Open the generated `.html` file in your browser.
+
+**Questions to Guide FastQC Interpretation:**
+
+**Basic Statistics:**
+*   How many sequences are there?
+*   What is the sequence length?
+*   What is the GC content?
+
+**Per base sequence quality / Per sequence quality scores:**
+*   Are there red ❌ or orange ⚠️ warnings?
+*   Do you think this run produced good quality sequences?
+
+**Per base sequence content / GC content:**
+*   Do you observe any unusual base composition bias?
+*   Should we worry about this in this particular case?
+
+**Overrepresented sequences:**
+*   Why does FastQC give a warning message here?
+*   Could this be related to adapters or PCR duplicates?
+
+### 2.3: Moving to the Cluster (Slurm Jobs with For Loops)
+
+Now we will repeat the steps on the cluster using Slurm. Instead of running files one by one, we will use `for` loops to process them all.
+
+**Step 2.3.1 – Run FastQC on all files**
+
+Create a file `fastqc_job.sh`:
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=fastqc_run      # Job name
-#SBATCH --partition=long           # Partition name (e.g., short, long, gpu)
-#SBATCH --nodes=1                  # Number of nodes
-#SBATCH --ntasks-per-node=1        # Number of tasks (cores) per node
-#SBATCH --cpus-per-task=4          # Number of CPU cores per task
-#SBATCH --mem=8G                   # Memory per node (e.g., 8GB)
-#SBATCH --time=0-02:00:00          # Wall clock time limit (D-HH:MM:SS)
-#SBATCH --output=fastqc_%j.out     # Standard output file
-#SBATCH --error=fastqc_%j.err      # Standard error file
+#SBATCH --job-name=fastqc
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=2G
+#SBATCH --time=01:00:00
+#SBATCH -o fastqc.out
+#SBATCH -e fastqc.err
 
-# Load necessary modules
-module load fastqc/0.11.9 # Example version, check available modules
+module load fastqc/0.11.9
 
-# Define input and output directories
-INPUT_DIR="/path/to/your/raw_data"
-OUTPUT_DIR="/path/to/your/fastqc_results"
+mkdir -p fastqc_reports
 
-mkdir -p $OUTPUT_DIR
-
-# Run FastQC
-fastqc ${INPUT_DIR}/sample_R1.fastq.gz ${INPUT_DIR}/sample_R2.fastq.gz -o $OUTPUT_DIR
-
-echo "FastQC job completed!"
+for fq in *.fastq.gz
+do
+    echo "Running FastQC on $fq"
+    fastqc "$fq" -o fastqc_reports
+done
 ```
 
-**Submitting the Job:**
+Submit the job:
 
 ```bash
-ssh your_username@apocrita.qmul.ac.uk # Login to the HPC
-sbatch my_fastqc_job.sh             # Submit the job
-sq                                  # Check job status (Slurm queue)
+sbatch fastqc_job.sh
 ```
+
+**Step 2.3.2 – Trim Reads with Trimmomatic**
+
+Trimmomatic is a fast, multithreaded tool that removes adapters, trims poor-quality bases, and filters short reads. It works with both single-end and paired-end reads, and can handle compressed files (.gz).
+
+**Common Trimmomatic Parameters:**
+
+| Parameter | Description |
+|---|---|
+| `ILLUMINACLIP` | Cuts adapter and Illumina-specific sequences from the read. |
+| `SLIDINGWINDOW` | Trims once the average quality within a sliding window falls below a threshold. |
+| `MAXINFO` | Adaptive trimming balancing read length and error rate. |
+| `LEADING` | Cuts bases from the start if below a threshold quality. |
+| `TRAILING` | Cuts bases from the end if below a threshold quality. |
+| `CROP` | Cuts the read to a fixed length by trimming from the end. |
+| `HEADCROP` | Cuts a specified number of bases from the start. |
+| `MINLEN` | Discards the read if shorter than the threshold length. |
+| `AVGQUAL` | Drops the read if its average quality is below the threshold. |
+
+Create a file `trim_job.sh`:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=trimmomatic
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=4G
+#SBATCH --time=01:30:00
+#SBATCH -o trim.out
+#SBATCH -e trim.err
+
+module load trimmomatic/0.39
+
+for fq in *.fastq.gz
+do
+    base=$(basename "$fq" .fastq.gz)
+    echo "Trimming $fq → ${base}_trimmed.fastq.gz"
+    java -jar $TRIMMOMATIC_JAR SE -phred33 \
+      "$fq" "${base}_trimmed.fastq.gz" \
+      ILLUMINACLIP:adapters.fa:2:30:10 \
+      LEADING:3 TRAILING:3 SLIDINGWINDOW:4:20 MINLEN:36
+done
+```
+
+Submit the job:
+
+```bash
+sbatch trim_job.sh
+```
+
+**Step 2.3.3 – Run FastQC again on trimmed data**
+
+Create `fastqc_trimmed_job.sh`:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=fastqc_trimmed
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=2G
+#SBATCH --time=01:00:00
+#SBATCH -o fastqc_trimmed.out
+#SBATCH -e fastqc_trimmed.err
+
+module load fastqc/0.11.9
+
+mkdir -p fastqc_trimmed_reports
+
+for fq in *_trimmed.fastq.gz
+do
+    echo "Running FastQC on $fq"
+    fastqc "$fq" -o fastqc_trimmed_reports
+done
+```
+
+Submit the job:
+
+```bash
+sbatch fastqc_trimmed_job.sh
+```
+
+**Step 2.3.4 – Summarize with MultiQC**
+
+Create `multiqc_job.sh`:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=multiqc
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:30:00
+#SBATCH -o multiqc.out
+#SBATCH -e multiqc.err
+
+module load multiqc/1.14
+
+multiqc fastqc_reports fastqc_trimmed_reports -o multiqc_summary
+```
+
+Submit the job:
+
+```bash
+sbatch multiqc_job.sh
+```
+
+### 2.4: Reflection Questions
+
+*   How many reads were removed after trimming?
+*   Did the average base quality improve?
+*   Were adapters successfully removed?
+*   Why does read length distribution change after trimming?
+*   Why is QC important before mapping or SNP calling?
 
 **Challenge:**
 
