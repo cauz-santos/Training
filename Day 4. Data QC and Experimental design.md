@@ -192,14 +192,46 @@ Now that you know how to convert quality values, fill out the following table:
 ____
 ### Section 2: Run FastQC Locally  
 
-Run FastQC on one file:
+Even though we are on the cluster, this step is very fast and does not need to be submitted with Slurm.  
+We just need to **load the module** and run FastQC directly.  
 
 ```bash
+module load fastqc
+
 mkdir -p fastqc_reports
 fastqc DRR070477.fastq.gz -o fastqc_reports
 ```
 
-Open the generated `.html` file in your browser.
+This will create two output files inside fastqc_reports/:  
+`DRR070477_fastqc.html` → open in a browser
+`DRR070477_fastqc.zip` → contains all raw QC data
+
+**Viewing the Results on Your Laptop**  
+The cluster does not have a graphical interface, so you cannot open the .html report directly there.
+To inspect the results:
+
+On your laptop, create a folder for today’s results (e.g., inside your course folder):
+
+```bash
+mkdir -p ~/bioinformatics_training/day4
+cd ~/bioinformatics_training/day4
+```
+
+**Copy the results from the cluster** to your local folder using `scp:
+
+```bash
+scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fastqc.html .
+scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fastqc.zip .
+```bash
+
+Replace `/path/to/fastqc_reports/` with the actual path where the results were created on the cluster.  
+You can find the correct path by navigating to the folder in the cluster and typing:
+
+```bash
+pwd
+```
+
+Open the .html file by double-clicking it or dragging it into your browser.
 
 **Questions to Guide FastQC Interpretation:**
 
