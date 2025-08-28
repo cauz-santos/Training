@@ -511,7 +511,5 @@ Finally, open the report in your web browser by double-clicking it.
 - [FastQC Documentation](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) – Official user guide with explanations of each module and how to interpret plots.  
 - [MultiQC Documentation](https://multiqc.info/docs/) – Learn how to aggregate QC results from multiple samples and tools.  
 - [Trimmomatic Manual](http://www.usadellab.org/cms/?page=trimmomatic) – Detailed explanation of trimming steps and parameters.  
-- [FASTQ Format Explained (EMBL-EBI)](https://www.ebi.ac.uk/training/online/courses/functional-genomics-ii-introduction/what-is-fastq/) – Beginner-friendly introduction to FASTQ files and quality scores.  
-- [Best Practices for NGS Data QC (Harvard FAS Informatics)](https://informatics.fas.harvard.edu/quality-control-of-ngs-data.html) – Practical advice for sequencing data quality control.  
-- [RNA-seq Quality Control Guide (Galaxy Training Network)](https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/rna-seq-reads-qc/tutorial.html) – Step-by-step QC tutorial for RNA-seq data.  
+ 
 
