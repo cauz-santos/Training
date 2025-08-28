@@ -336,6 +336,64 @@ Navigate to a specific region by pressing `g` and entering the coordinates (e.g.
 
 ___
 
+### Optional Exercise: Inspecting Alignments with Qualimap  
+
+While `samtools flagstat` and `samtools coverage` give good summary statistics, sometimes it’s useful to generate more detailed reports with graphs and summaries.  
+For this, we can use **Qualimap**.  
+
+Qualimap provides detailed statistics about the mapping quality, coverage distribution, GC bias, and more.  
+This is optional, but a great way to visually confirm the quality of your alignments.  
+
+**Step 1 – Create a Slurm job for Qualimap**  
+
+Open a new file:
+
+```bash
+vi qualimap_job.sh
+```
+
+Press `i` to enter insert mode, then paste:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=qualimap
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=8G
+#SBATCH --time=01:00:00
+#SBATCH -o qualimap.out
+#SBATCH -e qualimap.err
+
+module load qualimap
+
+# Example: run on one BAM file
+BAM="sample1.sorted.bam"
+
+# Run Qualimap bamqc
+qualimap bamqc -bam $BAM -outdir qualimap_report_sample1 -nt 4
+```
+
+Save and exit (`ESC`, then `:wq`).
+
+**Step 2 – Submit the job**  
+```bash
+sbatch qualimap_job.sh
+```
+
+This will create a folder qualimap_report_sample1/ containing:
+`qualimapReport.html` → open in your browser (after copying it to your laptop with scp)
+
+
+**Step 3 – Copy the report to your local computer**
+On your laptop:
+
+```bash
+scp your_username@login02.lisc.univie.ac.at:/path/to/qualimap_report_sample1/qualimapReport.html ~/bioinformatics_training/day5/
+```
+
+Then open the HTML report in your browser.
+
+___
+
 ### Section 5: Variant Calling
 
 Now that we have high-quality alignments, we can proceed to variant calling. This process identifies positions where the aligned reads consistently differ from the reference genome.
