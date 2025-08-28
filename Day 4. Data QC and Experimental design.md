@@ -206,7 +206,7 @@ This will create two output files inside fastqc_reports/:
 `DRR070477_fastqc.html` → open in a browser  
 `DRR070477_fastqc.zip` → contains all raw QC data  
 
-**Viewing the Results on Your Laptop**  
+**Viewing the results on your Laptop**  
 The cluster does not have a graphical interface, so you cannot open the .html report directly there.
 To inspect the results:
 
