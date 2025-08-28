@@ -370,8 +370,7 @@ Submit the job:
 sbatch trim_job.sh
 ```
 
-**Step 2.3.3 – Run FastQC again on trimmed data**
-
+**Step 3.4 – Run FastQC again on trimmed data**
 Create `fastqc_trimmed_job.sh`:
 
 ```bash
@@ -410,9 +409,20 @@ scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_trimmed_reports/*.ht
 
 Open the `.html` files in your browser.
 
-**Step 2.3.4 – Summarize with MultiQC**
+**Step 3.5 – Summarize with MultiQC**
+After running FastQC on both **raw reads** and **trimmed reads**, you now have multiple `.html` reports (one per file).  
+Opening them one by one is time-consuming and makes it difficult to compare.  
 
-Create `multiqc_job.sh`:
+**MultiQC** solves this problem by **aggregating all FastQC reports** into a single, easy-to-navigate HTML summary.  
+This allows you to directly compare quality improvements before and after trimming.
+
+Create a new file called `multiqc_job.sh`:
+
+```bash
+vi multiqc_job.sh
+```
+
+Press i to enter insert mode and paste the script:
 
 ```bash
 #!/bin/bash
@@ -423,10 +433,12 @@ Create `multiqc_job.sh`:
 #SBATCH -o multiqc.out
 #SBATCH -e multiqc.err
 
-module load multiqc/1.14
+module load multiqc
 
 multiqc fastqc_reports fastqc_trimmed_reports -o multiqc_summary
 ```
+
+Save and exit (`ESC`, then `:wq`).
 
 Submit the job:
 
@@ -434,7 +446,26 @@ Submit the job:
 sbatch multiqc_job.sh
 ```
 
-### 2.4: Reflection Questions
+**Step 3.6 – Copy the MultiQC report to your local computer**
+On your laptop, create a folder for results:
+
+```bash
+mkdir -p ~/bioinformatics_training/day4/multiqc
+cd ~/bioinformatics_training/day4/multiqc
+```
+
+Then copy the HTML file from the cluster:
+
+```bash
+scp your_username@login02.lisc.univie.ac.at:/path/to/multiqc_summary/multiqc_report.html .
+```
+
+Replace `/path/to/multiqc_summary/` with the actual path on the cluster (check with pwd).
+
+Finally, open the report in your web browser by double-clicking it.
+
+
+### Reflection Questions:
 
 *   How many reads were removed after trimming?
 *   Did the average base quality improve?
@@ -442,11 +473,6 @@ sbatch multiqc_job.sh
 *   Why does read length distribution change after trimming?
 *   Why is QC important before mapping or SNP calling?
 
-**Challenge:**
-
-Your challenge will be to take a provided raw sequencing dataset, perform quality control using FastQC and Trimmomatic, and then summarize the results using MultiQC, all within the HPC environment. This will test your ability to navigate the cluster, submit jobs, and manage your data effectively.
-
-By the end of Week 1, you will have a strong foundation in the computational aspects of bioinformatics, including command-line proficiency, basic scripting, understanding of biological sequences and databases, and critical skills in data quality control and HPC usage. This knowledge will be essential as we move into more applied genomic analyses in Week 2.
 
 
 ## You have completed **Day 4**!
