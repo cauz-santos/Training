@@ -614,6 +614,11 @@ After the job completes, you should have:
 `joint_variants.filtered.recode.vcf.gz.tbi` → index file
 `filtered_stats.txt` → summary statistics after filtering
 
+Please check the summary statistics after filtering:
+```bash
+head -n 30 filtered_stats.txt
+```
+
 **❓Questions**  
 - How many SNPs were present before filtering, and how many remain after?
 - Which filter (MAF, missing data, indels, biallelic) do you think removed the most variants?
