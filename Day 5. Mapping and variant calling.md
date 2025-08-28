@@ -35,6 +35,15 @@ We will be working with a set of up to 10 single-end FASTQ files and a reference
 *   **Reference Genome of *Elaeis guineensis*:** `GCF_000442705.2_EG11_genomic.fna` (Size: 1.8 GB)
 *   **Input Reads:** 12 single-end FASTQ files (e.g., `DRR070477.fastq.gz`, `DRR070483.fastq.gz`, `DRR070491.fastq.gz`, `DRR070494.fastq.gz`, `DRR070497.fastq.gz`, `SRR14510793.fastq.gz`, `SRR14510807.fastq.gz`, `DRR070482.fastq.gz`, `DRR070488.fastq.gz`, `DRR070492.fastq.gz`, `DRR070496.fastq.gz`, `DRR070498.fastq.gz`, `SRR14510795.fastq.gz`)
 
+**Table 1. File Format Flow**
+| File Type | Extension | Description | Produced By |
+|-----------|-----------|-------------|-------------|
+| **Raw Reads** | `.fastq.gz` | Raw sequences with qualities | Sequencer |
+| **Alignments (text)** | `.sam` | Large, human-readable alignments | BWA |
+| **Alignments (binary)** | `.bam` | Compressed, efficient alignments | Samtools |
+| **Sorted + Index** | `.sorted.bam` + `.bai` | Required for downstream analysis | Samtools |
+| **Variants** | `.vcf.gz` | SNPs and indels compared to reference | BCFtools |
+
 ---
 
 ### Section 1: Setting up the Environment and Data
@@ -200,6 +209,10 @@ echo "All samples processed."
 sbatch map_reads.sh
 ```
 
+**📍 Checkpoint:** After completion, you should see these files in the folder:
+`sample.sorted.bam`
+`sample.sorted.bam.bai`
+
 **❓ Questions:**
 
 *   Why do we pipe the output of `bwa mem` directly to `samtools view`? What is the advantage of this approach?
@@ -294,33 +307,25 @@ We will use `bcftools mpileup` and `bcftools call`.
 ```bash
 #!/bin/bash
 #SBATCH --job-name=variant_calling
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
-#SBATCH --time=01:30:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=16G
+#SBATCH --time=03:00:00
 #SBATCH -o variant_calling.out
 #SBATCH -e variant_calling.err
 
-# Load necessary modules
 module load bcftools
 
-# Define the reference genome
 GENOME="GCF_000442705.2_EG11_genomic.fna"
 
-# Loop through all sorted BAM files
-for bam in *.sorted.bam
-do
-    base=$(basename "$bam" .sorted.bam)
+# Create list of BAM files
+ls *.sorted.bam > bamlist.txt
 
-    echo "Calling variants for sample: $base"
+# Joint calling
+bcftools mpileup -Ou -f $GENOME -b bamlist.txt | \
+bcftools call -mv -Oz -o joint_variants.vcf.gz
 
-    # Variant calling pipeline
-    bcftools mpileup -Ou -f $GENOME "$bam" | \
-    bcftools call -mv -Oz -o "${base}.vcf.gz"
-
-    # Index the resulting VCF file
-    bcftools index "${base}.vcf.gz"
-
-done
+# Index VCF
+bcftools index joint_variants.vcf.gz
 
 echo "Variant calling complete."
 ```
