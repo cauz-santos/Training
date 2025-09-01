@@ -254,7 +254,12 @@ sbatch 20_run_gwas_suc.sh
 - Use rows with `TEST == "ADD"` for additive model results.
 
 > **Tip:** If your trait is **non-normal**, consider rank-normalizing phenotypes or using robust models. For binary traits use `--logistic`.
-
+>
+> **Relevance of GWAS**
+> - Identifies **trait-linked markers** that can be turned into **KASP/SNP-chip assays**.
+> - Guides **parent selection** and **cross design** by highlighting favorable alleles/haplotypes.
+> - Prioritizes **validation targets** to de-risk downstream R&D spending.
+> - Feeds **genomic selection** models with signal-rich loci, improving prediction accuracy.
 ---
 
 ### Part 3 — Visualize GWAS (Manhattan + QQ) in R
@@ -508,7 +513,9 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 
 > **Relevance:**  
 > Translating SNPs to **genes and functions** turns statistical signals into **biological hypotheses**, which alleles/genes to track, validate, and deploy in breeding.
-
+> - Accelerates **marker development** and **IP differentiation** around candidate genes/alleles.
+> - Informs **assay design** (haplotype tagging, primers) and prioritizes **functional validation** (expression, knockouts).
+> - Creates a pipeline from **statistical hit → deployable marker → breeding action**.
 ---
 
 ### Part 5 — From GWAS to Selection Decisions
