@@ -6,7 +6,7 @@ Welcome to Day 7!
 
 Today we connect **SNP genotypes** to a **quantitative trait** (sucrose content, **SUC**) using **Genome-Wide Association Studies (GWAS)**, and then interpret significant signals biologically by mapping top SNPs to **genes** and **functions**.
 
-In this is a **hands-on** session you will:
+This is a **hands-on** session; you will:
 - Prepare genotype/phenotype/covariates for GWAS
 - Run GWAS in **PLINK** (with population-structure correction via **PC covariates** from Day 6)
 - Visualize results (**Manhattan** and **QQ** plots in R)
@@ -18,7 +18,7 @@ In this is a **hands-on** session you will:
 
 ### Input Data
 
-- `my_filtered_variants.vcf.gz` — high-quality, biallelic SNPs 
+- `my_filtered_variants.vcf.gz` — high-quality, biallelic SNPs
 - `pca_results.eigenvec` — PCA eigenvectors (Day 6 output)  
 - `phenotypes.csv` — phenotypes with **SUC** column (g/100g dry matter)
 
@@ -157,7 +157,7 @@ sbatch 02_make_covariates.sh
 
 ---
 
-### Part 1 — GWAS QC (basic genotype-level filters)
+## Part 1 — GWAS QC (basic genotype-level filters)
 
 We’ll apply minimal QC commonly used before association:
 
@@ -198,8 +198,9 @@ sbatch 10_qc_make_subset.sh
 
 > **Note:** Thresholds are dataset-dependent. For training we use pragmatic defaults.
 
+---
 
-### Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
+## Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
 
 We’ll run an **additive linear regression**, including **PC1–PC5** as covariates.
 
@@ -216,7 +217,6 @@ In GWAS, **additive linear regression** tests whether the trait changes in a str
 - Genotype **2** → baseline **+ 1.6**
 
 This assumes **additivity** (heterozygotes are roughly halfway between the two homozygotes). If you suspect dominance/overdominance, you’d use a genotypic or dominance model—but the additive model is the standard, efficient default for genome-wide scans.
-
 
 ```bash
 vi 20_run_gwas_suc.sh
@@ -255,13 +255,14 @@ sbatch 20_run_gwas_suc.sh
 
 > **Tip:** If your trait is **non-normal**, consider rank-normalizing phenotypes or using robust models. For binary traits use `--logistic`.
 
+---
 
-### Part 3 — Visualize GWAS (Manhattan + QQ) in R
+## Part 3 — Visualize GWAS (Manhattan + QQ) in R
+
 Now we will load the PLINK GWAS results and create two standard checks:  
 - **Manhattan plot:** each point is a SNP; the y-axis is **−log10(p)**, so taller points mean stronger associations. Peaks across the x-axis (chromosomes) highlight regions linked to **SUC**.  
 - **QQ plot:** compares observed p-values to what we’d expect by chance; big upward deviations suggest inflation or true signals.  
 We’ll also add a **Bonferroni** genome-wide line (cutoff = 0.05 / number of SNPs) to control false positives, and compute **FDR (BH)** as a less conservative alternative.
-
 
 Open an **interactive R** session (with graphics) on the cluster or RStudio.
 
@@ -324,15 +325,16 @@ cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
 ```
 
 **Interpretation checks:**  
-- Are there **clear peaks** in the Manhattan plot?
-- - Is the **QQ plot** close to expectation (no heavy inflation)?
-  - - Do top hits remain after **FDR** or **Bonferroni** correction?
+- Are there **clear peaks** in the Manhattan plot?  
+- Is the **QQ plot** close to expectation (no heavy inflation)?  
+- Do top hits remain after **FDR** or **Bonferroni** correction?
 
 > **Relevance:**  
 > Peaks identify **candidate loci** controlling sucrose—targets for **marker development**, **introgression**, and **GS validation**.
 
+---
 
-### Part 4 — From SNP to Gene (annotation & function)
+## Part 4 — From SNP to Gene (annotation & function)
 
 Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **putative function**.
 
@@ -349,9 +351,8 @@ Set your annotation filenames (replace with your actual files):
 **Make a BED of top SNPs:**  
 
 We’ll map **Bonferroni-significant** hits (or top 20 if none pass) to genes. This script creates:  
-
-- top_snps.bed — BED coordinates of your strongest GWAS SNPs (Bonferroni-significant or top 20).
-- genes.bed — BED coordinates of all genes parsed from your GFF3 with IDs/names/products.
+- `top_snps.bed` — BED coordinates of your strongest GWAS SNPs (Bonferroni-significant or top 20).  
+- `genes.bed` — BED coordinates of all genes parsed from your GFF3 with IDs/names/products.  
 You’ll use these with BEDTools to find which genes overlap or are nearest to the top SNPs.
 
 ```bash
@@ -370,7 +371,6 @@ vi 30_prepare_bed_for_annotation.sh
 set -euo pipefail
 
 GENOME_GFF="reference.gff3"   # <-- CHANGE to your GFF3 path
-ASSOC="gwas_suc_linear.assoc.linear"
 
 # 1) Pick SNPs to annotate (prefer Bonferroni; fallback top20)
 if [ -s bonferroni_hits_SUC.tsv ]; then
@@ -398,7 +398,7 @@ awk 'BEGIN{OFS="\t"} $3=="gene" {
     if(a[i] ~ /^gene=/){sub(/^gene=/,"",a[i]); name=a[i]} # fallback
   }
   print $1, $4-1, $5, id "|" name "|" prod
-}' "${GENOME_GFF}" > genes.bed
+}' "reference.gff3" > genes.bed
 
 echo "Wrote: genes.bed (gene features)"
 ```
@@ -442,7 +442,6 @@ sbatch 31_map_snps_to_genes.sh
 **Interpreting outputs:**
 - `snp_gene_overlaps.tsv` → if a SNP lies **within** a gene (exon/intron span)  
 - `snp_gene_nearest.tsv` → the **closest** gene and the **distance** (0 if overlapping)
-
 
 **Summarize mappings (friendly table)**
 
@@ -525,8 +524,9 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 > **Practical workflow:**  
 > GWAS → shortlist candidate regions → develop assays → quick screening → feed marker data + phenotypes into **GS models** for broader gains.
 
+---
 
-## You have completed **Day 6**!
+## You have completed **Day 7**!
 
 ---
 
