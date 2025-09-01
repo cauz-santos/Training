@@ -297,9 +297,9 @@ While PLINK is strong for data preparation and sample-level summaries, VCFtools 
 ---
 
 ## Part 3 — Principal Component Analysis (PCA) with PLINK
+Principal Component Analysis (PCA) is a statistical method that reduces the dimensionality of complex datasets while retaining most of the variation. In population genetics, PCA is used to visualize genetic relationships between individuals and identify population structure. Individuals that are genetically similar will cluster together in the PCA plot, while genetically distinct populations will separate.
 
-We will run PCA on the **LD-pruned** dataset produced in **Step 0.2** (`my_data_pruned.*`).  
-PCA reduces genetic variation into a few principal components (PCs) that capture major axes of structure.
+We will run PCA on the **LD-pruned** dataset produced in **Step 2** (`my_data_pruned.*`).  
 
 **Inputs used here**
 
@@ -345,6 +345,50 @@ PCA reduces genetic variation into a few principal components (PCs) that capture
    sbatch 20_run_pca.sh
    ```
 
+## 📊 PCA Visualization in R
+
+After running PCA with PLINK, we will visualize the results using R.  
+Copy the following script into RStudio (or an interactive R session on the cluster) and run it.
+
+```r
+# ================================
+# PCA Visualization Script
+# ================================
+
+# Load library
+library(ggplot2)
+
+# --- Load PCA results from PLINK ---
+eigenvec <- read.table("pca_results.eigenvec", header = FALSE)
+colnames(eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(eigenvec)-2)))
+
+eigenval <- scan("pca_results.eigenval")
+variance_explained <- round(100 * eigenval / sum(eigenval), 2)
+
+# --- Load population labels ---
+# File must contain at least two columns: IID and Population
+# Example:
+# IID    Population
+# sample1   PopA
+# sample2   PopB
+popinfo <- read.table("population_labels.txt", header = TRUE, stringsAsFactors = FALSE)
+
+# --- Merge data ---
+pca_df <- merge(eigenvec, popinfo, by = "IID")
+
+# --- Plot PCA ---
+ggplot(pca_df, aes(x = PC1, y = PC2, color = Population)) +
+  geom_point(size = 3, alpha = 0.8) +
+  theme_minimal(base_size = 14) +
+  labs(title = "PCA of Genomic Data (colored by population)",
+       x = paste0("PC1 (", variance_explained[1], "% variance)"),
+       y = paste0("PC2 (", variance_explained[2], "% variance)")) +
+  scale_color_brewer(palette = "Set1")
+```
+
+> This script will open a PCA scatterplot window with individuals colored by population.
+
+
 **Interpreting PCA**
 
 - **PC1, PC2** typically separate major population groups; nearby individuals in the plot are genetically similar.  
@@ -353,126 +397,7 @@ PCA reduces genetic variation into a few principal components (PCs) that capture
 
 ---
 
-## 📌 Checklist of Files After Part 0–2
-
-| File(s)                        | Description                                         |
-|--------------------------------|-----------------------------------------------------|
-| `my_data.*`                    | PLINK binary dataset (from VCF)                     |
-| `my_data_prune.prune.in/out`   | SNPs kept/removed by LD pruning                     |
-| `my_data_pruned.*`             | **LD-pruned** PLINK dataset (use for PCA/structure) |
-| `plink_het.het`                | Heterozygosity & inbreeding (PLINK)                 |
-| `plink_missing.imiss`          | Missingness per sample (PLINK)                      |
-| `vcftools_maf.frq`             | Per-site allele frequencies                         |
-| `vcftools_het.het`             | Heterozygosity & F (VCFtools)                       |
-| `vcftools_missing.imiss`       | Missingness per individual (VCFtools)               |
-| `pca_results.eigenval/.eigenvec`| PCA variance and scores per individual             |
-
----
-
-## 🧪 Quick Knowledge Checks
-
-- **Why** do we run PCA on the *pruned* dataset instead of the full set?  
-- What would a **cluster** of individuals on a PCA plot suggest about their relatedness?  
-- If PC1 separates samples by **sequencing batch** (not biology), what steps could you take?
-
----
-
-## 📝 Next (Day 7 Preview)
-
-- We will prepare **phenotype** and **covariate** files (including PCA eigenvectors) and run **GWAS**.  
-- We will discuss **population structure correction** and interpretation of association results.
-
----
-
-
-
-
-
-
-
-
-
-## Part 1: Principal Component Analysis (PCA)
-
-**What is PCA?**
-
-Principal Component Analysis (PCA) is a statistical method that reduces the dimensionality of complex datasets while retaining most of the variation. In population genetics, PCA is used to visualize genetic relationships between individuals and identify population structure. Individuals that are genetically similar will cluster together in the PCA plot, while genetically distinct populations will separate.
-
-We will use **PLINK** to perform PCA.
-
-### 2.1: Run PCA with PLINK
-
-**Create a file named `run_pca.sh` using `vi`:**
-
-```bash
-#!/bin/bash
-#SBATCH --job-name=run_pca
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=8G
-#SBATCH --time=01:00:00
-#SBATCH -o run_pca.out
-#SBATCH -e run_pca.err
-
-# Load necessary modules
-module load plink
-
-# Define input PLINK files base name (pruned data)
-INPUT_BASE_PRUNED="my_data_pruned"
-
-echo "Running PCA on ${INPUT_BASE_PRUNED}..."
-plink --bfile $INPUT_BASE_PRUNED \
-      --pca \
-      --out pca_results
-
-echo "PCA complete. Results: pca_results.eigenval, pca_results.eigenvec"
-```
-
-**Submit the job:**
-
-```bash
-sbatch run_pca.sh
-```
-
-This will generate two main output files:
-
-*   `pca_results.eigenval`: Contains the eigenvalues, representing the amount of variance explained by each principal component.
-*   `pca_results.eigenvec`: Contains the eigenvectors, which are the principal component scores for each individual.
-
-**❓ Question:** What do the first few principal components (e.g., PC1 and PC2) typically represent in population genetics PCA? How can you use the `eigenval` file to determine how many PCs are important?
-
-### 2.2: Visualize PCA Results (Conceptual)
-
-Visualizing PCA results usually involves plotting the first two or three principal components. This is typically done using statistical software like R or Python with libraries like `ggplot2` or `matplotlib`/`seaborn`.
-
-```python
-# Conceptual Python code for PCA visualization
-# You would need to transfer pca_results.eigenvec to your local machine
-# and use a plotting environment (e.g., Jupyter Notebook, RStudio)
-
-# import pandas as pd
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-
-# Load the eigenvec file (space-separated)
-# pca_df = pd.read_csv("pca_results.eigenvec", sep="\s+", header=None)
-# Assign column names (e.g., FID, IID, PC1, PC2, ...)
-# pca_df.columns = ["FID", "IID"] + [f"PC{i}" for i in range(1, pca_df.shape[1] - 1)]
-
-# Example: Plot PC1 vs PC2
-# plt.figure(figsize=(8, 6))
-# sns.scatterplot(data=pca_df, x="PC1", y="PC2", hue="<Population_Group_Column>", s=50) # Replace <Population_Group_Column> if you have population labels
-# plt.title("PCA of Genetic Data")
-# plt.xlabel(f"PC1 ({pca_df.iloc[0, 2]:.2f}% variance)") # Example for adding variance explained
-# plt.ylabel(f"PC2 ({pca_df.iloc[0, 3]:.2f}% variance)")
-# plt.grid(True)
-# plt.show()
-```
-
-**❓ Question:** How would you incorporate known population labels into your PCA plot to validate your findings? What would you look for in the plot to indicate strong population structure?
-
----
-
-## Part 2: Admixture Analysis
+## Part 4: Admixture Analysis
 
 **What is Admixture?**
 
