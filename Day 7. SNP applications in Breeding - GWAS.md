@@ -337,13 +337,57 @@ cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
 > **Relevance:**  
 > Peaks identify **candidate loci** controlling sucrose—targets for **marker development**, **introgression**, and **GS validation**.
 
+
+#### Regional Association Plot (±250 kb) around the Top Hit
+
+Now we’ll zoom into the strongest GWAS peak to inspect the local signal shape (is it a tight single peak or a broad region?).
+
+**Do I need to change `chr` and `pos`?**  
+**No** for the automatic version below — it **reads the top SNP from your PLINK results** and uses its `CHR`/`BP`.  
+Only change them if you want to zoom into a **specific SNP or region** (manual variants provided).
+
+```r
+# --- Regional association plot around the top SNP (±250 kb) ---
+# Requires: data.table, ggplot2
+library(data.table)
+library(ggplot2)
+
+# Load additive-model p-values from PLINK
+dt <- fread("gwas_suc_linear.assoc.linear")[TEST == "ADD" & !is.na(P)]
+
+# Safety check: ensure required columns exist
+stopifnot(all(c("CHR","BP","SNP","P") %in% names(dt)))
+
+# Identify the top hit (smallest p-value)
+setorder(dt, P)
+lead <- dt[1]
+chr  <- lead$CHR
+pos  <- lead$BP
+
+# Extract a ±250 kb window around the top hit
+win <- dt[CHR == chr & BP >= (pos - 250000) & BP <= (pos + 250000)]
+
+# Plot and save
+png("GWAS_SUC_RegionalTop.png", width = 1400, height = 500, res = 150)
+ggplot(win, aes(x = BP, y = -log10(P))) +
+  geom_point() +
+  geom_vline(xintercept = pos, linetype = "dashed") +
+  labs(
+    title = sprintf("Regional Association: chr%s ±250 kb around %s", chr, format(pos, big.mark=",")),
+    x = "Genomic Position (bp)", y = "-log10(P)"
+  ) +
+  theme_minimal(base_size = 14)
+dev.off()
+
+cat("Saved: GWAS_SUC_RegionalTop.png\n")
+```
 ---
 
 ### Part 4 — From SNP to Gene (annotation & function)
 
 Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **putative function**.
 
-> 📦 **You need:**  
+>**You need:**  
 > - The **same reference genome** used for alignment & variant calling (FASTA)  
 > - Its **annotation** in **GFF3** (gene coordinates + attributes, e.g., `ID`, `Name`, `product`)  
 > - **BEDTools** module (for genomic intersections)
