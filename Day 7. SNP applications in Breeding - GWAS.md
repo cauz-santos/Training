@@ -526,6 +526,7 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 > GWAS → shortlist candidate regions → develop assays → quick screening → feed marker data + phenotypes into **GS models** for broader gains.
 
 
+## You have completed **Day 6**!
 
 ---
 
