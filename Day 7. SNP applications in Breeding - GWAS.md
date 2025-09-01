@@ -565,9 +565,9 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 ### Part 5 — From GWAS to Selection Decisions
 
 In this **training** step you’ll turn your GWAS outputs into **actionable breeding artifacts**. You will:  
-1) build a **MAS marker table** from your top SNPs,  
+1) build a **MAS marker table** from your top SNPs  
 2) compute a quick **polygenic (GS-lite) score** to rank lines  
-Everything below assumes you already ran Part 3 and have: `gwas_suc_linear.assoc.linear`, `bonferroni_hits_SUC.tsv` and/or `top20_hits_SUC.tsv`, plus your genotype set `gwas_data_qc.*` and `phenotypes.csv` (IID,SUC).
+*Everything below assumes you already ran Part 3 and have: `gwas_suc_linear.assoc.linear`, `bonferroni_hits_SUC.tsv` and/or `top20_hits_SUC.tsv`, plus your genotype set `gwas_data_qc.*` and `phenotypes.csv` (IID,SUC).
 
 
 **A) Make a MAS-ready marker table (effect allele, effect size, p-value)**  
@@ -665,9 +665,9 @@ echo "Saved: PGS_vs_SUC.png"
 ```
 
 **Interpretation:**  
-`pgs_ranked.tsv` → all lines ranked by genomic score.
-`PGS_vs_SUC.png` → scatterplot showing how well the genomic score predicts sucrose.
-If correlation (`r`) is positive and strong, even this “lite” version shows promise.
+`pgs_ranked.tsv` → all lines ranked by genomic score.  
+`PGS_vs_SUC.png` → scatterplot showing how well the genomic score predicts sucrose.  
+If correlation (`r`) is positive and strong, even this “lite” version shows promise.  
 
 > Relevance GS-lite:
 > This gives a fast, interpretable genomic ranking you can already use today for pre-selection, while waiting for larger training sets and more advanced GS models. It shows how GWAS results can directly feed into breeding decisions.
@@ -678,10 +678,16 @@ If correlation (`r`) is positive and strong, even this “lite” version shows 
 
 ### Useful Tutorials and Resources
 
-- PLINK Association Analysis — https://zzz.bwh.harvard.edu/plink/anal.shtml  
-- qqman: GWAS Manhattan & QQ plots in R — https://cran.r-project.org/package=qqman  
-- Speciation Genomics: ADMIXTURE & PCA (structure background) — https://speciationgenomics.github.io/  
-- InterProScan (protein domains/GO) — https://interproscan-docs.readthedocs.io/  
+- [PLINK Association Analysis (GWAS)](https://zzz.bwh.harvard.edu/plink/anal.shtml)  
+- [GWAS Tutorial with PLINK + R (NIH HPC)](https://hpc.nih.gov/training/gwas_plink_tutorial.html)  
+- [qqman R package (Manhattan & QQ plots)](https://cran.r-project.org/web/packages/qqman/vignettes/qqman.html)  
+- [TASSEL GWAS Tutorial (Plants)](https://bitbucket.org/tasseladmin/tassel-5-source/wiki/Tassel5Pipeline/TASSEL_GWAS_Tutorial)  
+- [GAPIT R Package for GWAS & GS](https://zzlab.net/GAPIT/)  
+- [Introduction to Genomic Selection (WUR course material)](https://www.wur.nl/en/education-programmes/courses/genomic-selection.htm)  
+- [Practical Genomic Selection in Plant Breeding (YouTube Lecture)](https://www.youtube.com/watch?v=x3pYCB4GcJo)  
+- [GEMMA Documentation (Mixed Model GWAS)](https://github.com/genetics-statistics/GEMMA)  
+- [GCTA fastGWA Manual](http://cnsgenomics.com/software/gcta/#GWAS)  
+
 
 
 ### Appendix (Optional/Advanced): Mixed Models & When to Use Other GWAS Tools
