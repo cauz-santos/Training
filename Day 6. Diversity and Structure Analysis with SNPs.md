@@ -26,7 +26,7 @@ By the end of this session, you will be able to:
 
 ### Input Data
 
-We will work with a VCF file already filtered during Day 5 (e.g., for depth, quality, missingness, and minor allele frequency).
+We will work with a VCF file already filtered (e.g., for depth, quality, missingness, and minor allele frequency).
 
 - `my_filtered_variants.vcf.gz` — High-quality, biallelic SNP dataset
 
@@ -44,7 +44,6 @@ Understanding **genetic diversity and structure** is essential in genomics and b
 
 The tools we explore today — like PCA and ADMIXTURE — are **foundational methods** in modern genomics. Combined with diversity metrics (e.g., heterozygosity, allele frequency spectra), they allow you to **quantify and visualize genetic patterns** in your dataset.
 
----
 
 **Table 1. Tools You Will Use**
 
