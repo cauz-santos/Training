@@ -57,6 +57,369 @@ The tools we explore today — like PCA and ADMIXTURE — are **foundational met
 
 ---
 
+# Day 6 – Exploring Genetic Diversity and Population Structure with SNPs
+
+## 🧭 Why Does This Matter?
+
+Understanding **genetic diversity and structure** is essential in genomics and breeding:
+
+- In **breeding programs**, it helps identify divergent individuals, avoid inbreeding, and guide parent selection.  
+- In **population genetics**, it reveals how populations are related and how they evolved.  
+- In **conservation**, it supports decisions on which populations or individuals to prioritize.  
+
+Today’s session introduces tools like **PLINK** and **VCFtools** to quantify diversity and visualize structure. The outputs from today (e.g., PCA eigenvectors) will be used as **covariates for GWAS** on Day 7.
+
+---
+
+## 🛠 Tools You Will Use
+
+| Tool         | Purpose                                               |
+|--------------|--------------------------------------------------------|
+| **PLINK**      | Data conversion, LD pruning, PCA, diversity stats     |
+| **VCFtools**   | Diversity estimates (MAF, heterozygosity, missingness)|
+| **BCFtools**   | VCF querying (optional)                               |
+| **Slurm**      | Job scheduling on the HPC cluster                     |
+| **vi**         | Command-line text editor for creating scripts         |
+
+> ℹ️ **Note:** Module names can vary by cluster. Replace `module load <tool>` with the correct names on your system.
+
+---
+
+## Part 0 — Data Preparation (VCF → PLINK + LD Pruning)
+
+We will convert a **filtered VCF** into PLINK format and perform **LD pruning**. The pruned dataset will be used for **PCA** (and later for ADMIXTURE/GWAS).
+
+### Step 1 — Convert VCF to PLINK format
+
+What this produces:
+
+- `my_data.bed` – binary genotype matrix  
+- `my_data.bim` – variant metadata (CHROM, POS, ID, REF/ALT)  
+- `my_data.fam` – sample metadata (FID, IID, Sex, Phenotype placeholder)  
+
+**Create the Slurm script with `vi`:**
+
+1. Open the editor:
+   ```bash
+   vi 00_convert_vcf_to_plink.sh
+   ```
+2. Press `i` to enter *INSERT* mode.  
+3. **Copy & paste** the content below:
+   ```bash
+   #!/bin/bash
+   #SBATCH --job-name=vcf2plink
+   #SBATCH --cpus-per-task=1
+   #SBATCH --mem=8G
+   #SBATCH --time=00:30:00
+   #SBATCH -o vcf2plink.out
+   #SBATCH -e vcf2plink.err
+
+   module load plink
+
+   # Input VCF (from Day 5)
+   IN_VCF="my_filtered_variants.vcf.gz"
+
+   echo "Converting ${IN_VCF} to PLINK binary format..."
+   plink --vcf "${IN_VCF}" \
+         --make-bed \
+         --out my_data
+
+   echo "Done. Created: my_data.bed / .bim / .fam"
+   ```
+4. Press `Esc`, type `:wq` and press `Enter` to save and exit.  
+5. Submit the job:
+   ```bash
+   sbatch 00_convert_vcf_to_plink.sh
+   ```
+
+
+### Step 2 — LD Pruning (remove linked SNPs)
+
+**What is LD Pruning?**  
+
+**Linkage Disequilibrium (LD)** refers to the non-random association of alleles at different loci.  
+In simple terms, if two SNPs are very close to each other on the chromosome, they are often inherited together — meaning their genotypes are **correlated**.  
+
+- Example: If SNP A and SNP B are always observed together in your dataset, they are in **high LD**.  
+- For analyses like **PCA** or **Admixture**, including both SNPs does not add new information — it only adds redundancy.  
+
+**Why do we prune SNPs in LD?**  
+
+- **PCA & Admixture assume independence**: correlated SNPs inflate the signal and may bias the results.  
+- **Computational efficiency**: fewer SNPs make analyses faster without losing meaningful information.  
+- **Interpretability**: a pruned dataset captures the true population structure instead of local chromosomal effects.  
+
+**How does pruning work in PLINK?**  
+
+PLINK uses a **sliding window** approach:
+- It scans windows of a defined number of SNPs (e.g., 50 SNPs).  
+- Within each window, it calculates the **pairwise correlation (r²)** between SNPs.  
+- If two SNPs are too correlated (above a threshold, e.g., r² ≥ 0.2), one of them is removed.  
+- The window slides forward (e.g., by 5 SNPs), and the process repeats until the genome is scanned.  
+
+
+**Create the Slurm script with `vi`:**
+
+1. Open the editor:
+   ```bash
+   vi 01_ld_pruning.sh
+   ```
+2. Press `i` to enter *INSERT* mode.  
+3. **Copy & paste**:
+   ```bash
+   #!/bin/bash
+   #SBATCH --job-name=ld_prune
+   #SBATCH --cpus-per-task=1
+   #SBATCH --mem=8G
+   #SBATCH --time=00:30:00
+   #SBATCH -o ld_prune.out
+   #SBATCH -e ld_prune.err
+
+   module load plink
+
+   IN_BASE="my_data"  # from Step 0.1
+
+   echo "Selecting approximately independent SNPs (LD pruning)..."
+   plink --bfile "${IN_BASE}" \
+         --indep-pairwise 50 5 0.2 \
+         --out my_data_prune
+
+   echo "Creating pruned dataset..."
+   plink --bfile "${IN_BASE}" \
+         --extract my_data_prune.prune.in \
+         --make-bed \
+         --out my_data_pruned
+
+   echo "Done. Use 'my_data_pruned' for PCA and structure analyses."
+   ```
+4. Press `Esc`, then `:wq`, `Enter`.  
+5. Submit the job:
+   ```bash
+   sbatch 01_ld_pruning.sh
+   ```
+
+**Outputs created**
+
+- `my_data_prune.prune.in` — SNPs to keep  
+- `my_data_prune.prune.out` — SNPs removed  
+- `my_data_pruned.*` — **LD-pruned** PLINK dataset (use this for **PCA**)
+
+---
+## Part 1 — Genetic Diversity Estimation (PLINK + VCFtools)
+
+We will compute **heterozygosity**, **inbreeding (F)**, **missingness**, and **allele frequencies** to assess data quality and diversity.  
+For consistency, use the **unpruned** dataset (`my_data.*`) for diversity summaries (unless you specifically want summaries on the pruned set).
+
+### Step 1 — PLINK: Heterozygosity and Missingness
+
+Calculating heterozygosity and missingness is important because it allows us to evaluate both the **biological signal** and the **technical quality** of the dataset. Samples with unusually low heterozygosity may indicate **inbreeding** or **loss of diversity**, while samples with extremely high heterozygosity could suggest **contamination** or **sample mix-ups**. Similarly, individuals or loci with high levels of missing data may reflect **low sequencing depth**, **library preparation problems**, or **poor alignment**, and can bias downstream analyses such as PCA, Admixture, or GWAS if not detected and filtered out.
+
+**Create the Slurm script with `vi`:**
+
+1. Open:
+   ```bash
+   vi 10_plink_diversity.sh
+   ```
+2. Press `i` to enter *INSERT* mode.  
+3. **Copy & paste**:
+   ```bash
+   #!/bin/bash
+   #SBATCH --job-name=plink_div
+   #SBATCH --cpus-per-task=1
+   #SBATCH --mem=8G
+   #SBATCH --time=00:20:00
+   #SBATCH -o plink_div.out
+   #SBATCH -e plink_div.err
+
+   module load plink
+
+   IN_BASE="my_data"  # unpruned dataset from Step 0.1
+
+   echo "Calculating heterozygosity and inbreeding coefficient (per sample)..."
+   plink --bfile "${IN_BASE}" \
+         --het \
+         --out plink_het
+
+   echo "Calculating per-individual missingness..."
+   plink --bfile "${IN_BASE}" \
+         --missing \
+         --out plink_missing
+
+   echo "Done. Outputs: plink_het.het, plink_missing.imiss"
+   ```
+4. `Esc`, `:wq`, `Enter`.  
+5. Submit:
+   ```bash
+   sbatch 10_plink_diversity.sh
+   ```
+
+**How to read the outputs**
+
+- `plink_het.het` → O(HOM), E(HOM), N_SNPs, **F** = (E - O) / E  
+- `plink_missing.imiss` → fraction of missing genotypes per individual
+
+
+### Step 2 — VCFtools: MAF, Heterozygosity, Missingness  
+
+We will use another tool, **VCFtools**, that complements PLINK.  
+While PLINK is strong for data preparation and sample-level summaries, VCFtools works directly on the VCF file and provides detailed per-site and per-individual statistics such as MAF, heterozygosity, and missingness. Combining both tools gives us a more complete and reliable picture of genetic diversity and data quality.
+
+
+**Create the Slurm script with `vi`:**
+
+1. Open:
+   ```bash
+   vi 11_vcftools_diversity.sh
+   ```
+2. Press `i`.  
+3. **Copy & paste**:
+   ```bash
+   #!/bin/bash
+   #SBATCH --job-name=vcftools_div
+   #SBATCH --cpus-per-task=1
+   #SBATCH --mem=6G
+   #SBATCH --time=00:20:00
+   #SBATCH -o vcftools_div.out
+   #SBATCH -e vcftools_div.err
+
+   module load vcftools
+
+   IN_VCF="my_filtered_variants.vcf.gz"  # same input used in Step 0.1
+
+   echo "Per-site allele frequencies (MAF)..."
+   vcftools --gzvcf "${IN_VCF}" \
+            --freq \
+            --out vcftools_maf
+
+   echo "Per-individual heterozygosity and inbreeding coefficient..."
+   vcftools --gzvcf "${IN_VCF}" \
+            --het \
+            --out vcftools_het
+
+   echo "Per-individual missingness..."
+   vcftools --gzvcf "${IN_VCF}" \
+            --missing-indv \
+            --out vcftools_missing
+
+   echo "Done. Outputs: vcftools_maf.frq, vcftools_het.het, vcftools_missing.imiss"
+   ```
+4. `Esc`, `:wq`, `Enter`.  
+5. Submit:
+   ```bash
+   sbatch 11_vcftools_diversity.sh
+   ```
+
+**Key outputs**
+
+- `vcftools_maf.frq` → allele frequencies per SNP (inspect MAF distribution)  
+- `vcftools_het.het` → per-sample O(HOM), E(HOM), **F**  
+- `vcftools_missing.imiss` → per-sample missingness
+
+
+### Diversity QC — Questions to Consider
+
+- Are there individuals with **very high missingness** (e.g., >10–20%)?  
+- Do some samples show **unusually low heterozygosity** (possible inbreeding or data issues)?  
+- Is the **MAF distribution** dominated by very rare variants (might affect power/interpretation)?
+
+---
+
+## Part 3 — Principal Component Analysis (PCA) with PLINK
+
+We will run PCA on the **LD-pruned** dataset produced in **Step 0.2** (`my_data_pruned.*`).  
+PCA reduces genetic variation into a few principal components (PCs) that capture major axes of structure.
+
+**Inputs used here**
+
+- `my_data_pruned.bed/.bim/.fam` (created by `01_ld_pruning.sh`)
+
+**Outputs produced**
+
+- `pca_results.eigenval` — variance explained by each PC  
+- `pca_results.eigenvec` — PC scores per individual  
+
+### Step 2.1 — Run PCA (create script with `vi`)
+
+1. Open:
+   ```bash
+   vi 20_run_pca.sh
+   ```
+2. Press `i`.  
+3. **Copy & paste**:
+   ```bash
+   #!/bin/bash
+   #SBATCH --job-name=run_pca
+   #SBATCH --cpus-per-task=1
+   #SBATCH --mem=8G
+   #SBATCH --time=00:30:00
+   #SBATCH -o run_pca.out
+   #SBATCH -e run_pca.err
+
+   module load plink
+
+   # LD-pruned dataset from Part 0
+   INPUT_BASE_PRUNED="my_data_pruned"
+
+   echo "Running PCA on ${INPUT_BASE_PRUNED}..."
+   plink --bfile "${INPUT_BASE_PRUNED}" \
+         --pca \
+         --out pca_results
+
+   echo "Done. Outputs: pca_results.eigenval, pca_results.eigenvec"
+   ```
+4. `Esc`, `:wq`, `Enter`.  
+5. Submit:
+   ```bash
+   sbatch 20_run_pca.sh
+   ```
+
+**Interpreting PCA**
+
+- **PC1, PC2** typically separate major population groups; nearby individuals in the plot are genetically similar.  
+- Use `pca_results.eigenval` to compute the **variance explained** (e.g., PC1% = eigenval₁ / sum(eigenvals) × 100).  
+- The file `pca_results.eigenvec` begins with `FID IID` followed by PC1, PC2, … per individual.
+
+---
+
+## 📌 Checklist of Files After Part 0–2
+
+| File(s)                        | Description                                         |
+|--------------------------------|-----------------------------------------------------|
+| `my_data.*`                    | PLINK binary dataset (from VCF)                     |
+| `my_data_prune.prune.in/out`   | SNPs kept/removed by LD pruning                     |
+| `my_data_pruned.*`             | **LD-pruned** PLINK dataset (use for PCA/structure) |
+| `plink_het.het`                | Heterozygosity & inbreeding (PLINK)                 |
+| `plink_missing.imiss`          | Missingness per sample (PLINK)                      |
+| `vcftools_maf.frq`             | Per-site allele frequencies                         |
+| `vcftools_het.het`             | Heterozygosity & F (VCFtools)                       |
+| `vcftools_missing.imiss`       | Missingness per individual (VCFtools)               |
+| `pca_results.eigenval/.eigenvec`| PCA variance and scores per individual             |
+
+---
+
+## 🧪 Quick Knowledge Checks
+
+- **Why** do we run PCA on the *pruned* dataset instead of the full set?  
+- What would a **cluster** of individuals on a PCA plot suggest about their relatedness?  
+- If PC1 separates samples by **sequencing batch** (not biology), what steps could you take?
+
+---
+
+## 📝 Next (Day 7 Preview)
+
+- We will prepare **phenotype** and **covariate** files (including PCA eigenvectors) and run **GWAS**.  
+- We will discuss **population structure correction** and interpretation of association results.
+
+---
+
+
+
+
+
+
+
+
+
 ## Part 1: Principal Component Analysis (PCA)
 
 **What is PCA?**
