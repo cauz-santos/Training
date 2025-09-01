@@ -1,210 +1,563 @@
 ## Week 2: Applied Bioinformatics for Genomics and Breeding
 
-## Day 7: SNP Applications in Breeding - GWAS
+## Day 7: SNP Applications in Breeding - GWAS and Gene Interpretation
 
-Day 7 focuses on the practical applications of SNPs in agricultural and animal breeding. We will explore how genetic markers, particularly SNPs, are used to understand population structure, identify desirable traits, and accelerate breeding programs.
+Welcome to Day 7!
 
-**Morning Session 1: Introduction to Breeding Needs**
+Today we connect **SNP genotypes** to a **quantitative trait** (sucrose content, **SUC**) using **Genome-Wide Association Studies (GWAS)**, and then interpret significant signals biologically by mapping top SNPs to **genes** and **functions**.
 
-This session will provide an overview of the challenges and objectives in modern breeding programs and how genomic tools, particularly SNP markers, have revolutionized the field. Traditional breeding relies on phenotypic selection, which can be slow, labor-intensive, and influenced by environmental factors. Genomic breeding aims to accelerate this process by using genetic information directly.
+In this is a **hands-on** session you will:
+- Prepare genotype/phenotype/covariates for GWAS
+- Run GWAS in **PLINK** (with population-structure correction via **PC covariates** from Day 6)
+- Visualize results (**Manhattan** and **QQ** plots in R)
+- Identify **top SNPs**, map them to **genes** (GFF3), and extract **putative functions**
+- Discuss how hits feed into **Marker-Assisted Selection (MAS)** and **Genomic Selection (GS)**
 
-**Key Breeding Objectives:**
+> **Relevance:**  
+> GWAS uncovers **genomic regions** that control traits like sucrose. These become **markers** for MAS, and inform **genome-wide prediction** in GS—shortening cycles and improving accuracy in breeding pipelines.
 
-*   **Increased Yield:** Developing varieties or breeds that produce more food, fiber, or other products.
-*   **Improved Quality:** Enhancing nutritional content, taste, shelf-life, or other desirable product characteristics.
-*   **Disease and Pest Resistance:** Breeding for resilience against common pathogens and pests to reduce crop losses and reliance on chemical treatments.
-*   **Stress Tolerance:** Developing varieties that can withstand adverse environmental conditions like drought, salinity, or extreme temperatures.
-*   **Adaptation to Climate Change:** Creating resilient crops and livestock that can thrive in changing climatic conditions.
-*   **Reduced Environmental Impact:** Breeding for traits that require fewer inputs (e.g., water, fertilizer) or produce less waste.
+## Input Data
 
-**How Genomics Addresses Breeding Needs:**
+- `my_filtered_variants.vcf.gz` — high-quality, biallelic SNPs 
+- `pca_results.eigenvec` — PCA eigenvectors (Day 6 output)  
+- `phenotypes.csv` — phenotypes with **SUC** column (g/100g dry matter)
 
-Genomic technologies, especially high-throughput SNP genotyping, provide a powerful means to:
+**Example `phenotypes.csv` (CSV with header):**
+```
+IID,SUC
+PDAC253_Ram_S,17.88
+PDAC254_Rij_S,20.86
+PDAC255_Sin_S,21.24
+...
+```
 
-*   **Accelerate Selection:** Identify individuals with desirable genes at an early stage (e.g., seedling stage in plants), significantly shortening breeding cycles.
-*   **Increase Precision:** Select for complex traits influenced by many genes (quantitative traits) with greater accuracy.
-*   **Broaden Genetic Diversity:** Efficiently manage and utilize genetic diversity from germplasm collections.
-*   **Understand Genetic Architecture:** Map genes responsible for specific traits, leading to a deeper understanding of the underlying biology.
-*   **Overcome Environmental Variation:** Genomic selection is less affected by environmental fluctuations compared to phenotypic selection.
+> **Assumptions:**  
+> - **IID** matches the **second column** of your PLINK `.fam` file (IID).  
+> - You can set **FID = IID** if family IDs are not used.  
+> - Missing phenotypes are `NA`.
 
-**Morning Session 2: Population Structure and PCA (e.g., PLINK, SNPRelate)**
+---
 
-Understanding the genetic structure of a population is crucial in breeding and genetic studies. Population structure refers to the presence of subgroups within a larger population that have different allele frequencies. Ignoring population structure can lead to spurious associations in genetic studies (false positives) and inefficient breeding strategies.
+## Part 0 — Prepare Genotypes, Phenotypes, and Covariates
 
-**What is Population Structure?**
+### Step 1 — Convert VCF → PLINK (binary)
 
-Population structure arises from factors like geographical isolation, limited gene flow, historical migrations, and selection pressures. It can manifest as distinct genetic clusters within a population.
+Create and submit:
 
-**Principal Component Analysis (PCA) for Population Structure:**
+```bash
+vi 00_vcf2plink_gwas.sh
+```
+copy and paste:
+```bash
+#!/bin/bash
+#SBATCH --job-name=vcf2plink_gwas
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=8G
+#SBATCH --time=00:30:00
+#SBATCH -o vcf2plink_gwas.out
+#SBATCH -e vcf2plink_gwas.err
 
-PCA is a widely used statistical method to reduce the dimensionality of complex datasets while retaining most of the variation. In genomics, PCA is applied to SNP data to visualize genetic relationships among individuals and identify population structure. Individuals that are genetically similar will cluster together in a PCA plot.
+module load plink
 
-*   **How it works:** PCA transforms the original SNP data into a new set of uncorrelated variables called principal components (PCs). The first few PCs capture the largest proportion of genetic variation in the dataset.
-*   **Interpretation:** By plotting individuals based on their scores on the first two or three PCs, we can often observe distinct clusters corresponding to different populations or ancestral groups.
+IN_VCF="my_filtered_variants.vcf.gz"
 
-**Tools for Population Structure Analysis:**
+echo "Converting VCF to PLINK binary..."
+plink --vcf "${IN_VCF}" \
+      --make-bed \
+      --out gwas_data
 
-    *   **PLINK:** A comprehensive open-source whole-genome association analysis toolset. It can perform various genetic data manipulations, including calculating principal components for population structure analysis.
-        *   **Input:** Typically requires genotype data in PLINK binary format (BED, BIM, FAM).
-        *   **Command for PCA:**
-            ```bash
-            # Assuming you have a PLINK binary file set (my_data.bed, my_data.bim, my_data.fam)
-            plink --bfile my_data --pca --out my_pca_results
-            # Output: my_pca_results.eigenvec (eigenvectors/PC scores) and my_pca_results.eigenval (eigenvalues)
-            ```
-        *   **Output:** Files containing eigenvector (PC scores for each individual) and eigenvalue (proportion of variance explained by each PC) information.
-    *   **SNPRelate (R package):** An R package for genome-wide association studies (GWAS) and population genetics. It provides functions for calculating genetic relatedness, principal component analysis, and other population genetic analyses.
-        *   **Input:** GDS (Genomic Data Structure) format, which can be created from VCF files.
-        *   **Example R code:**
-            ```R
-            library(SNPRelate)
+echo "Done: gwas_data.bed/.bim/.fam"
+```
+save the file and then submit the job:
+```bash
+sbatch 00_vcf2plink_gwas.sh
+```
 
-            # Convert VCF to GDS format (if not already in GDS)
-            # snpgdsVCF2GDS("input.vcf", "output.gds", method="biallelic.only")
-
-            # Open the GDS file
-            genofile <- snpgdsOpen("output.gds")
-
-            # Perform PCA
-            pca <- snpgdsPCA(genofile, num.thread=2)
-
-            # Get sample IDs and population information (if available)
-            sample.id <- read.gdsn(index.gdsn(genofile, "sample.id"))
-            # pop_code <- read.gdsn(index.gdsn(genofile, "sample.annot/pop_code")) # If population info is in GDS
-
-            # Plotting the PCA results
-            plot(pca$eigenvect[,1], pca$eigenvect[,2], 
-                 xlab=paste0("PC1 (", round(pca$varprop[1]*100, 2), "%)"), 
-                 ylab=paste0("PC2 (", round(pca$varprop[2]*100, 2), "%)"),
-                 main="PCA of SNP Data")
-            # Add text labels or color by population if pop_code is available
-            # text(pca$eigenvect[,1], pca$eigenvect[,2], labels=sample.id, cex=0.7, pos=3)
-
-            # Close the GDS file
-            snpgdsClose(genofile)
-            ```
-
-**Morning Session 3: Introgression and Admixture Analysis (e.g., Treemix, Dsuite)**
-
-Introgression and admixture are evolutionary processes that involve the mixing of genetic material between previously divergent populations or species. Understanding these processes is vital for studying evolutionary history, identifying adaptive traits, and managing genetic resources in breeding.
-
-**Introgression:** The movement of genes from one species or population into another through hybridization and backcrossing.
-
-**Admixture:** The result of interbreeding between two or more previously isolated populations, leading to individuals with mixed ancestry.
-
-**Tools for Introgression and Admixture Analysis:**
-
-    *   **TreeMix:** A powerful program for inferring population trees that include migration events (gene flow/admixture). It uses allele frequency data to build a maximum likelihood tree and then adds migration edges to improve the fit of the tree to the data.
-        *   **Input:** Allele frequency data (e.g., from VCF files, converted to TreeMix format using `vcf2treemix.py` or similar).
-        *   **Output:** Newick tree file with migration edges, and residual plots.
-        *   **Example Workflow (Conceptual):**
-            ```bash
-            # 1. Convert VCF to TreeMix input format (requires a script like vcf2treemix.py)
-            # python vcf2treemix.py -i your_variants.vcf.gz -o treemix_input.gz
-
-            # 2. Run TreeMix (allowing for 3 migration events)
-            treemix -i treemix_input.gz -m 3 -o output_treemix
-
-            # 3. Plot the tree (requires R and the TreeMix plotting script)
-            # Rscript plot_tree.r output_treemix
-            ```
-    *   **Dsuite:** A suite of tools for calculating D-statistics (also known as ABBA-BABA test) and related statistics to detect introgression. D-statistics measure the excess of shared derived alleles between non-sister lineages, indicating gene flow.
-        *   **Input:** VCF file.
-        *   **Output:** Tables with D-statistics and Z-scores.
-        *   **Example Workflow (Conceptual):**
-            ```bash
-            # 1. Create a population file (e.g., populations.txt) with SampleID\tPopulationName
-            # 2. Run Dsuite Dtrios to calculate D-statistics for all trios of populations
-            Dsuite Dtrios my_data.vcf.gz populations.txt
-
-            # 3. Run Dsuite Dinvestigate to test for introgression from a specific outgroup
-            # Dsuite Dinvestigate my_data.vcf.gz populations.txt outgroup_population
-            ```
-
-**Afternoon Session 4: GWAS and Genotype-Phenotype Association Studies (e.g., PLINK)**
-
-Genome-Wide Association Studies (GWAS) are a powerful approach to identify genetic variants (typically SNPs) that are statistically associated with a particular trait or disease. GWAS has been widely applied in human genetics, agriculture, and animal breeding to discover genetic markers linked to complex traits.
-
-**The Principle of GWAS:**
-
-GWAS involves scanning the entire genome for common genetic variants that occur more frequently in individuals with a particular trait (e.g., high yield, disease resistance) compared to individuals without that trait. It is based on the concept of linkage disequilibrium (LD), where alleles at different loci are inherited together more often than expected by chance.
-
-**Steps in a GWAS:**
-
-1.  **Phenotype Collection:** Accurate and precise measurement of the trait of interest across a large number of individuals.
-2.  **Genotype Data:** High-throughput genotyping of SNPs across the genome for all individuals.
-3.  **Quality Control:** Rigorous QC of both genotype and phenotype data to remove errors and biases.
-4.  **Statistical Association:** Performing statistical tests (e.g., logistic regression for binary traits, linear regression for quantitative traits) to assess the association between each SNP and the trait.
-5.  **Correction for Multiple Testing:** Adjusting p-values for the large number of statistical tests performed across the genome (e.g., Bonferroni correction, False Discovery Rate).
-6.  **Interpretation and Follow-up:** Identifying significant SNPs and exploring their biological relevance.
-
-**Tools for GWAS:**
-
-    *   **PLINK:** As mentioned before, PLINK is a versatile tool for GWAS. It can perform various association tests, including basic case-control association, quantitative trait association, and more complex models incorporating covariates.
-        *   **Input:** Genotype data (BED, BIM, FAM) and phenotype data (a simple text file with individual IDs and trait values).
-        *   **Example Command for Quantitative Trait Association (Linear Regression):**
-            ```bash
-            # Assuming you have a PLINK binary file set (my_genotypes.bed, .bim, .fam)
-            # And a phenotype file (my_phenotypes.txt) with FID, IID, and phenotype column (e.g., TRAIT1)
-            # Example my_phenotypes.txt:
-            # FID IID TRAIT1
-            # Sample1 Sample1 10.5
-            # Sample2 Sample2 12.3
-
-            plink --bfile my_genotypes --pheno my_phenotypes.txt --pheno-name TRAIT1 --linear --out my_gwas_results_linear
-            # --linear: Performs a linear regression association test.
-            # --pheno-name: Specifies the phenotype column name if multiple are present.
-            # Output: my_gwas_results_linear.assoc.linear (contains association results)
-            ```
-        *   **Example Command for Case-Control Association (Logistic Regression):**
-            ```bash
-            # Assuming phenotype file has 1 for controls, 2 for cases (or -9 for missing)
-            plink --bfile my_genotypes --pheno my_phenotypes.txt --pheno-name DISEASE --logistic --out my_gwas_results_logistic
-            # --logistic: Performs a logistic regression association test.
-            # Output: my_gwas_results_logistic.assoc.logistic (contains association results)
-            ```
-        *   **Output:** Results files containing SNP information, allele frequencies, p-values, and effect sizes.
-    *   **GEMMA, GCTA, TASSEL:** Other popular tools for GWAS, often offering more advanced statistical models or specific functionalities.
-        *   **GEMMA (Genome-wide Efficient Mixed Model Association):** Used for mixed model association mapping, which accounts for population structure and relatedness.
-            ```bash
-            # Example GEMMA workflow (conceptual)
-            # 1. Prepare input files (binary PLINK format and phenotype file)
-            # 2. Calculate kinship matrix
-            # gemma -bfile my_genotypes -gk 1 -o my_kinship
-
-            # 3. Run association analysis with mixed model
-            # gemma -bfile my_genotypes -k output/my_kinship.cXX.txt -lmm 1 -o my_gemma_results
-            ```
-
-**Afternoon Session 5: Marker-Assisted Selection, Genomic Selection, and Prediction**
-
-Building upon GWAS, this session will introduce advanced breeding strategies that leverage genomic information to make more efficient and accurate selection decisions.
-
-**Marker-Assisted Selection (MAS):**
-
-MAS involves using DNA markers (like SNPs) that are tightly linked to genes controlling desirable traits to select individuals in a breeding program. Instead of waiting for the phenotype to express, breeders can select based on the presence of the marker allele.
-
-*   **Advantages:** Faster, more efficient, less influenced by environment, can select for traits difficult to phenotype.
-*   **Limitations:** Requires markers to be in strong linkage disequilibrium with the causal gene, primarily effective for traits controlled by a few major genes.
-
-**Genomic Selection (GS) and Prediction:**
-
-Genomic selection is a more advanced form of MAS, particularly suited for complex traits controlled by many genes with small effects. Instead of using a few major markers, GS uses all available markers across the genome to predict an individual\`s breeding value (Genomic Estimated Breeding Value - GEBV).
-
-*   **Training Population:** A population of individuals that have both genotype and phenotype data. This population is used to estimate the effects of all markers across the genome.
-*   **Prediction Equation:** A statistical model is built using the training population to predict GEBVs for new individuals.
-*   **Selection Candidate Population:** Individuals that are genotyped but not yet phenotyped (or are too young to be phenotyped). Their GEBVs are predicted using the equation from the training population.
-*   **Advantages:** More accurate for complex traits, can accelerate breeding cycles significantly, no need to identify individual causal genes.
-*   **Tools:** Software like `GBLUP`, `rrBLUP` (R packages), and `AlphaSimR` (for simulation) are used for genomic prediction.
-
-**Conceptual Workflow of Genomic Selection:**
-
-1.  **Genotype and Phenotype Training Population:** Collect SNP data and trait data for a diverse set of individuals.
-2.  **Build Prediction Model:** Use statistical methods to estimate the effect of each SNP on the trait.
-3.  **Genotype Selection Candidates:** Obtain SNP data for individuals in the breeding population that need to be selected.
-4.  **Predict GEBVs:** Use the established model to predict the breeding value for each selection candidate.
-5.  **Select Best Individuals:** Choose individuals with the highest GEBVs for the next breeding cycle.
-
-By the end of Day 7, you will have a comprehensive understanding of how genomic data, particularly SNPs, are applied in modern breeding programs to enhance efficiency, precision, and genetic gain. You will be familiar with key concepts like population structure, introgression, GWAS, MAS, and genomic selection.
+**Outputs:** `gwas_data.bed/.bim/.fam`
 
 
+### Step 2 — Build a PLINK-friendly phenotype file for **SUC**
+
+We’ll construct **`pheno_suc.txt`** with 3 columns: `FID IID SUC`.
+
+```bash
+vi 01_make_pheno.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=make_pheno
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:05:00
+#SBATCH -o make_pheno.out
+#SBATCH -e make_pheno.err
+
+set -euo pipefail
+
+PHENO_CSV="phenotypes.csv"   # columns: IID,SUC
+FAM="gwas_data.fam"
+
+# Create header
+echo -e "FID\tIID\tSUC" > pheno_suc.txt
+
+# Build associative array from phenotypes (CSV -> TSV)
+awk -F, 'NR>1{ph[$1]=$2} END{for(k in ph) print k"\t"ph[k] }' "${PHENO_CSV}" \
+| sort -k1,1 > pheno_suc_tmp.tsv
+
+# Append FID IID SUC (FID=IID if FID unknown)
+awk 'NR==FNR{ph[$1]=$2; next} {fid=$1; iid=$2; val=(iid in ph?ph[iid]:"NA"); print fid"\t"iid"\t"val}' \
+    pheno_suc_tmp.tsv "${FAM}" >> pheno_suc.txt
+
+rm -f pheno_suc_tmp.tsv
+
+echo "Done: pheno_suc.txt (FID IID SUC)"
+```
+
+```bash
+sbatch 01_make_pheno.sh
+```
+
+### Step 3 — Prepare **PCA covariates** (PC1–PC5) from Day 6
+Add PC1–PC5 as covariates so GWAS controls for broad genetic background (ancestry/relatedness) differences among samples. Without them, some SNPs look “significant” just because certain groups both share those alleles and tend to have different sucrose values. PCs capture that group effect; adjusting for them removes this bias and leaves signals that are more likely to be truly linked to sucrose.
+
+Create **`covar_pcs.txt`** with header `FID IID PC1 PC2 PC3 PC4 PC5`:
+
+```bash
+vi 02_make_covariates.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=make_covariates
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:05:00
+#SBATCH -o make_covariates.out
+#SBATCH -e make_covariates.err
+
+EIGENVEC="pca_results.eigenvec"
+
+# pca_results.eigenvec: FID IID PC1 PC2 ...
+# Keep first 5 PCs (adjust if needed)
+{ 
+  echo -e "FID\tIID\tPC1\tPC2\tPC3\tPC4\tPC5"
+  awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7}' "${EIGENVEC}"
+} > covar_pcs.txt
+
+echo "Done: covar_pcs.txt (PC1..PC5)"
+```
+
+```bash
+sbatch 02_make_covariates.sh
+```
+
+> **Why PCs as covariates?**  
+> PCs capture **population structure**; including them reduces **false positives** (spurious associations due to stratification).
+
+---
+
+## Part 1 — GWAS QC (basic genotype-level filters)
+
+We’ll apply minimal QC commonly used before association:
+
+- **MAF filter**: remove very rare variants (e.g., MAF < 0.05)  
+- **Missingness per SNP**: remove poorly genotyped sites (e.g., >5% missing)  
+- **HWE filter** (optional for unrelated, non-selected populations): e.g., p < 1e-6
+
+> We apply MAF, missingness, and HWE filters to remove rare, error-prone, or inconsistent SNPs so GWAS tests high-quality markers, improving power and reducing false positives.
+
+```bash
+vi 10_qc_make_subset.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=gwas_qc
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=8G
+#SBATCH --time=00:20:00
+#SBATCH -o gwas_qc.out
+#SBATCH -e gwas_qc.err
+
+module load plink
+
+plink --bfile gwas_data \
+      --maf 0.05 \
+      --geno 0.05 \
+      --hwe 1e-6 midp \
+      --make-bed \
+      --out gwas_data_qc
+
+echo "QC subset: gwas_data_qc.*"
+```
+
+```bash
+sbatch 10_qc_make_subset.sh
+```
+
+> ⚠️ **Note:** Thresholds are dataset-dependent. For training we use pragmatic defaults.
+
+
+## Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
+
+We’ll run an **additive linear regression**, including **PC1–PC5** as covariates.
+
+#### Model being fit
+\[
+\text{SUC}_i = \beta_0 \;+\; \beta_{\text{SNP}}\cdot \text{Genotype}_i \;+\; \sum_{k=1}^{5}\gamma_k\cdot \text{PC}_{k,i} \;+\; \varepsilon_i
+\]
+- **Genotype** is **0, 1, or 2** copies of the alternate allele (**additive** genetic effect).
+- **PC1–PC5** are covariates that capture broad genetic background.
+
+```bash
+vi 20_run_gwas_suc.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=gwas_suc
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=8G
+#SBATCH --time=01:00:00
+#SBATCH -o gwas_suc.out
+#SBATCH -e gwas_suc.err
+
+module load plink
+
+plink --bfile gwas_data_qc \
+      --pheno pheno_suc.txt \
+      --pheno-name SUC \
+      --covar covar_pcs.txt \
+      --covar-name PC1,PC2,PC3,PC4,PC5 \
+      --linear hide-covar \
+      --allow-no-sex \
+      --out gwas_suc_linear
+
+echo "Done: gwas_suc_linear.assoc.linear"
+```
+
+```bash
+sbatch 20_run_gwas_suc.sh
+```
+
+**Output:** `gwas_suc_linear.assoc.linear`  
+- Contains columns: `CHR BP SNP A1 TEST NMISS BETA STAT P ...`  
+- Use rows with `TEST == "ADD"` for additive model results.
+
+> 💡 **Tip:** If your trait is **non-normal**, consider rank-normalizing phenotypes or using robust models. For binary traits use `--logistic`.
+
+---
+
+## Part 3 — Visualize GWAS (Manhattan + QQ) in R
+
+Open an **interactive R** session (with graphics) on the cluster or RStudio.
+
+```r
+# ================================
+# GWAS Visualization: SUC
+# ================================
+# Install once if needed:
+# install.packages(c("qqman","data.table","ggrepel"))
+
+library(qqman)
+library(data.table)
+library(ggrepel)
+
+# Load PLINK linear results
+dt <- fread("gwas_suc_linear.assoc.linear")
+
+# Keep additive model rows
+dt <- dt[TEST == "ADD"]
+
+# Remove missing p-values
+dt <- dt[!is.na(P)]
+
+# --- Genomic inflation (lambda) ---
+# chisq ~ qchisq(1 - P, df=1)
+dt[, CHISQ := qchisq(1 - P, df = 1)]
+lambda <- median(dt$CHISQ, na.rm = TRUE) / 0.456
+cat("Genomic inflation factor (lambda):", round(lambda, 3), "\n")
+
+# --- Bonferroni and FDR thresholds ---
+M <- nrow(dt)
+bonf <- 0.05 / M
+cat("Bonferroni threshold (alpha=0.05):", signif(bonf, 3), "\n")
+
+dt[, FDR_BH := p.adjust(P, method = "BH")]
+
+# --- Manhattan plot ---
+# qqman expects CHR, BP, P, SNP columns
+png("GWAS_SUC_Manhattan.png", width = 1400, height = 600, res = 150)
+manhattan(dt,
+          chr = "CHR", bp = "BP", snp = "SNP", p = "P",
+          main = "GWAS for Sucrose (SUC) — Manhattan",
+          genomewideline = -log10(bonf), # Bonferroni line
+          suggestiveline = -log10(1e-5))
+dev.off()
+
+# --- QQ plot ---
+png("GWAS_SUC_QQ.png", width = 800, height = 800, res = 150)
+qq(dt$P, main = sprintf("GWAS QQ Plot (SUC) — lambda=%.3f", lambda))
+dev.off()
+
+# --- Export top hits ---
+# Top 20 by P and all Bonferroni-significant
+setorder(dt, P)
+fwrite(dt[1:20], "top20_hits_SUC.tsv", sep = "\t")
+fwrite(dt[P <= bonf], "bonferroni_hits_SUC.tsv", sep = "\t")
+
+cat("Plots saved: GWAS_SUC_Manhattan.png, GWAS_SUC_QQ.png\n")
+cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
+```
+
+> 🧪 **Interpretation checks:**  
+> - Are there **clear peaks** in the Manhattan plot?  
+> - Is the **QQ plot** close to expectation (no heavy inflation)?  
+> - Do top hits remain after **FDR** or **Bonferroni** correction?
+
+> 💼 **Relevance:**  
+> Peaks identify **candidate loci** controlling sucrose—targets for **marker development**, **introgression**, and **GS validation**.
+
+---
+
+## Part 4 — From SNP to Gene (annotation & function)
+
+Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **putative function**.
+
+> 📦 **You need:**  
+> - The **same reference genome** used for alignment & variant calling (FASTA)  
+> - Its **annotation** in **GFF3** (gene coordinates + attributes, e.g., `ID`, `Name`, `product`)  
+> - **BEDTools** module (for genomic intersections)
+
+Set your annotation filenames (replace with your actual files):
+
+- `GENOME_GFF="reference.gff3"`  
+  (e.g., `GCF_000442705.2_EG11_genomic.gff` if using Elaeis guineensis EG11)  
+
+### Step 4.1 — Make a BED of top SNPs
+
+We’ll map **Bonferroni-significant** hits (or top 20 if none pass) to genes. This script creates:
+
+- `top_snps.bed` — 0-based BED with SNP positions  
+- `genes.bed` — BED of gene features parsed from GFF3
+
+```bash
+vi 30_prepare_bed_for_annotation.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=prep_annot
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4G
+#SBATCH --time=00:10:00
+#SBATCH -o prep_annot.out
+#SBATCH -e prep_annot.err
+
+set -euo pipefail
+
+GENOME_GFF="reference.gff3"   # <-- CHANGE to your GFF3 path
+ASSOC="gwas_suc_linear.assoc.linear"
+
+# 1) Pick SNPs to annotate (prefer Bonferroni; fallback top20)
+if [ -s bonferroni_hits_SUC.tsv ]; then
+  awk 'NR==1 || $0 ~ /ADD/' bonferroni_hits_SUC.tsv | \
+  awk 'NR>1{print $1, $2, $3, $12}' OFS='\t' > snps_for_annot.tsv
+  # CHR BP SNP P (columns per your assoc file; adjust if needed)
+else
+  awk 'NR==1 || $0 ~ /ADD/' top20_hits_SUC.tsv | \
+  awk 'NR>1{print $1, $2, $3, $12}' OFS='\t' > snps_for_annot.tsv
+fi
+
+# 2) Convert to 0-based BED: chrom, start(BP-1), end(BP), name=SNP
+awk 'BEGIN{OFS="\t"} { if(NR==1 && $1=="CHR"){next} start=$2-1; end=$2; print $1, start, end, $3 }' \
+    snps_for_annot.tsv > top_snps.bed
+
+echo "Wrote: top_snps.bed"
+
+# 3) Extract gene features from GFF3 into BED (chrom, start-1, end, gene_id|name|product)
+awk 'BEGIN{OFS="\t"} $3=="gene" {
+  split($9,a,";"); id="NA"; name="NA"; prod="NA";
+  for(i in a){
+    if(a[i] ~ /^ID=/){sub(/^ID=/,"",a[i]); id=a[i]}
+    if(a[i] ~ /^Name=/){sub(/^Name=/,"",a[i]); name=a[i]}
+    if(a[i] ~ /^product=/){sub(/^product=/,"",a[i]); prod=a[i]}
+    if(a[i] ~ /^gene=/){sub(/^gene=/,"",a[i]); name=a[i]} # fallback
+  }
+  print $1, $4-1, $5, id "|" name "|" prod
+}' "${GENOME_GFF}" > genes.bed
+
+echo "Wrote: genes.bed (gene features)"
+```
+
+```bash
+sbatch 30_prepare_bed_for_annotation.sh
+```
+
+---
+
+### Step 4.2 — Intersect SNPs with genes (overlap) and find nearest genes
+
+We’ll use **BEDTools** for exact overlaps and the **nearest** gene within ±10 kb (change as needed).
+
+```bash
+vi 31_map_snps_to_genes.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=map_snps_genes
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=4G
+#SBATCH --time=00:10:00
+#SBATCH -o map_snps_genes.out
+#SBATCH -e map_snps_genes.err
+
+module load bedtools
+
+# Overlapping genes
+bedtools intersect -a top_snps.bed -b genes.bed -wa -wb > snp_gene_overlaps.tsv
+
+# Nearest gene (report distance)
+bedtools closest -a top_snps.bed -b genes.bed -d > snp_gene_nearest.tsv
+
+echo "Created: snp_gene_overlaps.tsv (overlaps), snp_gene_nearest.tsv (nearest with distance)"
+```
+
+```bash
+sbatch 31_map_snps_to_genes.sh
+```
+
+**Interpreting outputs:**
+- `snp_gene_overlaps.tsv` → if a SNP lies **within** a gene (exon/intron span)  
+- `snp_gene_nearest.tsv` → the **closest** gene and the **distance** (0 if overlapping)
+
+---
+
+### Step 4.3 — Summarize mappings (friendly table)
+
+We’ll produce an easy-to-read table linking **SNP → gene → putative function**.
+
+```bash
+vi 32_summarize_annotations.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=sum_annot
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:05:00
+#SBATCH -o sum_annot.out
+#SBATCH -e sum_annot.err
+
+# If overlaps exist, prefer them; otherwise use nearest within 10kb
+# top_snps.bed: chr start end snp
+# genes.bed: chr start end id|name|product
+# snp_gene_overlaps.tsv / snp_gene_nearest.tsv: a(4 cols) + b(4 cols) + [distance]
+
+echo -e "SNP\tCHR\tBP\tGene_ID\tGene_Name\tProduct\tRelation\tDistance_bp" > snp_gene_summary.tsv
+
+# 1) Overlaps
+if [ -s snp_gene_overlaps.tsv ]; then
+  awk 'BEGIN{OFS="\t"}{
+    split($8,a,"|"); gid=a[1]; gname=a[2]; prod=a[3];
+    bp=$2+1;
+    print $4,$1,bp,gid,gname,prod,"overlap",0
+  }' snp_gene_overlaps.tsv >> snp_gene_summary.tsv
+fi
+
+# 2) Nearest within 10000 bp (10 kb), excluding those already printed
+# Build a set of SNPs already added
+cut -f1 snp_gene_summary.tsv | tail -n +2 | sort -u > already.tsv
+
+awk -vMAXD=10000 'BEGIN{OFS="\t"}
+  FNR==NR {seen[$1]=1; next}
+  {
+    split($8,a,"|"); gid=a[1]; gname=a[2]; prod=a[3]; dist=$9
+    snp=$4; chr=$1; bp=$2+1
+    if(!(snp in seen) && dist<=MAXD){
+      print snp, chr, bp, gid, gname, prod, "nearest", dist
+      seen[snp]=1
+    }
+  }' already.tsv snp_gene_nearest.tsv >> snp_gene_summary.tsv
+
+rm -f already.tsv
+
+echo "Wrote: snp_gene_summary.tsv"
+```
+
+```bash
+sbatch 32_summarize_annotations.sh
+```
+
+Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/nearest gene, and a **product/description** (when present in GFF3 attributes).
+
+> 🧠 **If function is missing:**  
+> - Your GFF annotation may not include `product`—try `Name`/`gene` attributes or consult the genome’s annotation README.  
+> - For deeper function (domains/GO), run tools like **InterProScan** offline on the protein FASTA of candidate genes (advanced, not covered here).
+
+> 💼 **Relevance:**  
+> Translating SNPs to **genes and functions** turns statistical signals into **biological hypotheses**—which alleles/genes to track, validate, and deploy in breeding.
+
+---
+
+## Part 5 — From GWAS to Selection Decisions
+
+**Marker-Assisted Selection (MAS)**  
+- Use **significant SNPs** (or tight LD proxies) as **diagnostic markers** for SUC.  
+- Validate in independent material; deploy via **KASP** or **SNP chips**.
+
+**Genomic Selection (GS)**  
+- Use **all SNPs** to predict GEBVs for sucrose or correlated traits.  
+- Prioritize lines with high predicted performance **before full phenotyping**.
+
+> 🧩 **Practical workflow:**  
+> GWAS → shortlist candidate regions → develop assays → quick screening → feed marker data + phenotypes into **GS models** for broader gains.
+
+---
+
+## Knowledge Checks (quick)
+
+- Why do we include **PC covariates** in GWAS?  
+- What’s the difference between **Bonferroni** and **FDR** control?  
+- If a top SNP lies **between genes**, how far do you search for candidates? Why?  
+- How would you **validate** a sucrose-associated SNP before deploying it in MAS?
+
+---
+
+## Common Pitfalls & Tips
+
+- **Mismatched IDs** between phenotype and genotype → always verify `IID` matches `.fam`.  
+- **Uncorrected structure** → inflated p-values; include PCs or use mixed models (advanced).  
+- **Over-stringent QC** on small datasets → power loss. Balance filters.  
+- **Annotation mismatch** → use the **same reference build** for VCF and GFF3.
+
+---
+
+## 📦 Outputs You Should Have
+
+- PLINK data: `gwas_data_qc.*`  
+- GWAS stats: `gwas_suc_linear.assoc.linear`  
+- Plots: `GWAS_SUC_Manhattan.png`, `GWAS_SUC_QQ.png`  
+- Top lists: `top20_hits_SUC.tsv`, `bonferroni_hits_SUC.tsv`  
+- SNP→gene tables: `top_snps.bed`, `genes.bed`, `snp_gene_summary.tsv`
+
+---
+
+### 📚 Useful Tutorials and Resources
+
+- PLINK Association Analysis — https://zzz.bwh.harvard.edu/plink/anal.shtml  
+- qqman: GWAS Manhattan & QQ plots in R — https://cran.r-project.org/package=qqman  
+- Speciation Genomics: ADMIXTURE & PCA (structure background) — https://speciationgenomics.github.io/  
+- InterProScan (protein domains/GO) — https://interproscan-docs.readthedocs.io/  
+
+---
+
+### Appendix (Optional/Advanced): Mixed Models
+
+For related/structured samples, use MLMs (e.g., **GEMMA**, **GCTA fastGWA**, **EMMAX**) with a **kinship matrix** to further control confounding.  
+*Not required for this 4-hour practical, but recommended for production analyses.*
+
+---
