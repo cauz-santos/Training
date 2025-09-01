@@ -667,6 +667,6 @@ Remember that these analyses are often iterative, and the interpretation of resu
 
 - [PLINK Tutorial (Population Genetics)](https://zzz.bwh.harvard.edu/plink/tutorial.shtml)  
 - [PCA and Population Structure](https://speciationgenomics.github.io/pca/)  
-- [PCA in R](https://rpubs.com/nanette/PCA))  
+- [PCA in R](https://rpubs.com/nanette/PCA)  
 - [VCFtools User Guide](https://vcftools.sourceforge.net/man_latest.html)
 - [Population Genetics - ADMIXTURE](https://speciationgenomics.github.io/ADMIXTURE/)
