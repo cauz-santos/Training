@@ -2,7 +2,7 @@
 
 ## Day 6: Diversity and Structure Analysis with SNPs
 
-Welcome to **Day 6** of our bioinformatics training!  
+Welcome to Day 6 of our bioinformatics training!  
 
 Today, we take a major step forward — from simply **generating variant data** to actually **understanding the biology behind the variation**. Using SNPs (Single Nucleotide Polymorphisms), we will explore how genomes differ between individuals and how those differences reflect patterns of **genetic diversity**, **population structure**, and **ancestry**.
 
