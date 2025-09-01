@@ -661,7 +661,7 @@ Congratulations! You have completed a comprehensive practical on population stru
 
 Remember that these analyses are often iterative, and the interpretation of results requires careful consideration of biological context and potential biases. 
 
-
+## You have completed **Day 6**!
 
 ### 📚 Useful Tutorials and Resources
 
