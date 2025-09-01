@@ -1,6 +1,6 @@
 ## Week 2: Applied Bioinformatics for Genomics and Breeding
 
-### Day 7: SNP Applications in Breeding
+## Day 7: SNP Applications in Breeding - GWAS
 
 Day 7 focuses on the practical applications of SNPs in agricultural and animal breeding. We will explore how genetic markers, particularly SNPs, are used to understand population structure, identify desirable traits, and accelerate breeding programs.
 
