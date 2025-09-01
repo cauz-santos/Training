@@ -38,7 +38,7 @@ PDAC255_Sin_S,21.24
 
 ---
 
-## Part 0 — Prepare Genotypes, Phenotypes, and Covariates
+### Part 0 — Prepare Genotypes, Phenotypes, and Covariates
 
 ### Step 1 — Convert VCF → PLINK (binary)
 
@@ -157,7 +157,7 @@ sbatch 02_make_covariates.sh
 
 ---
 
-## Part 1 — GWAS QC (basic genotype-level filters)
+### Part 1 — GWAS QC (basic genotype-level filters)
 
 We’ll apply minimal QC commonly used before association:
 
@@ -200,7 +200,7 @@ sbatch 10_qc_make_subset.sh
 
 ---
 
-## Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
+### Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
 
 We’ll run an **additive linear regression**, including **PC1–PC5** as covariates.
 
@@ -257,7 +257,7 @@ sbatch 20_run_gwas_suc.sh
 
 ---
 
-## Part 3 — Visualize GWAS (Manhattan + QQ) in R
+### Part 3 — Visualize GWAS (Manhattan + QQ) in R
 
 Now we will load the PLINK GWAS results and create two standard checks:  
 - **Manhattan plot:** each point is a SNP; the y-axis is **−log10(p)**, so taller points mean stronger associations. Peaks across the x-axis (chromosomes) highlight regions linked to **SUC**.  
@@ -334,7 +334,7 @@ cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
 
 ---
 
-## Part 4 — From SNP to Gene (annotation & function)
+### Part 4 — From SNP to Gene (annotation & function)
 
 Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **putative function**.
 
@@ -511,7 +511,7 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 
 ---
 
-## Part 5 — From GWAS to Selection Decisions
+### Part 5 — From GWAS to Selection Decisions
 
 **Marker-Assisted Selection (MAS)**  
 - Use **significant SNPs** (or tight LD proxies) as **diagnostic markers** for SUC.  
@@ -524,7 +524,6 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 > **Practical workflow:**  
 > GWAS → shortlist candidate regions → develop assays → quick screening → feed marker data + phenotypes into **GS models** for broader gains.
 
----
 
 ## You have completed **Day 7**!
 
@@ -537,7 +536,6 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 - Speciation Genomics: ADMIXTURE & PCA (structure background) — https://speciationgenomics.github.io/  
 - InterProScan (protein domains/GO) — https://interproscan-docs.readthedocs.io/  
 
----
 
 ### Appendix (Optional/Advanced): Mixed Models & When to Use Other GWAS Tools
 
