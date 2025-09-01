@@ -16,7 +16,7 @@ In this is a **hands-on** session you will:
 > **Relevance:**  
 > GWAS uncovers **genomic regions** that control traits like sucrose. These become **markers** for MAS, and inform **genome-wide prediction** in GS—shortening cycles and improving accuracy in breeding pipelines.
 
-## Input Data
+### Input Data
 
 - `my_filtered_variants.vcf.gz` — high-quality, biallelic SNPs 
 - `pca_results.eigenvec` — PCA eigenvectors (Day 6 output)  
@@ -196,19 +196,27 @@ echo "QC subset: gwas_data_qc.*"
 sbatch 10_qc_make_subset.sh
 ```
 
-> ⚠️ **Note:** Thresholds are dataset-dependent. For training we use pragmatic defaults.
+> **Note:** Thresholds are dataset-dependent. For training we use pragmatic defaults.
 
 
 ## Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
 
 We’ll run an **additive linear regression**, including **PC1–PC5** as covariates.
 
-#### Model being fit
-\[
-\text{SUC}_i = \beta_0 \;+\; \beta_{\text{SNP}}\cdot \text{Genotype}_i \;+\; \sum_{k=1}^{5}\gamma_k\cdot \text{PC}_{k,i} \;+\; \varepsilon_i
-\]
-- **Genotype** is **0, 1, or 2** copies of the alternate allele (**additive** genetic effect).
-- **PC1–PC5** are covariates that capture broad genetic background.
+### What is “additive linear regression”?
+
+In GWAS, **additive linear regression** means we test whether the trait changes in a **straight-line** way with the **number of alternate alleles** at a SNP:
+- We code each person’s genotype as **0, 1, or 2** (copies of the alternate allele).
+- We fit a line: `Trait ≈ Intercept + BETA × Genotype (+ covariates)`.
+- **BETA** is the **per-allele effect**: how much the trait changes for **each extra copy** of the alternate allele.
+
+**Example:** If `BETA = +0.8` for sucrose (SUC), then on average:
+- Genotype **0** → baseline SUC  
+- Genotype **1** → baseline **+ 0.8**  
+- Genotype **2** → baseline **+ 1.6**
+
+This model assumes **no dominance** (no special boost/penalty for heterozygotes beyond being halfway between 0 and 2) and is a good default for scanning millions of SNPs efficiently.
+
 
 ```bash
 vi 20_run_gwas_suc.sh
@@ -245,9 +253,8 @@ sbatch 20_run_gwas_suc.sh
 - Contains columns: `CHR BP SNP A1 TEST NMISS BETA STAT P ...`  
 - Use rows with `TEST == "ADD"` for additive model results.
 
-> 💡 **Tip:** If your trait is **non-normal**, consider rank-normalizing phenotypes or using robust models. For binary traits use `--logistic`.
+> **Tip:** If your trait is **non-normal**, consider rank-normalizing phenotypes or using robust models. For binary traits use `--logistic`.
 
----
 
 ## Part 3 — Visualize GWAS (Manhattan + QQ) in R
 
@@ -311,15 +318,14 @@ cat("Plots saved: GWAS_SUC_Manhattan.png, GWAS_SUC_QQ.png\n")
 cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
 ```
 
-> 🧪 **Interpretation checks:**  
-> - Are there **clear peaks** in the Manhattan plot?  
-> - Is the **QQ plot** close to expectation (no heavy inflation)?  
-> - Do top hits remain after **FDR** or **Bonferroni** correction?
+**Interpretation checks:**  
+- Are there **clear peaks** in the Manhattan plot?
+- - Is the **QQ plot** close to expectation (no heavy inflation)?
+  - - Do top hits remain after **FDR** or **Bonferroni** correction?
 
-> 💼 **Relevance:**  
+> **Relevance:**  
 > Peaks identify **candidate loci** controlling sucrose—targets for **marker development**, **introgression**, and **GS validation**.
 
----
 
 ## Part 4 — From SNP to Gene (annotation & function)
 
