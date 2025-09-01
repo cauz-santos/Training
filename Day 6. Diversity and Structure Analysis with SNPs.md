@@ -2,27 +2,59 @@
 
 ## Day 6: Diversity and Structure Analysis with SNPs
 
+Welcome to **Day 6** of our bioinformatics training!  
 
-Welcome to Day 6 of our bioinformatics training! Today, we will explore advanced topics in population genetics, focusing on how to infer population structure using **Admixture** and **Principal Component Analysis (PCA)**, and how to visualize genomic variation through **SNP density plots**.
+Today, we take a major step forward — from simply **generating variant data** to actually **understanding the biology behind the variation**. Using SNPs (Single Nucleotide Polymorphisms), we will explore how genomes differ between individuals and how those differences reflect patterns of **genetic diversity**, **population structure**, and **ancestry**.
 
-## Learning Objectives
-
-By the end of this 4-hour session, you will be able to:
-
-*   **Understand the theoretical basis** of population structure analysis (Admixture and PCA).
-*   **Prepare VCF files** for population genetics software (e.g., PLINK).
-*   **Perform PCA** on genomic data to visualize population relationships.
-*   **Run Admixture analysis** to infer individual ancestries and population proportions.
-*   **Generate SNP density plots** to visualize variant distribution across the genome.
-*   **Write and execute robust Slurm job scripts** for these analyses.
-*   **Interpret and critically evaluate** the results of population structure analyses.
+This is a **hands-on session** designed to run on an HPC cluster using **Slurm**.
 
 
-## The Data
+### Learning Objectives
 
-For this practical, we will use a filtered VCF file containing SNP data from multiple individuals. We assume this VCF file has already undergone basic quality filtering (e.g., as covered in Day 5).
+By the end of this session, you will be able to:
 
-*   **Input VCF File:** `my_filtered_variants.vcf.gz` 
+- Understand the biological meaning behind genetic structure and diversity
+- Prepare and convert VCF files for population genetics tools
+- Perform and interpret **Principal Component Analysis (PCA)**
+- Run **Admixture analysis** to infer individual ancestries
+- Generate **SNP density plots** across chromosomes
+- Estimate **basic population diversity statistics** (e.g., observed heterozygosity, missingness, allele frequencies)
+- Use **Slurm job scripts** to automate analyses on a cluster
+- Begin to critically evaluate and interpret population-level genomic data  
+
+
+
+### Input Data
+
+We will work with a VCF file already filtered during Day 5 (e.g., for depth, quality, missingness, and minor allele frequency).
+
+- `my_filtered_variants.vcf.gz` — High-quality, biallelic SNP dataset
+
+This file will be converted into formats required for **PLINK**, **ADMIXTURE**, and other tools.
+
+
+
+### Why Does This Matter?
+
+Understanding **genetic diversity and structure** is essential in genomics and breeding:
+
+- In **breeding programs**, it helps identify divergent individuals, avoid inbreeding, and guide parent selection.
+- In **population genetics**, it reveals how populations are related and how they evolved.
+- In **conservation**, it supports decisions on which populations or individuals to prioritize.
+
+The tools we explore today — like PCA and ADMIXTURE — are **foundational methods** in modern genomics. Combined with diversity metrics (e.g., heterozygosity, allele frequency spectra), they allow you to **quantify and visualize genetic patterns** in your dataset.
+
+---
+
+**Table 1. Tools You Will Use**
+
+| Tool       | Purpose                                      |
+|------------|----------------------------------------------|
+| **PLINK**      | Data conversion, PCA, diversity stats        |
+| **ADMIXTURE**  | Ancestry inference (admixture proportions)  |
+| **VCFtools**   | Summary statistics, missingness, MAF        |
+| **BCFtools**   | SNP extraction, VCF querying                 |
+| **R / Python** | Visualization (PCA plots, admixture bars, SNP density) |
 
 ---
 
