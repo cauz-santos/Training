@@ -157,7 +157,7 @@ sbatch 02_make_covariates.sh
 
 ---
 
-## Part 1 — GWAS QC (basic genotype-level filters)
+### Part 1 — GWAS QC (basic genotype-level filters)
 
 We’ll apply minimal QC commonly used before association:
 
@@ -199,23 +199,23 @@ sbatch 10_qc_make_subset.sh
 > **Note:** Thresholds are dataset-dependent. For training we use pragmatic defaults.
 
 
-## Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
+### Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
 
 We’ll run an **additive linear regression**, including **PC1–PC5** as covariates.
 
-### What is “additive linear regression”?
+**What is “additive linear regression” (for our plants)?**
 
-In GWAS, **additive linear regression** means we test whether the trait changes in a **straight-line** way with the **number of alternate alleles** at a SNP:
-- We code each person’s genotype as **0, 1, or 2** (copies of the alternate allele).
-- We fit a line: `Trait ≈ Intercept + BETA × Genotype (+ covariates)`.
-- **BETA** is the **per-allele effect**: how much the trait changes for **each extra copy** of the alternate allele.
+In GWAS, **additive linear regression** tests whether the trait changes in a straight-line way with the **number of alternate alleles** at a SNP for each **individual/plant**:
+- Genotype is coded **0, 1, or 2** (copies of the alternate allele).
+- We fit: `Trait ≈ Intercept + BETA × Genotype (+ covariates like PC1–PC5)`.
+- **BETA** is the **per-allele effect**: how much the trait (e.g., sucrose, g/100g) changes **for each extra copy** of the alternate allele.
 
-**Example:** If `BETA = +0.8` for sucrose (SUC), then on average:
+**Example:** If `BETA = +0.8`, then (on average)
 - Genotype **0** → baseline SUC  
 - Genotype **1** → baseline **+ 0.8**  
 - Genotype **2** → baseline **+ 1.6**
 
-This model assumes **no dominance** (no special boost/penalty for heterozygotes beyond being halfway between 0 and 2) and is a good default for scanning millions of SNPs efficiently.
+This assumes **additivity** (heterozygotes are roughly halfway between the two homozygotes). If you suspect dominance/overdominance, you’d use a genotypic or dominance model—but the additive model is the standard, efficient default for genome-wide scans.
 
 
 ```bash
@@ -256,7 +256,12 @@ sbatch 20_run_gwas_suc.sh
 > **Tip:** If your trait is **non-normal**, consider rank-normalizing phenotypes or using robust models. For binary traits use `--logistic`.
 
 
-## Part 3 — Visualize GWAS (Manhattan + QQ) in R
+### Part 3 — Visualize GWAS (Manhattan + QQ) in R
+Now we will load the PLINK GWAS results and create two standard checks:  
+- **Manhattan plot:** each point is a SNP; the y-axis is **−log10(p)**, so taller points mean stronger associations. Peaks across the x-axis (chromosomes) highlight regions linked to **SUC**.  
+- **QQ plot:** compares observed p-values to what we’d expect by chance; big upward deviations suggest inflation or true signals.  
+We’ll also add a **Bonferroni** genome-wide line (cutoff = 0.05 / number of SNPs) to control false positives, and compute **FDR (BH)** as a less conservative alternative.
+
 
 Open an **interactive R** session (with graphics) on the cluster or RStudio.
 
@@ -327,7 +332,7 @@ cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
 > Peaks identify **candidate loci** controlling sucrose—targets for **marker development**, **introgression**, and **GS validation**.
 
 
-## Part 4 — From SNP to Gene (annotation & function)
+### Part 4 — From SNP to Gene (annotation & function)
 
 Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **putative function**.
 
@@ -341,12 +346,13 @@ Set your annotation filenames (replace with your actual files):
 - `GENOME_GFF="reference.gff3"`  
   (e.g., `GCF_000442705.2_EG11_genomic.gff` if using Elaeis guineensis EG11)  
 
-### Step 4.1 — Make a BED of top SNPs
+**Make a BED of top SNPs:**  
 
-We’ll map **Bonferroni-significant** hits (or top 20 if none pass) to genes. This script creates:
+We’ll map **Bonferroni-significant** hits (or top 20 if none pass) to genes. This script creates:  
 
-- `top_snps.bed` — 0-based BED with SNP positions  
-- `genes.bed` — BED of gene features parsed from GFF3
+- top_snps.bed — BED coordinates of your strongest GWAS SNPs (Bonferroni-significant or top 20).
+- genes.bed — BED coordinates of all genes parsed from your GFF3 with IDs/names/products.
+You’ll use these with BEDTools to find which genes overlap or are nearest to the top SNPs.
 
 ```bash
 vi 30_prepare_bed_for_annotation.sh
@@ -401,9 +407,7 @@ echo "Wrote: genes.bed (gene features)"
 sbatch 30_prepare_bed_for_annotation.sh
 ```
 
----
-
-### Step 4.2 — Intersect SNPs with genes (overlap) and find nearest genes
+**Intersect SNPs with genes (overlap) and find nearest genes:**
 
 We’ll use **BEDTools** for exact overlaps and the **nearest** gene within ±10 kb (change as needed).
 
@@ -439,9 +443,8 @@ sbatch 31_map_snps_to_genes.sh
 - `snp_gene_overlaps.tsv` → if a SNP lies **within** a gene (exon/intron span)  
 - `snp_gene_nearest.tsv` → the **closest** gene and the **distance** (0 if overlapping)
 
----
 
-### Step 4.3 — Summarize mappings (friendly table)
+**Summarize mappings (friendly table)**
 
 We’ll produce an easy-to-read table linking **SNP → gene → putative function**.
 
@@ -500,12 +503,12 @@ sbatch 32_summarize_annotations.sh
 
 Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/nearest gene, and a **product/description** (when present in GFF3 attributes).
 
-> 🧠 **If function is missing:**  
+> **If function is missing:**  
 > - Your GFF annotation may not include `product`—try `Name`/`gene` attributes or consult the genome’s annotation README.  
 > - For deeper function (domains/GO), run tools like **InterProScan** offline on the protein FASTA of candidate genes (advanced, not covered here).
 
-> 💼 **Relevance:**  
-> Translating SNPs to **genes and functions** turns statistical signals into **biological hypotheses**—which alleles/genes to track, validate, and deploy in breeding.
+> **Relevance:**  
+> Translating SNPs to **genes and functions** turns statistical signals into **biological hypotheses**, which alleles/genes to track, validate, and deploy in breeding.
 
 ---
 
@@ -519,40 +522,14 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 - Use **all SNPs** to predict GEBVs for sucrose or correlated traits.  
 - Prioritize lines with high predicted performance **before full phenotyping**.
 
-> 🧩 **Practical workflow:**  
+> **Practical workflow:**  
 > GWAS → shortlist candidate regions → develop assays → quick screening → feed marker data + phenotypes into **GS models** for broader gains.
 
----
 
-## Knowledge Checks (quick)
-
-- Why do we include **PC covariates** in GWAS?  
-- What’s the difference between **Bonferroni** and **FDR** control?  
-- If a top SNP lies **between genes**, how far do you search for candidates? Why?  
-- How would you **validate** a sucrose-associated SNP before deploying it in MAS?
 
 ---
 
-## Common Pitfalls & Tips
-
-- **Mismatched IDs** between phenotype and genotype → always verify `IID` matches `.fam`.  
-- **Uncorrected structure** → inflated p-values; include PCs or use mixed models (advanced).  
-- **Over-stringent QC** on small datasets → power loss. Balance filters.  
-- **Annotation mismatch** → use the **same reference build** for VCF and GFF3.
-
----
-
-## 📦 Outputs You Should Have
-
-- PLINK data: `gwas_data_qc.*`  
-- GWAS stats: `gwas_suc_linear.assoc.linear`  
-- Plots: `GWAS_SUC_Manhattan.png`, `GWAS_SUC_QQ.png`  
-- Top lists: `top20_hits_SUC.tsv`, `bonferroni_hits_SUC.tsv`  
-- SNP→gene tables: `top_snps.bed`, `genes.bed`, `snp_gene_summary.tsv`
-
----
-
-### 📚 Useful Tutorials and Resources
+### Useful Tutorials and Resources
 
 - PLINK Association Analysis — https://zzz.bwh.harvard.edu/plink/anal.shtml  
 - qqman: GWAS Manhattan & QQ plots in R — https://cran.r-project.org/package=qqman  
@@ -561,9 +538,14 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 
 ---
 
-### Appendix (Optional/Advanced): Mixed Models
+### Appendix (Optional/Advanced): Mixed Models & When to Use Other GWAS Tools
 
-For related/structured samples, use MLMs (e.g., **GEMMA**, **GCTA fastGWA**, **EMMAX**) with a **kinship matrix** to further control confounding.  
+For related/structured samples, prefer **mixed linear models (MLMs)** that include a **kinship matrix** to control sample relatedness and residual structure.
 *Not required for this 4-hour practical, but recommended for production analyses.*
 
----
+**When to use alternatives**
+- **Strong relatedness / stratification:** use **GEMMA**, **GCTA fastGWA**, **EMMAX**, **BOLT-LMM**.  
+- **Very large cohorts (speed):** **BOLT-LMM**, **GCTA fastGWA**.  
+- **Imbalanced case–control / rare binary traits:** **SAIGE**.  
+- **Plant-focused methods (MLM, FarmCPU, BLINK):** **GAPIT** (R), **TASSEL**.  
+- **Fine-mapping after peaks:** **FINEMAP**, **SuSiE**, **CAVIAR**, **coloc**.
