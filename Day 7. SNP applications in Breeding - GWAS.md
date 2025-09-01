@@ -679,16 +679,12 @@ If correlation (`r`) is positive and strong, even this “lite” version shows 
 ### Useful Tutorials and Resources
 
 - [PLINK Association Analysis (GWAS)](https://zzz.bwh.harvard.edu/plink/anal.shtml)  
-- [GWAS Tutorial with PLINK + R (NIH HPC)](https://hpc.nih.gov/training/gwas_plink_tutorial.html)  
-- [qqman R package (Manhattan & QQ plots)](https://cran.r-project.org/web/packages/qqman/vignettes/qqman.html)  
-- [TASSEL GWAS Tutorial (Plants)](https://bitbucket.org/tasseladmin/tassel-5-source/wiki/Tassel5Pipeline/TASSEL_GWAS_Tutorial)  
-- [GAPIT R Package for GWAS & GS](https://zzlab.net/GAPIT/)  
-- [Introduction to Genomic Selection (WUR course material)](https://www.wur.nl/en/education-programmes/courses/genomic-selection.htm)  
-- [Practical Genomic Selection in Plant Breeding (YouTube Lecture)](https://www.youtube.com/watch?v=x3pYCB4GcJo)  
+- [qqman R package (Manhattan & QQ plots)](https://cran.r-project.org/web/packages/qqman/vignettes/qqman.html)
+- [How to perform GWAS](https://frontlinegenomics.com/how-to-perform-a-genome-wide-association-study-gwas/)
 - [GEMMA Documentation (Mixed Model GWAS)](https://github.com/genetics-statistics/GEMMA)  
 - [GCTA fastGWA Manual](http://cnsgenomics.com/software/gcta/#GWAS)  
 
-
+https://frontlinegenomics.com/how-to-perform-a-genome-wide-association-study-gwas/
 
 ### Appendix (Optional/Advanced): Mixed Models & When to Use Other GWAS Tools
 
