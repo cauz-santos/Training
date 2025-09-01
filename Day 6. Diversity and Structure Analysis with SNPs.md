@@ -663,3 +663,16 @@ Remember that these analyses are often iterative, and the interpretation of resu
 
 
 
+### 📚 Useful Tutorials and Resources
+
+- [PLINK Tutorial (Population Genetics)](https://zzz.bwh.harvard.edu/plink/tutorial.shtml)  
+- [PCA and Population Structure (GATK Blog)](https://gatk.broadinstitute.org/hc/en-us/articles/360035531852)  
+- [ADMIXTURE Documentation & Examples](http://dalexander.github.io/admixture/admixture-manual.pdf)  
+- [VCFtools User Guide](https://vcftools.github.io/man_latest.html)  
+- [Population Genetics with VCFtools (Practical)](https://speciationgenomics.github.io/vcftools/)  
+- [Visualization of Admixture Results with pong](https://academic.oup.com/bioinformatics/article/32/18/2817/1744211)  
+- [Genome Diversity and SNP Density Analyses (Galaxy Training)](https://training.galaxyproject.org/training-material/topics/sequence-analysis/)  
+
+
+
+
