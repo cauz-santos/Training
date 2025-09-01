@@ -564,7 +564,9 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 
 ### Part 5 — From GWAS to Selection Decisions
 
-In this **training** step you’ll turn your GWAS outputs into **actionable breeding artifacts**. You will:  
+Now that we have GWAS hits and candidate genes, we’ll take the final step: show how these results translate into breeding tools through MAS (diagnostic markers) and GS-lite (genomic scores).
+
+You will:  
 1) build a **MAS marker table** from your top SNPs  
 2) compute a quick **polygenic (GS-lite) score** to rank lines  
 *Everything below assumes you already ran Part 3 and have: `gwas_suc_linear.assoc.linear`, `bonferroni_hits_SUC.tsv` and/or `top20_hits_SUC.tsv`, plus your genotype set `gwas_data_qc.*` and `phenotypes.csv` (IID,SUC).
