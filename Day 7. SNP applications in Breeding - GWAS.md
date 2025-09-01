@@ -338,7 +338,7 @@ cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
 > Peaks identify **candidate loci** controlling sucrose—targets for **marker development**, **introgression**, and **GS validation**.
 
 
-#### Regional Association Plot (±250 kb) around the Top Hit
+### Regional Association Plot (±250 kb) around the Top Hit
 
 Now we’ll zoom into the strongest GWAS peak to inspect the local signal shape (is it a tight single peak or a broad region?).
 
@@ -556,7 +556,7 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 > - For deeper function (domains/GO), run tools like **InterProScan** offline on the protein FASTA of candidate genes (advanced, not covered here).
 
 > **Relevance:**  
-> Translating SNPs to **genes and functions** turns statistical signals into **biological hypotheses**, which alleles/genes to track, validate, and deploy in breeding.
+> - Translating SNPs to **genes and functions** turns statistical signals into **biological hypotheses**, which alleles/genes to track, validate, and deploy in breeding.
 > - Accelerates **marker development** and **IP differentiation** around candidate genes/alleles.
 > - Informs **assay design** (haplotype tagging, primers) and prioritizes **functional validation** (expression, knockouts).
 > - Creates a pipeline from **statistical hit → deployable marker → breeding action**.
@@ -564,17 +564,113 @@ Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/neare
 
 ### Part 5 — From GWAS to Selection Decisions
 
-**Marker-Assisted Selection (MAS)**  
-- Use **significant SNPs** (or tight LD proxies) as **diagnostic markers** for SUC.  
-- Validate in independent material; deploy via **KASP** or **SNP chips**.
+In this **training** step you’ll turn your GWAS outputs into **actionable breeding artifacts**. You will:  
+1) build a **MAS marker table** from your top SNPs,  
+2) compute a quick **polygenic (GS-lite) score** to rank lines  
+Everything below assumes you already ran Part 3 and have: `gwas_suc_linear.assoc.linear`, `bonferroni_hits_SUC.tsv` and/or `top20_hits_SUC.tsv`, plus your genotype set `gwas_data_qc.*` and `phenotypes.csv` (IID,SUC).
 
-**Genomic Selection (GS)**  
-- Use **all SNPs** to predict GEBVs for sucrose or correlated traits.  
-- Prioritize lines with high predicted performance **before full phenotyping**.
 
-> **Practical workflow:**  
-> GWAS → shortlist candidate regions → develop assays → quick screening → feed marker data + phenotypes into **GS models** for broader gains.
+**A) Make a MAS-ready marker table (effect allele, effect size, p-value)**  
+We will build a script that collects the top SNPs from GWAS results (Bonferroni-significant or top 20), joins them with PLINK’s BIM file to add chromosome, position, and alleles, and outputs a ready-to-use marker list for marker-assisted selection (MAS).
 
+```bash
+vi 40_build_mas_markers.sh
+```
+
+Paste the following content:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=mas_markers
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=1G
+#SBATCH --time=00:05:00
+#SBATCH -o mas_markers.out
+#SBATCH -e mas_markers.err
+
+set -euo pipefail
+
+# 1) Pick the source of top hits (prefer Bonferroni, else Top20)
+if [ -s bonferroni_hits_SUC.tsv ]; then SRC=bonferroni_hits_SUC.tsv; else SRC=top20_hits_SUC.tsv; fi
+
+# 2) From PLINK BIM, build a lookup: SNP -> CHR BP A1 A2
+#                 SNP  CHR  BP   A1   A2
+awk 'BEGIN{OFS="\t"}{print $2, $1, $4, $5, $6}' gwas_data_qc.bim > bim.lookup
+
+# 3) From the hits table, extract SNP, P, BETA by header names (keeps header first)
+awk 'BEGIN{FS=OFS="\t"}
+NR==1 {for(i=1;i<=NF;i++) h[$i]=i; print "SNP","P","BETA"; next}
+      {print $h["SNP"], $h["P"], $h["BETA"]}' "$SRC" > assoc.slim
+
+# 4) Join hits with BIM to add CHR/BP/A1/A2, then reorder columns and add a header
+sort -k1,1 assoc.slim > a
+sort -k1,1 bim.lookup > b
+join -t $'\t' -1 1 -2 1 a b | awk 'BEGIN{OFS="\t"}{print $1,$4,$5,$6,$7,$3,$2}' > mas_markers.tsv
+(echo -e "SNP\tCHR\tBP\tA1(effect)\tA2\tBETA\tP"; cat mas_markers.tsv) > tmp && mv tmp mas_markers.tsv
+
+# 5) (Optional) Also write a plain SNP list (no header)
+cut -f1 mas_markers.tsv | tail -n +2 > mas_markers.snplist
+
+# Clean temp
+rm -f a b bim.lookup assoc.slim
+
+echo "Created: mas_markers.tsv  (and mas_markers.snplist)"
+```
+
+Save and submit:
+
+```bash
+sbatch 40_build_mas_markers.sh
+```
+
+> Relevance: A clean list of deployable markers (effect allele, effect size, position) to design assays and screen parents/progeny.
+
+### B) Quick GS-lite: Compute a Polygenic Score (PGS) and Rank Lines
+After GWAS, we know which SNPs are significantly associated with sucrose and their estimated effect sizes (**BETA**). In **Marker-Assisted Selection (MAS)** we could take a few diagnostic SNPs. But in **Genomic Selection (GS)** we want to use many SNPs together to rank lines.  
+
+Here we build a **Polygenic Score (PGS)**: for each plant, we multiply the genotype (0/1/2 copies of the allele) by the SNP’s effect size (BETA) and sum across top SNPs. This gives one number per line = the “genomic score.” If PGS correlates with observed sucrose, we can already prioritize top candidates. "Plants with higher scores should, on average, have higher sucrose. This is a mini version of Genomic Selection (GS)."
+
+```bash
+# 1) Build weights file for PLINK --score (columns: SNP  A1  BETA)
+awk 'BEGIN{FS=OFS="\t"} NR>1 {print $1,$4,$6}' mas_markers.tsv > gs_weights.tsv
+echo "Wrote gs_weights.tsv (SNP A1 BETA)"
+
+# 2) Compute per-line polygenic score (PGS) using PLINK
+module load plink
+plink --bfile gwas_data_qc \
+      --score gs_weights.tsv 1 2 3 header sum \
+      --out gs_pgs
+# Output: gs_pgs.profile  (contains FID IID SCORE)
+
+# 3) Rank lines by PGS and compare to observed SUC phenotype
+awk 'NR==1{for(i=1;i<=NF;i++)if($i=="SCORE")s=i; next}{print $1"\t"$2"\t"$s}' gs_pgs.profile > pgs.tsv
+awk -F, 'NR>1{print $1"\t"$2}' phenotypes.csv | sort -k1,1 > pheno.tsv
+sort -k2,2 pgs.tsv > pgs.sorted
+join -t $'\t' -1 2 -2 1 pgs.sorted pheno.tsv | awk 'BEGIN{OFS="\t"}{print $2,$1,$3,$4}' > pgs_with_suc.tsv
+(echo -e "FID\tIID\tPGS\tSUC"; cat pgs_with_suc.tsv) > tmp && mv tmp pgs_with_suc.tsv
+sort -k3,3gr pgs_with_suc.tsv > pgs_ranked.tsv
+head -n 21 pgs_ranked.tsv > top20_by_PGS.tsv
+echo "Created: pgs_ranked.tsv (all ranked) and top20_by_PGS.tsv"
+
+# 4) Quick R plot: check correlation between PGS and SUC
+R --vanilla <<'EOF'
+d <- read.table("pgs_ranked.tsv", header=TRUE, sep="\t")
+png("PGS_vs_SUC.png", 1000, 800, res=150)
+plot(d$PGS, d$SUC, xlab="Polygenic Score (PGS)", ylab="Sucrose (SUC)", main="PGS vs SUC (quick check)")
+abline(lm(SUC ~ PGS, data=d))
+legend("topleft", bty="n", legend=paste0("r = ", round(cor(d$PGS, d$SUC, use='complete.obs'),3)))
+dev.off()
+EOF
+echo "Saved: PGS_vs_SUC.png"
+```
+
+**Interpretation:**  
+`pgs_ranked.tsv` → all lines ranked by genomic score.
+`PGS_vs_SUC.png` → scatterplot showing how well the genomic score predicts sucrose.
+If correlation (`r`) is positive and strong, even this “lite” version shows promise.
+
+> Relevance GS-lite:
+> This gives a fast, interpretable genomic ranking you can already use today for pre-selection, while waiting for larger training sets and more advanced GS models. It shows how GWAS results can directly feed into breeding decisions.
 
 ## You have completed **Day 7**!
 
