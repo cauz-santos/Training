@@ -57,34 +57,6 @@ The tools we explore today — like PCA and ADMIXTURE — are **foundational met
 
 ---
 
-# Day 6 – Exploring Genetic Diversity and Population Structure with SNPs
-
-## 🧭 Why Does This Matter?
-
-Understanding **genetic diversity and structure** is essential in genomics and breeding:
-
-- In **breeding programs**, it helps identify divergent individuals, avoid inbreeding, and guide parent selection.  
-- In **population genetics**, it reveals how populations are related and how they evolved.  
-- In **conservation**, it supports decisions on which populations or individuals to prioritize.  
-
-Today’s session introduces tools like **PLINK** and **VCFtools** to quantify diversity and visualize structure. The outputs from today (e.g., PCA eigenvectors) will be used as **covariates for GWAS** on Day 7.
-
----
-
-## 🛠 Tools You Will Use
-
-| Tool         | Purpose                                               |
-|--------------|--------------------------------------------------------|
-| **PLINK**      | Data conversion, LD pruning, PCA, diversity stats     |
-| **VCFtools**   | Diversity estimates (MAF, heterozygosity, missingness)|
-| **BCFtools**   | VCF querying (optional)                               |
-| **Slurm**      | Job scheduling on the HPC cluster                     |
-| **vi**         | Command-line text editor for creating scripts         |
-
-> ℹ️ **Note:** Module names can vary by cluster. Replace `module load <tool>` with the correct names on your system.
-
----
-
 ## Part 0 — Data Preparation (VCF → PLINK + LD Pruning)
 
 We will convert a **filtered VCF** into PLINK format and perform **LD pruning**. The pruned dataset will be used for **PCA** (and later for ADMIXTURE/GWAS).
