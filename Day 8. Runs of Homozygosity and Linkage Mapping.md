@@ -498,7 +498,7 @@ cat("Test accuracy:", acc, "\n")
 **How to interpret:**  
 Accuracy is a first check. In real genomic prediction, we’d also use metrics like AUC (for classification), RMSE (for regression), or cross-validation. But for training purposes, accuracy gives a quick, intuitive measure of performance.
 
-**Step 4 (Optional) — Variable importance and plots**
+**Step 4 (Optional) — Variable importance and plots**  
 In many machine learning models, especially **Random Forests**, we can check **which features (variables)** are most useful for making predictions. This is called **variable importance**.
 
 In Rstudio:
@@ -531,15 +531,18 @@ In practice, breeders can:
 - Integrate **multi-trait and environmental data** for more robust selection.  
 
 
+
+
 ## You have completed **Day 8**!
 
 ---
 
-
 # Useful Tutorials and Resources
 
-- [PLINK ROH Documentation](https://www.cog-genomics.org/plink/1.9/roh)  
-- [qtl R package vignette](https://rqtl.org/tutorials/)  
-- [MSTmap for linkage mapping](http://mstmap.org/)  
+- [Heterozygosity and runs of homozygosity](https://anopheles-genomic-surveillance.github.io/workshop-5/module-4-roh.html)  
+- [Detecting runs of homozygosity (RoH)](https://samtools.github.io/bcftools/howtos/roh-calling.html)
+- [MSTmap for linkage mapping](http://mstmap.org/)
+- [OneMap](http://mstmap.org/](https://github.com/augusto-garcia/onemap)  
 - [Random Forest in R](https://cran.r-project.org/web/packages/randomForest/randomForest.pdf)  
-- [Introduction to Machine Learning for Biologists (YouTube)](https://www.youtube.com/watch?v=tNa99PG8hR8)  
+- [Machine Learning for Biologists - Guide](https://www.nature.com/articles/s41580-021-00407-0)
+- [Machine Learning for Biologists](https://carpentries-incubator.github.io/ml4bio-workshop/01-introduction/index.html)
