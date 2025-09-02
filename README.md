@@ -50,8 +50,9 @@ module list                           # verify what's loaded
 
 # sanity check the binaries
 which bwa && bwa 2>&1 | head -n1
+```
 
-Then, submit batch jobs and monitor progress:
+Then, **submit** batch jobs and **monitor progress**:
 
 ```bash
 # submit
