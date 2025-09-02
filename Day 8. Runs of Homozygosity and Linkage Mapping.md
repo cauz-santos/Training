@@ -112,9 +112,7 @@ Once we have detected Runs of Homozygosity (ROHs), we can summarize them with th
 - **FROH (Genomic Inbreeding Coefficient)**  
   This is calculated as:  
 
-  \[
-  F_{ROH} = \frac{\text{SROH}}{\text{Total genome length analyzed}}
-  \]
+ `FROH = SROH / Total genome length analyzed`
 
   It represents the **proportion of the genome that is autozygous** (identical by descent).  
   - For example, if an individual has 200 Mb in ROHs and the genome analyzed is 1,000 Mb, then FROH = 0.2 (20%).  
