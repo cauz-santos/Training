@@ -83,9 +83,9 @@ The bcftools output contains several record types. ROH blocks are labeled with R
 We will extract only those:
 
 ```bash
-grep "RG" roh_results.txt > roh_RG.txt
+# Keep only lines whose first field is exactly "RG" (bcftools ROH segments)
+awk -F'\t' '$1=="RG"' roh_results.txt > roh_RG.txt
 ```
-
 This keeps only homozygous blocks with information such as sample ID, chromosome, start, end, length.
 
 ### Step 3 — Summarize ROH Statistics in R**  
