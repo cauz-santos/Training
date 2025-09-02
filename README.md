@@ -21,7 +21,7 @@ Each Day file contains copy‑pasteable commands and Slurm-ready snippets used i
 
 ---
 
-## Daily access checklist (external networks)
+## Daily access checklist (HPC - Cluster)
 You’ll normally connect from outside Uni/MedUni networks. **Before every session/day** (or when your IP changes):
 
 1. **Enable LiSC firewall access (12 h)**  
