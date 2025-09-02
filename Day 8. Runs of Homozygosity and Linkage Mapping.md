@@ -30,72 +30,39 @@ In plant breeding, **ROH are important because**:
 
 By detecting ROH in our GWAS dataset from Day 7, we can explore how much homozygosity exists in different lines, and which genomic regions may be under breeding pressure.  
 
-### Step 1 — Call ROH using PLINK
+# Step 1 — Run bcftools roh
 
-```bash
-vi 01_run_roh.sh
-```
+We first detect Runs of Homozygosity (ROH) using the `roh` plugin from **bcftools**.  
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=roh_call
+#SBATCH --job-name=roh_bcftools
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=4G
+#SBATCH --mem=2G
 #SBATCH --time=00:30:00
-#SBATCH -o roh_call.out
-#SBATCH -e roh_call.err
+#SBATCH -o roh_bcftools.out
+#SBATCH -e roh_bcftools.err
 
-module load plink
+module load bcftools/1.17
 
-plink --bfile gwas_data_qc       --homozyg       --homozyg-window-snp 50       --homozyg-snp 50       --homozyg-kb 1000       --homozyg-density 50       --homozyg-gap 100       --out roh_results
+VCF="gwas_data_qc.vcf.gz"      # Input from Day 7
+OUT="roh_results.txt"
 
-echo "ROH calling complete: roh_results.hom"
+bcftools roh -G30 --rec-rate 1.4e-8 ${VCF} > ${OUT}
+
+echo "ROH calling finished: ${OUT}"
 ```
 
-Submit:
+**Explanation of Parameters:**  
+`bcftools roh` → calls the roh plugin to scan the VCF and identify runs of homozygosity.
+`-G30` → sets a genotype quality filter (Phred score ≥ 30). Low-quality genotypes are treated as missing to avoid false ROHs caused by errors.
+`--rec-rate 1.4e-8` → specifies the assumed recombination rate per base per generation. This helps the algorithm decide whether nearby homozygous markers are part of the same ROH or split by recombination.
+`1.4e-8` is a typical genome-wide rate in plants/animals; adjust if species-specific data exists.
+`${VCF}` → input VCF file.
+`>${OUT}` → saves the full report to roh_results.txt.
 
-```bash
-sbatch 01_run_roh.sh
-```
 
-- `--homozyg` → tells PLINK to detect runs of homozygosity.  
-- `--homozyg-window-snp 50` → minimum number of SNPs in a window.  
-- `--homozyg-snp 50` → minimum SNPs required to define a ROH.  
-- `--homozyg-kb 1000` → minimum length of ROH (in kb).  
-- `--homozyg-density 50` → maximum average kb distance per SNP allowed.  
-- `--homozyg-gap 100` → maximum gap between two consecutive homozygous SNPs within a run.  
 
-> Note: The thresholds are adjustable — for plants with high marker density (like GBS or WGS SNPs), you might want stricter settings (e.g., 100 SNPs, 2000 kb). For sparser data (like arrays), you can relax them a bit.
-
-### Step 2 — Summarize ROH
-
-```bash
-awk '{print $2,$3,$4,$5}' roh_results.hom | head
-```
-
-This file contains: Individual, chromosome, start, end, length, number of SNPs.  
-
-We can summarize by individual:
-
-```bash
-awk '{len[$2]+=$6} END{for(i in len) print i,len[i]}' roh_results.hom > roh_per_individual.txt
-```
-
-### Step 3 — Visualize in R
-
-```r
-roh <- read.table("roh_per_individual.txt")
-colnames(roh) <- c("IID","ROH_length")
-png("ROH_distribution.png",800,600)
-hist(roh$ROH_length/1e6, main="Total ROH length per individual", xlab="ROH (Mb)", breaks=20)
-dev.off()
-```
-
-> **Interpretation questions:**  
-> - Do some individuals carry **longer ROH tracts**?  
-> - Could this reflect **inbreeding** or **selection sweeps**?  
-
-> **Relevance:** Breeders use ROH to flag elite lines with excessive autozygosity or to track fixed favorable haplotypes.
 
 ---
 
