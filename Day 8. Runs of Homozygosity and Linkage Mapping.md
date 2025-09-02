@@ -145,8 +145,9 @@ Open Rstudio and run:
 library(tidyverse)
 
 # Load ROH data (Sample, Chromosome, Length)
-roh <- read_delim("roh_RG.txt", delim="\t", skip=1,
-                  col_names=c("Sample","Chromosome","Start","End","Length","Other"))
+roh <- readr::read_tsv("roh_segments.tsv",
+                       col_names=c("Sample","Chromosome","Start","End","Length"),
+                       col_types="cciii")
 
 # --- Compute NROH (number of ROHs per individual)
 nroh <- roh %>%
@@ -402,6 +403,12 @@ ld_mat <- cor(snp_subset, use="pairwise.complete.obs")^2
 LDheatmap(ld_mat, genetic.distances=pos,
           color=heat.colors(20),
           title="LD Heatmap (Chr1 subset)")
+
+# Fallback heatmap if LDheatmap isn't available
+ld_mat <- cor(snp_subset, use="pairwise.complete.obs")^2
+png("LD_heatmap_base.png", 1000, 800, res=150)
+image(ld_mat, axes=FALSE, main="LD Heatmap (r^2) — base R")
+dev.off()
 ```
 
 **Output:**  
