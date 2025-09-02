@@ -30,7 +30,7 @@ In plant breeding, **ROH are important because**:
 
 By detecting ROH in our GWAS dataset from Day 7, we can explore how much homozygosity exists in different lines, and which genomic regions may be under breeding pressure.  
 
-# Step 1 — Run bcftools roh
+### Step 1 — Run bcftools roh
 
 We first detect Runs of Homozygosity (ROH) using the `roh` plugin from **bcftools**.  
 
@@ -54,15 +54,124 @@ echo "ROH calling finished: ${OUT}"
 ```
 
 **Explanation of Parameters:**  
-`bcftools roh` → calls the roh plugin to scan the VCF and identify runs of homozygosity.
-`-G30` → sets a genotype quality filter (Phred score ≥ 30). Low-quality genotypes are treated as missing to avoid false ROHs caused by errors.
-`--rec-rate 1.4e-8` → specifies the assumed recombination rate per base per generation. This helps the algorithm decide whether nearby homozygous markers are part of the same ROH or split by recombination.
-`1.4e-8` is a typical genome-wide rate in plants/animals; adjust if species-specific data exists.
-`${VCF}` → input VCF file.
-`>${OUT}` → saves the full report to roh_results.txt.
+`bcftools roh` → calls the roh plugin to scan the VCF and identify runs of homozygosity.  
+`-G30` → sets a genotype quality filter (Phred score ≥ 30). Low-quality genotypes are treated as missing to avoid false ROHs caused by errors.  
+`--rec-rate 1.4e-8` → specifies the assumed recombination rate per base per generation. This helps the algorithm decide whether nearby homozygous markers are part of the same ROH or split by recombination.  
+*1.4e-8 is a typical genome-wide rate in plants/animals; adjust if species-specific data exists.*  
+`${VCF}` → input VCF file.  
+`>${OUT}` → saves the full report to roh_results.txt.  
 
+### Step 2 — Extract ROH Segments
+The bcftools output contains several record types. ROH blocks are labeled with RG.
+We will extract only those:
 
+```bash
+grep "RG" roh_results.txt > roh_RG.txt
+```
 
+This keeps only homozygous blocks with information such as sample ID, chromosome, start, end, length.
+
+**Step 3 — Summarize ROH Statistics in R**  
+We’ll now compute and visualize three summary statistics:
+NROH → number of ROHs per individual.
+
+SROH → sum of ROH lengths per individual.
+
+FROH → genomic inbreeding coefficient = SROH / genome size.
+
+Open Rstudio and run:
+```bash
+# ============================
+# ROH Analysis in R
+# ============================
+library(tidyverse)
+
+# Load ROH data (Sample, Chromosome, Length)
+roh <- read_delim("roh_RG.txt", delim="\t", skip=1,
+                  col_names=c("Sample","Chromosome","Start","End","Length","Other"))
+
+# --- Compute NROH (number of ROHs per individual)
+nroh <- roh %>%
+  group_by(Sample) %>%
+  summarise(NROH = n())
+
+# --- Compute SROH (sum length of ROHs per individual)
+sroh <- roh %>%
+  group_by(Sample) %>%
+  summarise(SROH = sum(Length))
+
+# --- Merge and calculate FROH (fraction of genome in ROH)
+genome_size <- 1.2e9   # example genome length; replace with your species
+summary_data <- inner_join(nroh, sroh, by="Sample") %>%
+  mutate(FROH = SROH / genome_size)
+
+head(summary_data)
+```
+
+### Step 4 — Visualizations:  
+
+**A) Scatterplot: NROH vs. SROH**
+In Rstudio:
+```bash
+ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
+  geom_point(color="blue", size=3) +
+  theme_minimal() +
+  labs(x="Total ROH Length (Mb)", y="Number of ROHs",
+       title="Relationship between ROH number and total length")
+```
+
+> **Interpretation:**  
+> Many short ROHs → older, background inbreeding.
+> Few long ROHs → recent parental relatedness.
+
+**B) Stacked Barplot: ROH Length Categories**
+In Rstudio:
+```bash
+roh_cat <- roh %>%
+  mutate(Category = case_when(
+    Length >= 1e6 & Length < 3e6 ~ "1–3 Mb",
+    Length >= 3e6 & Length < 5e6 ~ "3–5 Mb",
+    Length >= 5e6                ~ ">5 Mb",
+    TRUE ~ NA_character_
+  )) %>%
+  filter(!is.na(Category))
+
+summed_roh <- roh_cat %>%
+  group_by(Sample, Category) %>%
+  summarise(total_length = sum(Length), .groups="drop")
+
+ggplot(summed_roh, aes(x=Sample, y=total_length/1e6, fill=Category)) +
+  geom_bar(stat="identity") +
+  theme_minimal() +
+  labs(x="Sample", y="Total ROH Length (Mb)", fill="ROH Category",
+       title="Distribution of ROH by Length Class") +
+  theme(axis.text.x=element_text(angle=45,hjust=1))
+```
+
+> **Interpretation:**  
+> Short ROHs → reflect background relatedness (drift).
+> Long ROHs → evidence of recent inbreeding.
+
+**C) Boxplot: FROH by Population**  
+If you have population metadata (e.g., Sample → Population), you can merge and plot:
+
+In Rstudio:
+```bash
+# Example population file: popmap.txt (Sample \t Population)
+popmap <- read_delim("popmap.txt", delim="\t", col_names=c("Sample","Population"))
+
+data_with_pop <- left_join(summary_data, popmap, by="Sample")
+
+ggplot(data_with_pop, aes(x=Population, y=FROH, color=Population)) +
+  geom_boxplot(outlier.shape=NA) +
+  geom_jitter(width=0.2, size=2) +
+  theme_minimal() +
+  labs(y="FROH (Inbreeding Coefficient)", title="Genomic Inbreeding by Population")
+```
+
+> **Interpretation:**  
+> Higher FROH → stronger inbreeding.
+> Compare populations to identify inbred vs diverse groups.
 
 ---
 
