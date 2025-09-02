@@ -551,11 +551,11 @@ The plot ranks PCs by their contribution to prediction accuracy.
 - If PC3/PC4 are more important → subtle genomic patterns explain sucrose variation.
 
 
-#### Interpretation questions
+### Interpretation questions
 - How accurate is the classification?  
 - Which PCs (genomic patterns) are most predictive?  
 
-#### Relevance to Breeding
+### Relevance to Breeding
 Even with simple PCs, ML can stratify **high vs low sucrose lines**.  
 In practice, breeders can:  
 - Use **Random Forest or other ML models** with **full SNP data**.  
