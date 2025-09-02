@@ -138,20 +138,30 @@ A minimal template (`templates/`) will be referenced in the Day files; adapt `--
 
 Ensure your LiSC firewall access is active before transferring. Run these commands from your local machine (not from the cluster).
 
-# Download a file (LiSC → local)
+#### Download a file (LiSC → local)
+```bash
 scp <your_lisc_username>@login02.lisc.univie.ac.at:/path/on/cluster/file.txt .
+```
 
-# Download a directory
+#### Download a directory
+```bash
 scp -r <your_lisc_username>@login02.lisc.univie.ac.at:/path/on/cluster/RESULTS ./RESULTS
+```
 
-# Upload a file (local → LiSC)
+#### Upload a file (local → LiSC)
+```bash
 scp ./localfile.txt <your_lisc_username>@login02.lisc.univie.ac.at:/path/on/cluster/
+```
 
-# Large/robust transfer with resume + progress
+#### Large/robust transfer with resume + progress
+```bash
 rsync -avhP <your_lisc_username>@login02.lisc.univie.ac.at:/path/on/cluster/RESULTS/ ./RESULTS/
+```
 
-# Interactive session
+#### Interactive session
+```bash
 sftp <your_lisc_username>@login02.lisc.univie.ac.at
+```
 
 ---
 ### Maintainer
