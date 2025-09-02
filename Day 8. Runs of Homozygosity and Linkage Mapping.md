@@ -35,6 +35,15 @@ By detecting ROH in our GWAS dataset from Day 7, we can explore how much homozyg
 We first detect Runs of Homozygosity (ROH) using the `roh` plugin from **bcftools**.  
 
 ```bash
+vi bcftools_roh_job.sh
+```
+
+Remember: When the file opens, you are in command mode.
+To start typing, press the `i` key (this puts you in insert mode).
+
+Now copy and paste the following script into the file:
+
+```bash
 #!/bin/bash
 #SBATCH --job-name=roh_bcftools
 #SBATCH --cpus-per-task=1
@@ -51,6 +60,14 @@ OUT="roh_results.txt"
 bcftools roh -G30 --rec-rate 1.4e-8 ${VCF} > ${OUT}
 
 echo "ROH calling finished: ${OUT}"
+```
+
+Save and exit (`ESC`, then type `:wq` and press `ENTER`).
+
+Submit the job typing:
+
+```bash
+sbatch bcftools_roh_job.sh
 ```
 
 **Explanation of Parameters:**  
