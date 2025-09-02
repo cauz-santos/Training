@@ -134,5 +134,25 @@ A minimal template (`templates/`) will be referenced in the Day files; adapt `--
 
 ---
 
+## Copying files between LiSC and your computer
+
+Ensure your LiSC firewall access is active before transferring. Run these commands from your local machine (not from the cluster).
+
+# Download a file (LiSC → local)
+scp <your_lisc_username>@login02.lisc.univie.ac.at:/path/on/cluster/file.txt .
+
+# Download a directory
+scp -r <your_lisc_username>@login02.lisc.univie.ac.at:/path/on/cluster/RESULTS ./RESULTS
+
+# Upload a file (local → LiSC)
+scp ./localfile.txt <your_lisc_username>@login02.lisc.univie.ac.at:/path/on/cluster/
+
+# Large/robust transfer with resume + progress
+rsync -avhP <your_lisc_username>@login02.lisc.univie.ac.at:/path/on/cluster/RESULTS/ ./RESULTS/
+
+# Interactive session
+sftp <your_lisc_username>@login02.lisc.univie.ac.at
+
+---
 ### Maintainer
 Dr. Luiz Augusto Cauz dos Santos – University of Vienna 
