@@ -125,15 +125,13 @@ Once we have detected Runs of Homozygosity (ROHs), we can summarize them with th
 - These metrics guide breeders in **parental selection, avoiding inbred lines, and managing long-term diversity**.
 
 > **To get genome lenght for FROH**  
->
 > A) Make (or refresh) the FASTA index
-> # If you don’t already have reference.fa.fai:
+>If you don’t already have reference.fa.fai:
 > ```bash
 > samtools faidx reference.fa
 > ```
->
 > B) Sum the lengths of all contigs in the index
-> # Total genome length (all contigs)
+>Total genome length (all contigs)
 > ```bash
 > awk '{sum+=$2} END{print sum}' reference.fa.fai > genome_length.txt
 > cat genome_length.txt
