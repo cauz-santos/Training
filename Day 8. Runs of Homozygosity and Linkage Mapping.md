@@ -124,6 +124,20 @@ Once we have detected Runs of Homozygosity (ROHs), we can summarize them with th
 - **Low FROH** → indicates more diverse individuals, valuable for crossing and maintaining genetic diversity.  
 - These metrics guide breeders in **parental selection, avoiding inbred lines, and managing long-term diversity**.
 
+> **To get genome lenght for FROH**  
+>
+> A) Make (or refresh) the FASTA index
+> # If you don’t already have reference.fa.fai:
+> ```bash
+> samtools faidx reference.fa
+> ```
+>
+> B) Sum the lengths of all contigs in the index
+> # Total genome length (all contigs)
+> ```bash
+> awk '{sum+=$2} END{print sum}' reference.fa.fai > genome_length.txt
+> cat genome_length.txt
+>```
 
 Open Rstudio and run:
 ```bash
@@ -542,7 +556,7 @@ In practice, breeders can:
 - [Heterozygosity and runs of homozygosity](https://anopheles-genomic-surveillance.github.io/workshop-5/module-4-roh.html)  
 - [Detecting runs of homozygosity (RoH)](https://samtools.github.io/bcftools/howtos/roh-calling.html)
 - [MSTmap for linkage mapping](http://mstmap.org/)
-- [OneMap](http://mstmap.org/](https://github.com/augusto-garcia/onemap)  
+- [OneMap](https://github.com/augusto-garcia/onemap)  
 - [Random Forest in R](https://cran.r-project.org/web/packages/randomForest/randomForest.pdf)  
 - [Machine Learning for Biologists - Guide](https://www.nature.com/articles/s41580-021-00407-0)
 - [Machine Learning for Biologists](https://carpentries-incubator.github.io/ml4bio-workshop/01-introduction/index.html)
