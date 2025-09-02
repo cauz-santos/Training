@@ -110,8 +110,8 @@ head(summary_data)
 
 ### Step 4 — Visualizations:  
 
-**A) Scatterplot: NROH vs. SROH**
-In Rstudio:
+**A) Scatterplot: NROH vs. SROH**  
+In Rstudio:  
 ```bash
 ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
   geom_point(color="blue", size=3) +
@@ -124,8 +124,8 @@ ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
 > Many short ROHs → older, background inbreeding.
 > Few long ROHs → recent parental relatedness.
 
-**B) Stacked Barplot: ROH Length Categories**
-In Rstudio:
+**B) Stacked Barplot: ROH Length Categories**  
+In Rstudio:  
 ```bash
 roh_cat <- roh %>%
   mutate(Category = case_when(
@@ -152,10 +152,10 @@ ggplot(summed_roh, aes(x=Sample, y=total_length/1e6, fill=Category)) +
 > Short ROHs → reflect background relatedness (drift).
 > Long ROHs → evidence of recent inbreeding.
 
-**C) Boxplot: FROH by Population**  
-If you have population metadata (e.g., Sample → Population), you can merge and plot:
+**C) Boxplot: FROH by Population**    
+If you have population metadata (e.g., Sample → Population), you can merge and plot:  
 
-In Rstudio:
+In Rstudio:  
 ```bash
 # Example population file: popmap.txt (Sample \t Population)
 popmap <- read_delim("popmap.txt", delim="\t", col_names=c("Sample","Population"))
