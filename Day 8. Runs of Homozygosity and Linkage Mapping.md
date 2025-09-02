@@ -590,7 +590,7 @@ You also trained a **lightweight Random Forest on PCs to rank high/low sucrose l
 
 ---
 
-# Useful Tutorials and Resources
+## Useful Tutorials and Resources
 
 - [Heterozygosity and runs of homozygosity](https://anopheles-genomic-surveillance.github.io/workshop-5/module-4-roh.html)  
 - [Detecting runs of homozygosity (RoH)](https://samtools.github.io/bcftools/howtos/roh-calling.html)
