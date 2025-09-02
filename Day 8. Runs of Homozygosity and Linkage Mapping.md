@@ -71,13 +71,44 @@ grep "RG" roh_results.txt > roh_RG.txt
 
 This keeps only homozygous blocks with information such as sample ID, chromosome, start, end, length.
 
-**Step 3 — Summarize ROH Statistics in R**  
-We’ll now compute and visualize three summary statistics:
-NROH → number of ROHs per individual.
+### Step 3 — Summarize ROH Statistics in R**  
+We’ll now compute and visualize three summary statistics:  
 
-SROH → sum of ROH lengths per individual.
+`NROH` → number of ROHs per individual.
+`SROH` → sum of ROH lengths per individual.
+`FROH` → genomic inbreeding coefficient = SROH / genome size.
 
-FROH → genomic inbreeding coefficient = SROH / genome size.
+**Understanding ROH Statistics**
+
+Once we have detected Runs of Homozygosity (ROHs), we can summarize them with three key statistics that describe the genetic background of each individual:
+
+- **NROH (Number of ROHs per individual)**  
+  This is simply how many separate ROH segments are found in a genome.  
+  - A **high NROH with mostly short segments** usually reflects background relatedness accumulated over many generations (genetic drift).  
+  - A **low NROH but with long segments** suggests recent parental relatedness (e.g., close inbreeding).
+
+- **SROH (Sum of ROH lengths per individual)**  
+  This is the total genomic length (in base pairs) covered by ROHs in an individual.  
+  - Higher SROH means a larger portion of the genome is homozygous.  
+  - Useful to compare overall homozygosity between individuals or populations.
+
+- **FROH (Genomic Inbreeding Coefficient)**  
+  This is calculated as:  
+
+  \[
+  F_{ROH} = \frac{\text{SROH}}{\text{Total genome length analyzed}}
+  \]
+
+  It represents the **proportion of the genome that is autozygous** (identical by descent).  
+  - For example, if an individual has 200 Mb in ROHs and the genome analyzed is 1,000 Mb, then FROH = 0.2 (20%).  
+  - Higher FROH indicates more inbreeding.  
+  - FROH is comparable across datasets and is often used as a genomic estimate of inbreeding, complementing pedigree-based coefficients.
+
+**Why do we care in breeding?**  
+- **High NROH + High FROH** → indicates strong inbreeding, possibly reducing fitness and adaptability.  
+- **Low FROH** → indicates more diverse individuals, valuable for crossing and maintaining genetic diversity.  
+- These metrics guide breeders in **parental selection, avoiding inbred lines, and managing long-term diversity**.
+
 
 Open Rstudio and run:
 ```bash
@@ -121,7 +152,7 @@ ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
 ```
 
 > **Interpretation:**  
-> Many short ROHs → older, background inbreeding.
+> Many short ROHs → older, background inbreeding.  
 > Few long ROHs → recent parental relatedness.
 
 **B) Stacked Barplot: ROH Length Categories**  
@@ -149,7 +180,7 @@ ggplot(summed_roh, aes(x=Sample, y=total_length/1e6, fill=Category)) +
 ```
 
 > **Interpretation:**  
-> Short ROHs → reflect background relatedness (drift).
+> Short ROHs → reflect background relatedness (drift).  
 > Long ROHs → evidence of recent inbreeding.
 
 **C) Boxplot: FROH by Population**    
@@ -170,7 +201,7 @@ ggplot(data_with_pop, aes(x=Population, y=FROH, color=Population)) +
 ```
 
 > **Interpretation:**  
-> Higher FROH → stronger inbreeding.
+> Higher FROH → stronger inbreeding.  
 > Compare populations to identify inbred vs diverse groups.
 
 ---
