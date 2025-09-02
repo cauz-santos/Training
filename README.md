@@ -119,19 +119,5 @@ A minimal template (`templates/`) will be referenced in the Day files; adapt `--
 
 ---
 
-## Data & storage
-- Large datasets live on shared cluster storage—**do not commit them** to the repo.
-- Use checksums (MD5/SHA256) and a simple `samples.tsv` for provenance.
-- Aggregate QC with **MultiQC** and keep logs under `logs/` for each run.
-
----
-
-## Contributing & license
-- Keep commands copy‑pasteable and annotate assumptions (e.g., module names, partitions).
-- Suggested license: **MIT** for code and **CC BY‑4.0** for teaching materials.
-- Please cite third‑party tools/papers when publishing results.
-
----
-
 ### Maintainer
-Dr. Luiz Augusto Cauz dos Santos – University of Vienna / Verdant Bioscience (training)
+Dr. Luiz Augusto Cauz dos Santos – University of Vienna 
