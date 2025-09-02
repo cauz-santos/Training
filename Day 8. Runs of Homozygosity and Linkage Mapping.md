@@ -74,9 +74,9 @@ This keeps only homozygous blocks with information such as sample ID, chromosome
 ### Step 3 — Summarize ROH Statistics in R**  
 We’ll now compute and visualize three summary statistics:  
 
-`NROH` → number of ROHs per individual.
-`SROH` → sum of ROH lengths per individual.
-`FROH` → genomic inbreeding coefficient = SROH / genome size.
+`NROH` → number of ROHs per individual.  
+`SROH` → sum of ROH lengths per individual.  
+`FROH` → genomic inbreeding coefficient = SROH / genome size.  
 
 **Understanding ROH Statistics**
 
