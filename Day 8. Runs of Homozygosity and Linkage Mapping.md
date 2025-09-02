@@ -416,21 +416,16 @@ we can still use LD to study **marker correlations**, which is the foundation of
 
 ---
 
-## Session 3 — Machine Learning for Bioinformatics
-
-# Session 3 — Machine Learning for Bioinformatics
-
+## Session 3 — Basics of Machine Learning for Bioinformatics 
 In this session we will explore how **machine learning (ML)** can be applied in bioinformatics and plant breeding.  
 We will train a simple **classification model** using genomic principal components (PCs, from Day 6) and sucrose phenotype data (from Day 7).
 
----
 
 ## Why ML matters in breeding and bioinformatics
 - ML can integrate **genomic + phenotypic features** to predict traits.  
 - Goes beyond linear regression to capture **non-linear patterns**.  
 - Used in **genomic prediction**, **trait classification**, and **selection of top candidates**.
 
----
 
 ## What is Random Forest?
 **Random Forest** is an ensemble machine learning algorithm. It builds **many decision trees** on random subsets of the data and variables. Each tree makes a prediction, and the forest combines them by majority vote (classification) or averaging (regression).  
@@ -440,14 +435,14 @@ Why it works well:
 - Reduces **overfitting** because no single tree dominates.  
 - Works with **high-dimensional data** (many predictors, like SNP PCs).  
 
-👉 Think of it as a “committee of experts”: each decision tree is one expert, and the forest is the combined decision. This makes the predictions more robust than relying on just one.
+> 👉 Think of it as a “committee of experts”: each decision tree is one expert, and the forest is the combined decision. This makes the predictions more robust than relying on just one.
 
----
 
-## Step 1 — Prepare dataset
+**Step 1 — Prepare dataset**  
 
 We’ll merge PCA results (Day 6) with sucrose phenotypes (Day 7).
 
+In Rstudio:
 ```r
 pcs <- read.table("pca_results.eigenvec", header=FALSE)
 pheno <- read.csv("phenotypes.csv")
@@ -457,13 +452,11 @@ d <- merge(pcs, pheno, by="IID")
 head(d)
 ```
 
----
-
-## Step 2 — Train/test split and ML model
-
+**Step 2 — Train/test split and ML model:**  
 We classify lines into **High vs Low sucrose** using a median split.  
 Random Forest is used as the classifier.
 
+In Rstudio:
 ```r
 library(randomForest)
 
@@ -483,35 +476,52 @@ pred <- predict(rf, test)
 table(pred, test$class)
 ```
 
----
+**Step 3 — Evaluate accuracy:**  
+After training a machine learning model, we need to test how well it performs on data it has **never seen before** (the test set).  
+One simple way is to calculate the **accuracy**: the proportion of correct predictions compared to the true classes.
 
-## Step 3 — Evaluate accuracy
-
+In Rstudio:
 ```r
 acc <- mean(pred==test$class)
 cat("Test accuracy:", acc, "\n")
 ```
 
----
+**What this does:**  
+- Compares predicted classes (pred) to the true labels (test$class).   
+- mean() computes the fraction of matches (correct predictions).
 
-## Step 4 (Optional) — Variable importance and plots
+**Why this matters:**  
+- Accuracy tells us whether the model can generalize to new samples.  
+- High accuracy (>0.7–0.8) → the model is capturing useful genomic patterns.  
+- Low accuracy (<0.6) → the model may not distinguish high vs. low sucrose well, or more features are needed.
 
+**How to interpret:**  
+Accuracy is a first check. In real genomic prediction, we’d also use metrics like AUC (for classification), RMSE (for regression), or cross-validation. But for training purposes, accuracy gives a quick, intuitive measure of performance.
+
+**Step 4 (Optional) — Variable importance and plots**
+In many machine learning models, especially **Random Forests**, we can check **which features (variables)** are most useful for making predictions. This is called **variable importance**.
+
+In Rstudio:
 ```r
 # Variable importance (which PCs are most predictive?)
 importance(rf)
 varImpPlot(rf)
 ```
 
-This tells us which genomic PCs contribute most to sucrose classification.
+**For what purpose:**  
+- To identify the most informative genomic patterns (e.g., PC1 vs PC3).  
+- To guide breeders or researchers toward which parts of the genome contribute most to trait differences.
+- To avoid overfitting by focusing on the strongest predictors.  
 
----
+**How to interpret:**  
+The plot ranks PCs by their contribution to prediction accuracy.  
+- If PC1 is most important → the strongest population structure is predictive of sucrose levels.
+- If PC3/PC4 are more important → subtle genomic patterns explain sucrose variation.
+
 
 ## Interpretation questions
 - How accurate is the classification?  
 - Which PCs (genomic patterns) are most predictive?  
-- Would accuracy improve if we used **more SNPs** instead of just PCs?  
-
----
 
 ## Relevance to Breeding
 Even with simple PCs, ML can stratify **high vs low sucrose lines**.  
@@ -521,11 +531,10 @@ In practice, breeders can:
 - Integrate **multi-trait and environmental data** for more robust selection.  
 
 
+## You have completed **Day 8**!
 
 ---
 
-
----
 
 # Useful Tutorials and Resources
 
