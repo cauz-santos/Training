@@ -37,7 +37,21 @@ You’ll normally connect from outside Uni/MedUni networks. **Before every sessi
 ---
 
 ## Slurm basics we use in the lessons
-Submit batch jobs and monitor progress:
+First, **discover and load modules** for the tools you need:
+
+```bash
+# discover what's available
+module avail 2>&1 | head -n 30       # quick tree view
+module spider bwa                     # search details & versions for a tool
+
+# load specific versions (examples)
+module load bwa/0.7.17 samtools/1.20 bcftools/1.20
+module list                           # verify what's loaded
+
+# sanity check the binaries
+which bwa && bwa 2>&1 | head -n1
+
+Then, submit batch jobs and monitor progress:
 
 ```bash
 # submit
