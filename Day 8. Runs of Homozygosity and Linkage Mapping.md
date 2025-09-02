@@ -219,6 +219,19 @@ ggplot(data_with_pop, aes(x=Population, y=FROH, color=Population)) +
 > Higher FROH → stronger inbreeding.  
 > Compare populations to identify inbred vs diverse groups.
 
+
+**Discussion Questions:**  
+- What does a high NROH but low SROH suggest about a population’s history?
+- Why do very long ROHs point to recent parental relatedness?
+- How does FROH help breeders avoid inbreeding depression?
+- How could breeders use ROH patterns to balance fixing favorable traits vs maintaining diversity?
+
+**Relevance to Breeding:**  
+- **Decision-making:** Avoid crossing individuals with high FROH to reduce inbreeding depression.  
+- **Marker discovery:** Long ROHs overlapping trait regions may indicate selected alleles.
+- **Conservation:** Populations with lower ROH diversity are more resilient.
+- **Breeding strategy:** Helps decide when to outcross vs self/cross inbred lines.
+
 ---
 
 ## Session 2 — Linkage Mapping Basics
