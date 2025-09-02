@@ -538,7 +538,7 @@ dev.off()
 # Reproducibility breadcrumbs
 set.seed(42)
 sink("R_sessionInfo.txt"); print(sessionInfo()); sink()
-```r
+```
 
 **For what purpose:**  
 - To identify the most informative genomic patterns (e.g., PC1 vs PC3).  
