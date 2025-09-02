@@ -418,16 +418,35 @@ we can still use LD to study **marker correlations**, which is the foundation of
 
 ## Session 3 — Machine Learning for Bioinformatics
 
-We’ll train a simple **classification model** on biological data.  
-Dataset: We will reuse **phenotypes.csv** (SUC trait) and SNP PCs from Day 6.
+# Session 3 — Machine Learning for Bioinformatics
 
-### Why ML matters
+In this session we will explore how **machine learning (ML)** can be applied in bioinformatics and plant breeding.  
+We will train a simple **classification model** using genomic principal components (PCs, from Day 6) and sucrose phenotype data (from Day 7).
 
+---
+
+## Why ML matters in breeding and bioinformatics
 - ML can integrate **genomic + phenotypic features** to predict traits.  
 - Goes beyond linear regression to capture **non-linear patterns**.  
-- Used in **genomic prediction** and **trait classification**.
+- Used in **genomic prediction**, **trait classification**, and **selection of top candidates**.
 
-### Step 1 — Prepare dataset
+---
+
+## What is Random Forest?
+**Random Forest** is an ensemble machine learning algorithm. It builds **many decision trees** on random subsets of the data and variables. Each tree makes a prediction, and the forest combines them by majority vote (classification) or averaging (regression).  
+
+Why it works well:
+- Handles **non-linear relationships** between SNP/genomic data and traits.  
+- Reduces **overfitting** because no single tree dominates.  
+- Works with **high-dimensional data** (many predictors, like SNP PCs).  
+
+👉 Think of it as a “committee of experts”: each decision tree is one expert, and the forest is the combined decision. This makes the predictions more robust than relying on just one.
+
+---
+
+## Step 1 — Prepare dataset
+
+We’ll merge PCA results (Day 6) with sucrose phenotypes (Day 7).
 
 ```r
 pcs <- read.table("pca_results.eigenvec", header=FALSE)
@@ -438,48 +457,73 @@ d <- merge(pcs, pheno, by="IID")
 head(d)
 ```
 
-### Step 2 — Train/test split and ML model
+---
 
-We use **random forest** for trait classification (high vs low sucrose).
+## Step 2 — Train/test split and ML model
+
+We classify lines into **High vs Low sucrose** using a median split.  
+Random Forest is used as the classifier.
 
 ```r
 library(randomForest)
 
-# Define high vs low classes by median split
+# Define high vs low classes
 d$class <- ifelse(d$SUC > median(d$SUC, na.rm=TRUE),"High","Low")
 
+# Train/test split (70/30)
 set.seed(42)
 train_idx <- sample(1:nrow(d), 0.7*nrow(d))
 train <- d[train_idx,]
 test <- d[-train_idx,]
 
+# Train Random Forest using first 5 PCs
 rf <- randomForest(as.factor(class) ~ PC1+PC2+PC3+PC4+PC5, data=train, ntree=500)
 pred <- predict(rf, test)
 
 table(pred, test$class)
 ```
 
-### Step 3 — Evaluate accuracy
+---
+
+## Step 3 — Evaluate accuracy
 
 ```r
 acc <- mean(pred==test$class)
-cat("Test accuracy:", acc, "
-")
+cat("Test accuracy:", acc, "\n")
 ```
-
-> **Interpretation questions:**  
-> - How accurate is the classification?  
-> - Which PCs (genomic patterns) seem most predictive?  
-
-> **Relevance:** Even with simple PCs, ML can stratify high vs low sucrose lines. Breeders can expand this with **full SNP data** or **multi-trait models**.
 
 ---
 
-# Wrap-up Discussion
+## Step 4 (Optional) — Variable importance and plots
 
-- ROH: what does excess homozygosity reveal about breeding history?  
-- Linkage: how do recombination patterns constrain breeding?  
-- ML: how could predictive models be integrated into selection pipelines?  
+```r
+# Variable importance (which PCs are most predictive?)
+importance(rf)
+varImpPlot(rf)
+```
+
+This tells us which genomic PCs contribute most to sucrose classification.
+
+---
+
+## Interpretation questions
+- How accurate is the classification?  
+- Which PCs (genomic patterns) are most predictive?  
+- Would accuracy improve if we used **more SNPs** instead of just PCs?  
+
+---
+
+## Relevance to Breeding
+Even with simple PCs, ML can stratify **high vs low sucrose lines**.  
+In practice, breeders can:  
+- Use **Random Forest or other ML models** with **full SNP data**.  
+- Apply ML for **genomic prediction**, ranking candidates before phenotyping.  
+- Integrate **multi-trait and environmental data** for more robust selection.  
+
+
+
+---
+
 
 ---
 
