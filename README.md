@@ -15,7 +15,7 @@ The exact lesson files in this repository:
 - **Day 6 — _Day 6. Diversity and Structure Analysis with SNPs.md_**
 - **Day 7 — _Day 7. SNP applications in Breeding - GWAS.md_**
 - **Day 8 — _Day 8. Runs of Homozygosity and Linkage Mapping.md_**
-- **Day 9 — _Day 9. RNA-seq analysis.md_**
+- **Day 9 — _Day 9. RNA-seq - Differential expression analysis.md_**
 
 Each Day file contains copy‑pasteable commands and Slurm-ready snippets used in class.
 
