@@ -235,50 +235,111 @@ ggplot(data_with_pop, aes(x=Population, y=FROH, color=Population)) +
 ---
 
 ## Session 2 — Linkage Mapping Basics
+A **linkage map** is a genetic map that shows the relative positions of markers (e.g., SNPs, microsatellites) along chromosomes, based on how often they are inherited together.  
+The unit is the **centimorgan (cM)**, which represents the recombination frequency:  
+- **1 cM ≈ 1% chance** that a crossover occurs between two markers during meiosis.  
 
-Here we introduce linkage mapping with both a **toy dataset** and the **Day 7 SNP dataset**.
+Because recombination is less likely between markers that are close together, linkage maps help us order markers and estimate distances between them.  
 
-### Why linkage maps matter
+### Why linkage maps are important in breeding
 
-- Provide the **genetic framework** for QTL mapping.  
-- Show **marker order and distances** (cM).  
-- Detect **recombination patterns** across breeding populations.
+- Provide the **genetic framework** for locating QTLs (quantitative trait loci).  
+- Help breeders track recombination events and **design crosses more effectively**.  
+- Allow identification of **linkage drag** (undesirable alleles inherited together with target traits).  
+- Serve as the foundation for integrating **genomics with classical breeding**.  
 
-### Step 1 — Simulate a toy dataset in R
+In this session, we’ll practice linkage mapping first with a **toy dataset** (F2 cross simulation) and then explore how to prepare our real SNP dataset (from Day 7) for linkage-like analyses.
+
+### Linkage Map vs LD Map
+
+Although the terms sound similar, **linkage maps** and **LD maps** describe different concepts.
+
+| Feature              | Linkage Map                              | LD Map                              |
+|----------------------|-------------------------------------------|--------------------------------------|
+| **Population type**  | Controlled cross (F2, RIL, DH, BC)        | Natural/diversity panel              |
+| **Measure**          | Recombination frequency (cM)              | Statistical correlation (r², D’)     |
+| **Output**           | Marker order + distances (map)            | LD blocks/haplotype structure        |
+| **Reflects**         | True meiotic recombination                | Recombination + demography + drift   |
+| **Applications**     | QTL mapping, breeding populations         | GWAS, diversity, haplotype tagging   |
+
+
+### Step 1 — Simulate a toy dataset (F2 population)
+
+Because linkage maps require **pedigreed crosses** (e.g., F2), we’ll simulate one in R to show how maps are built.
 
 ```r
+# Load R/qtl package
 library(qtl)
 
 # Simulate a small F2 cross with 100 individuals and 3 chromosomes
-fake <- sim.cross(map = sim.map(len=c(100,80,60), n.mar=11, anchor=TRUE), n.ind=100, type="f2")
+fake <- sim.cross(map = sim.map(len=c(100,80,60), n.mar=11, anchor=TRUE), 
+                  n.ind=100, 
+                  type="f2")
 
 # Estimate recombination fractions
 fake <- est.rf(fake)
 
+# Plot recombination fractions (rf) matrix
 png("Linkage_toy_rf.png",1000,800)
 plotRF(fake)
 dev.off()
 
+# Export dataset for inspection
 write.cross(fake, format="csv", filestem="toy_cross")
 ```
 
-> This generates a small dataset (`toy_cross.csv`) that students can inspect.
+**Outputs:**  
+- `Linkage_toy_rf.png` → heatmap of recombination fractions.  
+- `toy_cross.csv` → toy dataset (can open in Excel to see genotypes).
 
-### Step 2 — Apply linkage analysis to real SNP data
+> **How to Interpret the RF Heatmap**  
+> - **Dark blocks (low rf)** → tightly linked markers.   
+> - **Light blocks (high rf)** → unlinked markers (different chromosomes or very distant on the same chromosome).  
+> - You’ll see **3 dark diagonal blocks** (one per chromosome), which shows that markers group correctly into **linkage groups**.  
 
-Convert Day 7 PLINK data to a format suitable for **R/qtl** or **MSTmap**.
+> 👉 This mimics what happens in **real linkage mapping**: you cluster markers into groups (chromosomes) based on recombination.
+
+
+**Relevance for breeding:**  
+- Shows how **recombination frequency translates into distances**.  
+- Demonstrates that **markers closer together recombine less frequently**.  
+- Provides the foundation for **QTL mapping**.
+
+
+## Step 2 — Apply linkage-like analysis to real SNP data
+Our GWAS dataset from Day 7 (`gwas_data_qc.*`) is **not from an F2 cross**, so we cannot build a traditional linkage map.  
+But we can still use it to study **LD patterns** (linkage disequilibrium) that reflect marker correlations in natural/diversity panels.
+
+First, convert to an allele dosage format:
 
 ```bash
 plink --bfile gwas_data_qc --recodeA --out gwas_for_linkage
 ```
 
-Now load in R:
+This produces `gwas_for_linkage.raw`, where genotypes are coded as **0,1,2** (copies of alternate allele).
+
+Load into R:
 
 ```r
 geno <- read.csv("gwas_for_linkage.raw", sep=" ", header=TRUE)
-# Inspect genotypes (0,1,2 dosage coding)
-head(geno)
+head(geno[,1:10])
 ```
+
+From here, we can compute LD decay across chromosomes using PLINK or R packages like `LDheatmap`.
+
+---
+
+## Discussion Questions
+
+- Why do we need **F2 or RIL populations** to build linkage maps?  
+- What information can LD maps provide that linkage maps cannot (and vice versa)?  
+- How could you use both maps in a breeding program?  
+
+**Relevance:**  
+- **Linkage maps** anchor markers in controlled populations → key for QTL discovery.  
+- **LD maps** reveal haplotype structure in natural panels → key for GWAS and diversity management.  
+Together, they provide complementary insights into **genetic architecture** and help breeders decide whether to use **cross-based QTL mapping** or **association mapping (GWAS)** strategies.
+
 
 > **Note:** Real linkage mapping usually requires a **controlled cross pedigree**, but here we showcase how SNP data can be prepped and visualized for linkage-like patterns.
 
