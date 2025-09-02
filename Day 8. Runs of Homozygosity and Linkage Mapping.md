@@ -569,6 +569,8 @@ In practice, breeders can:
 - Apply ML for **genomic prediction**, ranking candidates before phenotyping.  
 - Integrate **multi-trait and environmental data** for more robust selection.  
 
+---
+## Conclusion
 
 Today, you **quantified inbreeding with ROH (NROH/SROH/FROH)**, contrasted **recombination (linkage) with correlation (LD)** to understand block structure, and learned how these signals guide marker spacing and cross design.
 You also trained a **lightweight Random Forest on PCs to rank high/low sucrose lines** — an immediately useful triage that can later be upgraded to full genomic prediction.
