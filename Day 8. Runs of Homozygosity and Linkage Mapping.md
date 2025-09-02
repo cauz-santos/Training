@@ -296,7 +296,7 @@ write.cross(fake, format="csv", filestem="toy_cross")
 > - **Dark blocks (low rf)** → tightly linked markers.   
 > - **Light blocks (high rf)** → unlinked markers (different chromosomes or very distant on the same chromosome).  
 > - You’ll see **3 dark diagonal blocks** (one per chromosome), which shows that markers group correctly into **linkage groups**.  
-
+>
 > 👉 This mimics what happens in **real linkage mapping**: you cluster markers into groups (chromosomes) based on recombination.
 
 
@@ -308,40 +308,111 @@ write.cross(fake, format="csv", filestem="toy_cross")
 
 ## Step 2 — Apply linkage-like analysis to real SNP data
 Our GWAS dataset from Day 7 (`gwas_data_qc.*`) is **not from an F2 cross**, so we cannot build a traditional linkage map.  
-But we can still use it to study **LD patterns** (linkage disequilibrium) that reflect marker correlations in natural/diversity panels.
+But we can still explore **linkage disequilibrium (LD) patterns** in this diversity panel.  
+LD reflects **correlations between SNPs** due to shared ancestry, drift, or selection.
 
-First, convert to an allele dosage format:
+
+**Convert PLINK data to allele dosage format**
+We need SNP genotypes coded as **0, 1, 2** (number of alternate alleles).  
+Run:
 
 ```bash
 plink --bfile gwas_data_qc --recodeA --out gwas_for_linkage
 ```
 
-This produces `gwas_for_linkage.raw`, where genotypes are coded as **0,1,2** (copies of alternate allele).
+**Output:**  
+- `gwas_for_linkage.raw` → matrix of individuals × SNPs with dosage coding.  
+- Columns: `FID`, `IID`, `PAT`, `MAT`, `SEX`, `PHENOTYPE`, followed by SNPs.
 
-Load into R:
 
+
+**Load genotype matrix into R**
+In Rstudio:
 ```r
 geno <- read.csv("gwas_for_linkage.raw", sep=" ", header=TRUE)
+
+# Inspect first columns
 head(geno[,1:10])
 ```
 
-From here, we can compute LD decay across chromosomes using PLINK or R packages like `LDheatmap`.
 
----
+**Compute pairwise LD with PLINK**
+PLINK can directly compute LD between SNP pairs:
 
-## Discussion Questions
+```bash
+plink --bfile gwas_data_qc       --r2       --ld-window 99999       --ld-window-kb 1000       --ld-window-r2 0       --out gwas_ld
+```
+
+**Outputs:**  
+- `gwas_ld.ld` → file with SNP pairs, distance, and r².
+
+
+**Visualize LD decay in R**
+We can check how LD decays with physical distance:
+
+In Rstudio:
+```r
+library(data.table)
+library(ggplot2)
+
+# Load LD file
+ld <- fread("gwas_ld.ld")
+
+# Scatterplot: r² vs distance
+ggplot(ld, aes(x=BP_B - BP_A, y=R2)) +
+  geom_point(alpha=0.3, size=0.7) +
+  geom_smooth(method="loess", color="red") +
+  theme_minimal() +
+  labs(x="Distance between SNPs (bp)", y=expression(r^2),
+       title="LD Decay Across Genome")
+```
+
+**Output:**  
+- A scatterplot showing how r² decreases as SNP distance increases.  
+- The smoother line shows the **LD decay curve**.
+
+
+**LD heatmap for one chromosome region**
+We can zoom in and visualize LD as a heatmap:
+
+In Rstudio:
+```r
+library(LDheatmap)
+
+# Take a subset of SNPs from chromosome 1 (first 100 SNPs)
+snp_subset <- geno[, 7:106]   # skip metadata columns
+pos <- 1:ncol(snp_subset) * 10000   # fake positions, adjust if real BP available
+
+# Compute LD matrix
+ld_mat <- cor(snp_subset, use="pairwise.complete.obs")^2
+
+# Plot heatmap
+LDheatmap(ld_mat, genetic.distances=pos,
+          color=heat.colors(20),
+          title="LD Heatmap (Chr1 subset)")
+```
+
+**Output:**  
+- Heatmap where **dark red = strong LD** and **yellow/white = weak LD**.  
+
+> **Interpretation:**  
+> **LD decay plot:**  
+>  - Fast decay → high recombination, more diversity.  
+> - Slow decay → strong structure, less recombination, possible selection.  
+>
+> **LD heatmap:**  
+>  - Squares of high r² = **LD blocks** (haplotypes).  
+>  - Boundaries between blocks show recombination hotspots.  
+
+**Key point:**   
+Even though we cannot build a **linkage map** without a controlled F2 cross,  
+we can still use LD to study **marker correlations**, which is the foundation of **GWAS** and **haplotype-based breeding**.
+
+**Discussion Questions:**
 
 - Why do we need **F2 or RIL populations** to build linkage maps?  
 - What information can LD maps provide that linkage maps cannot (and vice versa)?  
 - How could you use both maps in a breeding program?  
-
-**Relevance:**  
-- **Linkage maps** anchor markers in controlled populations → key for QTL discovery.  
-- **LD maps** reveal haplotype structure in natural panels → key for GWAS and diversity management.  
-Together, they provide complementary insights into **genetic architecture** and help breeders decide whether to use **cross-based QTL mapping** or **association mapping (GWAS)** strategies.
-
-
-> **Note:** Real linkage mapping usually requires a **controlled cross pedigree**, but here we showcase how SNP data can be prepped and visualized for linkage-like patterns.
 
 ---
 
