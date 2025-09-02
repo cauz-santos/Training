@@ -312,7 +312,7 @@ But we can still explore **linkage disequilibrium (LD) patterns** in this divers
 LD reflects **correlations between SNPs** due to shared ancestry, drift, or selection.
 
 
-**Convert PLINK data to allele dosage format**
+**1) Convert PLINK data to allele dosage format**  
 We need SNP genotypes coded as **0, 1, 2** (number of alternate alleles).  
 Run:
 
@@ -326,7 +326,7 @@ plink --bfile gwas_data_qc --recodeA --out gwas_for_linkage
 
 
 
-**Load genotype matrix into R**
+**2) Load genotype matrix into R**  
 In Rstudio:
 ```r
 geno <- read.csv("gwas_for_linkage.raw", sep=" ", header=TRUE)
@@ -336,7 +336,7 @@ head(geno[,1:10])
 ```
 
 
-**Compute pairwise LD with PLINK**
+**3) Compute pairwise LD with PLINK**  
 PLINK can directly compute LD between SNP pairs:
 
 ```bash
@@ -347,7 +347,7 @@ plink --bfile gwas_data_qc       --r2       --ld-window 99999       --ld-window-
 - `gwas_ld.ld` → file with SNP pairs, distance, and r².
 
 
-**Visualize LD decay in R**
+**4) Visualize LD decay in R**  
 We can check how LD decays with physical distance:
 
 In Rstudio:
@@ -372,7 +372,7 @@ ggplot(ld, aes(x=BP_B - BP_A, y=R2)) +
 - The smoother line shows the **LD decay curve**.
 
 
-**LD heatmap for one chromosome region**
+**5) LD heatmap for one chromosome region**  
 We can zoom in and visualize LD as a heatmap:
 
 In Rstudio:
