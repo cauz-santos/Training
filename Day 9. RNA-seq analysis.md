@@ -208,8 +208,9 @@ This session aims to ensure that all participants leave the course with a clear 
 
 **Conclusion:**
 
-This two-week intensive bioinformatics training course has provided a comprehensive overview of essential concepts and practical skills in handling and analyzing genomic data. From mastering the Linux command line to performing advanced RNA-seq analysis, you have gained valuable experience that will serve as a strong foundation for your future endeavors in bioinformatics. We encourage you to continue exploring, practicing, and applying these skills to unlock new biological insights. The field of bioinformatics is constantly evolving, and continuous learning is key to staying at the forefront of discovery. We wish you all the best in your bioinformatics journey!
+This two-week intensive bioinformatics training course has provided a comprehensive overview of essential concepts and practical skills in handling and analyzing genomic data. From mastering the Linux command line to performing advanced RNA-seq analysis, you have gained valuable experience that will serve as a strong foundation for your future endeavors in bioinformatics. I encourage you to continue exploring, practicing, and applying these skills to unlock new biological insights. The field of bioinformatics is constantly evolving, and continuous learning is key to staying at the forefront of discovery. I wish you all the best in your bioinformatics journey!
 
+# Congratulations!!! You have completed the training
 
 
 
