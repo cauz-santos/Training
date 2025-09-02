@@ -1,11 +1,11 @@
 # Verdant Bioinformatics Training 
 
-Hands-on, HPC‑centric training that goes from Linux essentials to RNA‑seq, mapping/variant calling, population structure, GWAS, and ROH/linkage mapping. We work **entirely on the LiSC cluster**; a local Conda/Mamba setup is **not required**.
+This repository contains nine day-by-day pratical lessons for the Verdant bioinformatics training. Materials provide copy‑pasteable commands and Slurm job templates covering: Linux fundamentals; data QC; read mapping and variant calling; population structure and diversity; GWAS; ROH/linkage mapping; and RNA‑seq. All work is executed on LiSC HPC Cluster via the login node and Slurm. Access requires enabling the LiSC firewall (12‑hour window) and connecting via SSH to login02.lisc.univie.ac.at.
 
 ---
 
 ## Repository structure (Days 1–9)
-The exact lesson files  in this repository:
+The exact lesson files in this repository:
 
 - **Day 1 — _Day 1. Introduction to Linux.md_**
 - **Day 2 — _Day 2. Bioinformatics scripting essentials.md_**
@@ -33,8 +33,6 @@ You’ll normally connect from outside Uni/MedUni networks. **Before every sessi
    ```
 
 3. **Run heavy work via Slurm** (compute nodes only). Keep the login node for light tasks, editing, and submissions only.
-
-> If you are physically on a LiSC institution network (e.g., Uni Vienna/MedUni) **or** connected via **UniVPN**, your network may already be permanently allowed and step (1) might not be necessary.
 
 ---
 
