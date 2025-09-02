@@ -30,6 +30,16 @@ In plant breeding, **ROH are important because**:
 
 By detecting ROH in our GWAS dataset from Day 7, we can explore how much homozygosity exists in different lines, and which genomic regions may be under breeding pressure.  
 
+### Step 0 — Make sure the VCF exists
+
+Only if gwas_data_qc.vcf.gz doesn't already exist:
+```bash
+module load plink
+plink --bfile gwas_data_qc --recode vcf bgz --out gwas_data_qc
+module load bcftools/1.17
+bcftools index -t gwas_data_qc.vcf.gz
+```
+
 ### Step 1 — Run bcftools roh
 
 We first detect Runs of Homozygosity (ROH) using the `roh` plugin from **bcftools**.  
@@ -84,7 +94,7 @@ We will extract only those:
 
 ```bash
 # Keep only lines whose first field is exactly "RG" (bcftools ROH segments)
-awk -F'\t' '$1=="RG"' roh_results.txt > roh_RG.txt
+awk -F'\t' '$1=="RG"{print $2,$3,$4,$5,$6}' OFS='\t' roh_results.txt > roh_segments.tsv
 ```
 This keeps only homozygous blocks with information such as sample ID, chromosome, start, end, length.
 
@@ -124,7 +134,7 @@ Once we have detected Runs of Homozygosity (ROHs), we can summarize them with th
 - **Low FROH** → indicates more diverse individuals, valuable for crossing and maintaining genetic diversity.  
 - These metrics guide breeders in **parental selection, avoiding inbred lines, and managing long-term diversity**.
 
-> **To get genome lenght for FROH**  
+> **To get genome length for FROH**  
 > A) Make (or refresh) the FASTA index
 >If you don’t already have reference.fa.fai:
 > ```bash
@@ -138,7 +148,7 @@ Once we have detected Runs of Homozygosity (ROHs), we can summarize them with th
 >```
 
 Open Rstudio and run:
-```bash
+```r
 # ============================
 # ROH Analysis in R
 # ============================
@@ -171,7 +181,7 @@ head(summary_data)
 
 **A) Scatterplot: NROH vs. SROH**  
 In Rstudio:  
-```bash
+```r
 ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
   geom_point(color="blue", size=3) +
   theme_minimal() +
@@ -185,7 +195,7 @@ ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
 
 **B) Stacked Barplot: ROH Length Categories**  
 In Rstudio:  
-```bash
+```r
 roh_cat <- roh %>%
   mutate(Category = case_when(
     Length >= 1e6 & Length < 3e6 ~ "1–3 Mb",
@@ -215,7 +225,7 @@ ggplot(summed_roh, aes(x=Sample, y=total_length/1e6, fill=Category)) +
 If you have population metadata (e.g., Sample → Population), you can merge and plot:  
 
 In Rstudio:  
-```bash
+```r
 # Example population file: popmap.txt (Sample \t Population)
 popmap <- read_delim("popmap.txt", delim="\t", col_names=c("Sample","Population"))
 
