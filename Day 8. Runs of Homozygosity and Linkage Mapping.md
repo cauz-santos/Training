@@ -520,6 +520,26 @@ importance(rf)
 varImpPlot(rf)
 ```
 
+**--- Save evaluation artifacts (Optional) ---**
+```r
+# Confusion matrix + accuracy
+cm <- table(Pred = pred, True = test$class)
+print(cm)
+write.table(as.data.frame(cm), "RF_confusion_matrix.tsv", sep = "\t", row.names = FALSE)
+writeLines(sprintf("Test_accuracy\t%.3f", acc), "RF_accuracy.txt")
+
+# Variable importance (table + plot)
+vip <- importance(rf)
+write.csv(vip, "RF_variable_importance.csv", row.names = TRUE)
+png("RF_varImp.png", width = 1000, height = 800, res = 150)
+varImpPlot(rf, main = "Random Forest Variable Importance (PCs)")
+dev.off()
+
+# Reproducibility breadcrumbs
+set.seed(42)
+sink("R_sessionInfo.txt"); print(sessionInfo()); sink()
+```r
+
 **For what purpose:**  
 - To identify the most informative genomic patterns (e.g., PC1 vs PC3).  
 - To guide breeders or researchers toward which parts of the genome contribute most to trait differences.
@@ -543,6 +563,8 @@ In practice, breeders can:
 - Integrate **multi-trait and environmental data** for more robust selection.  
 
 
+Today, you **quantified inbreeding with ROH (NROH/SROH/FROH)**, contrasted **recombination (linkage) with correlation (LD)** to understand block structure, and learned how these signals guide marker spacing and cross design.
+You also trained a **lightweight Random Forest on PCs to rank high/low sucrose lines** — an immediately useful triage that can later be upgraded to full genomic prediction.
 
 
 ## You have completed **Day 8**!
