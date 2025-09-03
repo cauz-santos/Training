@@ -518,7 +518,7 @@ eigenvec <- read.table("/path/to/your/pca/pca_results.eigenvec", header = FALSE)
 colnames(eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(eigenvec)-2)))
 
 # Load eigenvalues
-eigenval <- scan("pca_results.eigenval")
+eigenval <- scan("/path/to/your/pca/pca_results.eigenval")
 
 # Calculate percentage variance explained
 variance_explained <- round(100 * eigenval / sum(eigenval), 2)
@@ -533,7 +533,11 @@ print(variance_explained[1:5])
 # IID    Population
 # sample1   PopA
 # sample2   PopB
-popinfo <- read.table("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv", header = TRUE, stringsAsFactors = FALSE)
+popinfo <- read.csv("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv",
+                    header = TRUE,
+                    stringsAsFactors = FALSE)
+
+head(popinfo)
 
 # --- Merge data ---
 pca_df <- merge(eigenvec, popinfo, by = "IID")
@@ -546,6 +550,21 @@ ggplot(pca_df, aes(x = PC1, y = PC2, color = Population)) +
        x = paste0("PC1 (", variance_explained[1], "% variance)"),
        y = paste0("PC2 (", variance_explained[2], "% variance)")) +
   scale_color_brewer(palette = "Set1")
+
+# Save the PCA plot as PDF
+pdf("pca/pca_plot.pdf")
+
+plot(pca_df$PC1, pca_df$PC2,
+     col=as.factor(pca_df$Population),
+     pch=19,
+     xlab="PC1",
+     ylab="PC2",
+     main="PCA of 120 Samples")
+
+legend("topright", legend=unique(pca_df$Population),
+       col=1:length(unique(pca_df$Population)), pch=19)
+
+dev.off()
 ```
 
 > This script will open a PCA scatterplot window with individuals colored by population.
