@@ -26,12 +26,21 @@ By the end of this session, you will be able to:
 
 ### Input Data
 
-We will work with a VCF file already filtered (e.g., for depth, quality, missingness, and minor allele frequency).
+The dataset we will use comes from the study by Hazzouri *et al.* (2019), published in *Nature Communications*:  
+*Genome-wide association mapping of date palm fruit traits.*  (https://www.nature.com/articles/s41467-019-12604-9)
 
-- `my_filtered_variants.vcf.gz` — High-quality, biallelic SNP dataset
+In this work, the authors:  
+- Produced a **high-quality genome assembly** for the date palm (*Phoenix dactylifera*).  
+- Conducted **GWAS** on fruit traits, identifying candidate genes such as the **R2R3-MYB transcription factor VIRESCENS** (fruit color) and **invertases** (sugar composition).  
+- Generated a large SNP dataset across hundreds of individuals.  
 
-This file will be converted into formats required for **PLINK**, **ADMIXTURE**, and other tools.
+For training purposes, I prepared a **reduced version** of their SNP dataset:  
 
+- **File**: `dataset120_chr18.vcf.gz`  
+- **Individuals**: Subset of **120 individuals** from the original population.  
+- **Variants**: Includes SNPs from **contigs 1–18 only**, with a **reduced number of SNPs**.  
+
+This reduced VCF is representative and enables us to run the full pipeline — including **PCA, ADMIXTURE, LD pruning/decay, and diversity statistics** — in a practical timeframe.
 
 
 ### Why Does This Matter?
