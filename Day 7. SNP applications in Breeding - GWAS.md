@@ -687,7 +687,7 @@ set -euo pipefail
 
 # ====== EDIT THESE 3 PATHS TO MATCH YOUR SETUP ======
 GWAS_DIR="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas"         # where bonferroni_hits_SUC.tsv / top20_hits_SUC.tsv live
-PLINK_BIM="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas_data_qc.bim"  # full path to the .bim file you used
+PLINK_BIM="/lisc/scratch/course/pgbiow/07_gwas_selection/plink/gwas_data_qc.bim"  # full path to the .bim file you used
 OUTDIR="/lisc/scratch/course/pgbiow/07_gwas_selection/mas_markers"    # where to write outputs
 # ====================================================
 
