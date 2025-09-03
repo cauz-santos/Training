@@ -711,7 +711,7 @@ We need to extract chromosome and position information from our VCF file and the
 module load bcftools
 
 # Define input VCF file (use the filtered VCF)
-INPUT_VCF="my_filtered_variants.vcf.gz"
+INPUT_VCF="dataset120_chr18.vcf.gz"
 
 # Define window size (e.g., 100 kb = 100000 bp)
 WINDOW_SIZE=100000
