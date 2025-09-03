@@ -77,7 +77,7 @@ Now, enter the folder with the command `cd`
 
 Then create some subfolders, for each specific analysis we will perform:
    ```bash
-   mkdir plink pca admixture snv_density
+   mkdir plink diversity pca admixture snv_density
    ```
 
 We will convert a **filtered VCF** into PLINK format and perform **LD pruning**. The pruned dataset will be used for **PCA** (and later for ADMIXTURE/GWAS).
