@@ -18,9 +18,9 @@ This is a **hands-on** session; you will:
 
 ### Input Data
 
-- `my_filtered_variants.vcf.gz` — high-quality, biallelic SNPs
+- `dataset120_chr18.vcf.gz` — high-quality, biallelic SNPs
 - `pca_results.eigenvec` — PCA eigenvectors (Day 6 output)  
-- `phenotypes.csv` — phenotypes with **SUC** column (g/100g dry matter)
+- `gwas_phen_table_120.csv` — phenotypes with **SUC** column (g/100g dry matter)
 
 **Example `phenotypes.csv` (CSV with header):**
 ```
@@ -52,7 +52,7 @@ copy and paste:
 #!/bin/bash
 #SBATCH --job-name=vcf2plink_gwas
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=8G
+#SBATCH --mem=1G
 #SBATCH --time=00:30:00
 #SBATCH -o vcf2plink_gwas.out
 #SBATCH -e vcf2plink_gwas.err
