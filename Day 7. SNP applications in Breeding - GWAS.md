@@ -882,7 +882,7 @@ sbatch 50_gs_lite_min.sh
 If correlation (`r`) is positive and strong, even this “lite” version shows promise.  
 
 
-#### Results: Polygenic Scores (PGS) for SUC
+### Results: Polygenic Scores (PGS) for SUC
 
 The folder (`gs-lite/`) contains the outputs from the simple PGS run. Use the commands below to **view** the results right in the terminal.
 
