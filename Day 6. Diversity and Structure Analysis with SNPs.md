@@ -814,33 +814,45 @@ Copy this into your R session (on the cluster with graphics enabled or in RStudi
 
 ```r
 # ================================
-# SNP Density Plot Script
+# SNP Density Genome-Wide Heatmap
 # ================================
 
-# Load libraries
 library(ggplot2)
 library(dplyr)
+library(scales)   # for Mb axis labels
 
-# --- Step 1: Load SNP density data ---
-# snp_density.txt has 4 columns:
-# count  chromosome  window_start  window_end
-snp_df <- read.table("snp_density.txt", header = FALSE)
+# Step 1: Load SNP density data
+snp_df <- read.table("./snv_density/snp_density.txt", header = FALSE)
 colnames(snp_df) <- c("Count", "Chromosome", "Window_Start", "Window_End")
 
-# --- Step 2: Order chromosomes (if numeric, convert properly) ---
-snp_df$Chromosome <- factor(snp_df$Chromosome,
-                            levels = mixedsort::mixedsort(unique(snp_df$Chromosome)))
+# Step 2: Calculate window midpoint
+snp_df <- snp_df %>%
+  mutate(Window_Mid = (Window_Start + Window_End) / 2)
 
-# --- Step 3: Make plot ---
-ggplot(snp_df, aes(x = Window_Start, y = Count)) +
-  geom_line(color = "steelblue") +
-  facet_wrap(~ Chromosome, scales = "free_x", ncol = 4) +
+# Step 3: Order chromosomes
+snp_df$Chromosome <- factor(snp_df$Chromosome,
+                            levels = sort(unique(snp_df$Chromosome)))
+
+# Step 4: Heatmap plot (interactive in RStudio)
+p <- ggplot(snp_df, aes(x = Window_Mid/1e6, y = Chromosome, fill = Count)) +
+  geom_tile(height = 0.9) +
+  scale_fill_gradientn(colours = c("darkgreen","green","yellow","orange","red"),
+                       name = "SNPs") +
+  scale_x_continuous(labels = label_number(suffix = "Mb")) +
   theme_minimal(base_size = 14) +
-  labs(title = "SNP Density Across the Genome",
-       x = "Genomic Position (bp)",
-       y = "Number of SNPs per Window") +
-  theme(panel.grid.minor = element_blank(),
-        strip.text = element_text(face = "bold"))
+  labs(title = "SNP Density per 100 kb window",
+       x = "Genomic Position",
+       y = "Chromosome") +
+  theme(panel.grid = element_blank(),
+        axis.text.y = element_text(face = "bold"),
+        plot.title = element_text(hjust = 0.5, face = "bold"))
+
+print(p)   # shows plot in RStudio
+
+# Step 5: Save as PDF in snv_density folder
+pdf("snv_density/snp_density_heatmap.pdf", width = 10, height = 6)
+print(p)
+dev.off()
 ```
 
 **Output**
