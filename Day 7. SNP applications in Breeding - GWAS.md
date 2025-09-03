@@ -442,6 +442,7 @@ Only change them if you want to zoom into a **specific SNP or region** (manual v
 
 library(data.table)
 library(ggplot2)
+library(ggrepel)
 
 # Load additive model GWAS results
 dt <- fread("gwas/gwas_suc_linear.assoc.linear")[TEST == "ADD" & !is.na(P)]
@@ -460,10 +461,22 @@ cat(sprintf("Top SNP: %s (CHR %s, POS %d, P = %.2e)\n", lead$SNP, chr, pos, lead
 # Subset ±250 kb window around top SNP
 win <- dt[CHR_NUM == chr & BP >= (pos - 250000) & BP <= (pos + 250000)]
 
+# Identify top SNP in the window
+top_win <- win[which.min(P)]
+
 # --- Plot to screen ---
 p_regional <- ggplot(win, aes(x = BP, y = -log10(P))) +
   geom_point(alpha = 0.7) +
   geom_vline(xintercept = pos, linetype = "dashed", color = "red") +
+  geom_text_repel(
+    data = top_win,
+    aes(label = SNP),
+    size = 3,
+    nudge_y = 0.5,
+    box.padding = 0.3,
+    segment.color = "grey50",
+    max.overlaps = Inf
+  ) +
   labs(
     title = sprintf("Regional Association: Chr %s ±250 kb around %s", chr, format(pos, big.mark = ",")),
     x = "Genomic Position (bp)",
@@ -475,9 +488,9 @@ p_regional <- ggplot(win, aes(x = BP, y = -log10(P))) +
 print(p_regional)
 
 # --- Save to file after inspection ---
-ggsave("GWAS_SUC_RegionalTop.png", plot = p_regional, width = 10, height = 4, dpi = 150)
+ggsave("GWAS_SUC_RegionalTop_labeled.png", plot = p_regional, width = 10, height = 4, dpi = 150)
 
-cat("Saved: GWAS_SUC_RegionalTop.png\n")
+cat("✅ Saved: GWAS_SUC_RegionalTop_labeled.png\n")
 ```
 ---
 
