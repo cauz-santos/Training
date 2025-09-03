@@ -84,7 +84,7 @@ export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
 
 **What are we doing and why?**  
 We will **build a STAR genome index** from a reference **FASTA** and **GTF**. STAR needs this index to align reads quickly and to detect **splice junctions** accurately.  
-**Breeding relevance:** robust splice-aware alignment preserves signals from genes and isoforms involved in **phosphorus-use efficiency (PUE)** and other stress responses—exactly the biology we want to prioritize for selection, marker design, and follow-up validation.
+>**Breeding relevance:** robust splice-aware alignment preserves signals from genes and isoforms involved in **phosphorus-use efficiency (PUE)** and other stress responses—exactly the biology we want to prioritize for selection, marker design, and follow-up validation.
 
 **Create the script with `vi`:**  
 Open a new file:
@@ -146,7 +146,7 @@ tail -n +1 logs/day9_star_index_*.err
 
 ### 2) Map **one** demo sample (Slurm)
 We will align **one** paired-end RNA-seq sample to the STAR index you just built. This produces a **coordinate-sorted, indexed BAM** plus STAR logs. Mapping only one sample live keeps the session fast while still showing you every critical decision (flags, resources, and checks).  
-**Breeding relevance:** consistent, high-quality alignment across treatments (−P vs +P) is essential to avoid false differential expression and to capture splice-aware signals in genes underlying **phosphorus-use efficiency (PUE)**.
+>**Breeding relevance:** consistent, high-quality alignment across treatments (−P vs +P) is essential to avoid false differential expression and to capture splice-aware signals in genes underlying **phosphorus-use efficiency (PUE)**.
 
 #### What to look for in the output
 - `Aligned.sortedByCoord.out.bam` (+ `.bai` index) for the demo sample  
@@ -219,7 +219,7 @@ After submission, we’ll **inspect `Log.final.out`** together and discuss wheth
 
 ### What are we doing and why?
 We will convert the per-sample **aligned BAM files** (from STAR) into a single **gene-level count matrix** using **featureCounts** (part of Subread). This step assigns read pairs to **exons** and sums them by **gene_id** from the GTF.  
-**Breeding relevance:** accurate gene counts are the backbone of **edgeR** differential expression. This is where nutrient/stress pathways (e.g., phosphate transport, root development) first become **quantifiable** for ranking candidates and informing selection decisions.
+>**Breeding relevance:** accurate gene counts are the backbone of **edgeR** differential expression. This is where nutrient/stress pathways (e.g., phosphate transport, root development) first become **quantifiable** for ranking candidates and informing selection decisions.
 
 ### Inputs and outputs
 - **Inputs**
