@@ -150,7 +150,7 @@ vi 02_make_covariates.sh
 #SBATCH -o make_covariates.out
 #SBATCH -e make_covariates.err
 
-EIGENVEC="pca_results.eigenvec"
+EIGENVEC="../06_diversity_structure/pca/pca_results.eigenvec"
 
 # pca_results.eigenvec: FID IID PC1 PC2 ...
 # Keep first 5 PCs (adjust if needed)
