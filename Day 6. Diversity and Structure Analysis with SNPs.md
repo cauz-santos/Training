@@ -638,22 +638,30 @@ ADMIXTURE takes PLINK BED files as input. We will run it for `K=2` to `K=5` as a
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --time=02:00:00
-#SBATCH -o admixture.out
-#SBATCH -e admixture.err
+#SBATCH -o admixture/admixture.out
+#SBATCH -e admixture/admixture.err
 
 module load admixture
 
 # Input dataset: LD-pruned files created in Step 2 (my_data_pruned.bed/.bim/.fam)
-INPUT_BASE_PRUNED="my_data_pruned"
+INPUT_BASE_PRUNED="./plink/my_data_pruned"
+
+# Make sure output folder exists
+mkdir -p admixture
 
 # Loop through different K values
 for K in {2..5}
 do
     echo "Running ADMIXTURE for K=$K"
-    admixture --cv -j4 $INPUT_BASE_PRUNED.bed $K | tee admixture_K${K}.log
+    admixture --cv -j4 ${INPUT_BASE_PRUNED}.bed $K | tee admixture/admixture_K${K}.log
+
+    # Move result files into admixture/ folder
+    mv ${INPUT_BASE_PRUNED}.${K}.Q admixture/ 2>/dev/null
+    mv ${INPUT_BASE_PRUNED}.${K}.P admixture/ 2>/dev/null
 done
 
-echo "ADMIXTURE runs complete."
+echo "ADMIXTURE runs complete. Results saved in ./admixture/"
+
 ```
 
 **Submit the job:**
