@@ -319,7 +319,7 @@ plot(miss$F_MISS, het$F,
 dev.off()
 ```
 
-### Step 2 — VCFtools: MAF, Heterozygosity, Missingness  
+### Step 2 — VCFtools: Heterozygosity, Missingness (Optional)
 
 We will use another tool, **VCFtools**, that complements PLINK.  
 While PLINK is strong for data preparation and sample-level summaries, VCFtools works directly on the VCF file and provides detailed per-site and per-individual statistics such as MAF, heterozygosity, and missingness. Combining both tools gives us a more complete and reliable picture of genetic diversity and data quality.
@@ -337,31 +337,26 @@ While PLINK is strong for data preparation and sample-level summaries, VCFtools 
    #!/bin/bash
    #SBATCH --job-name=vcftools_div
    #SBATCH --cpus-per-task=1
-   #SBATCH --mem=6G
+   #SBATCH --mem=1G
    #SBATCH --time=00:20:00
    #SBATCH -o vcftools_div.out
    #SBATCH -e vcftools_div.err
 
    module load vcftools
 
-   IN_VCF="my_filtered_variants.vcf.gz"  # same input used in Step 0.1
-
-   echo "Per-site allele frequencies (MAF)..."
-   vcftools --gzvcf "${IN_VCF}" \
-            --freq \
-            --out vcftools_maf
+   IN_VCF=/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"  # same input used in Step 0.1
 
    echo "Per-individual heterozygosity and inbreeding coefficient..."
    vcftools --gzvcf "${IN_VCF}" \
             --het \
-            --out vcftools_het
+            --out ./diversity/vcftools_het
 
    echo "Per-individual missingness..."
    vcftools --gzvcf "${IN_VCF}" \
             --missing-indv \
-            --out vcftools_missing
+            --out ./diversity/vcftools_missing
 
-   echo "Done. Outputs: vcftools_maf.frq, vcftools_het.het, vcftools_missing.imiss"
+   echo "Done. Outputs: vcftools_het.het, vcftools_missing.imiss"
    ```
 4. `Esc`, `:wq`, `Enter`.  
 5. Submit:
@@ -371,7 +366,6 @@ While PLINK is strong for data preparation and sample-level summaries, VCFtools 
 
 **Key outputs**
 
-- `vcftools_maf.frq` → allele frequencies per SNP (inspect MAF distribution)  
 - `vcftools_het.het` → per-sample O(HOM), E(HOM), **F**  
 - `vcftools_missing.imiss` → per-sample missingness
 
@@ -380,7 +374,6 @@ While PLINK is strong for data preparation and sample-level summaries, VCFtools 
 
 - Are there individuals with **very high missingness** (e.g., >10–20%)?  
 - Do some samples show **unusually low heterozygosity** (possible inbreeding or data issues)?  
-- Is the **MAF distribution** dominated by very rare variants (might affect power/interpretation)?
 
 > **Relevance:**
 > - Estimating heterozygosity, inbreeding, and allele frequencies helps breeders monitor the **health of germplasm collections**.  
