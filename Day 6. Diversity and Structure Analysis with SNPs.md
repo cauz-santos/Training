@@ -502,6 +502,8 @@ We will run PCA on the **LD-pruned** dataset produced in **Step 2** (`my_data_pr
 After running PCA with PLINK, we will visualize the results using R.  
 Copy the following script into RStudio (or an interactive R session on the cluster) and run it.
 
+*Please change the path to your pca results in the script:
+
 
 ```r
 # ================================
@@ -512,7 +514,7 @@ Copy the following script into RStudio (or an interactive R session on the clust
 library(ggplot2)
 
 # --- Load PCA results from PLINK ---
-eigenvec <- read.table("pca_results.eigenvec", header = FALSE)
+eigenvec <- read.table("/path/to/your/pca/pca_results.eigenvec", header = FALSE)
 colnames(eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(eigenvec)-2)))
 
 # Load eigenvalues
@@ -531,7 +533,7 @@ print(variance_explained[1:5])
 # IID    Population
 # sample1   PopA
 # sample2   PopB
-popinfo <- read.table("population_labels.txt", header = TRUE, stringsAsFactors = FALSE)
+popinfo <- read.table("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv", header = TRUE, stringsAsFactors = FALSE)
 
 # --- Merge data ---
 pca_df <- merge(eigenvec, popinfo, by = "IID")
