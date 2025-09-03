@@ -183,7 +183,7 @@ PLINK uses a **sliding window** approach:
    echo "Creating pruned dataset..."
    plink --bfile "${IN_BASE}" \
          --allow-extra-chr \
-         --extract my_data_prune.prune.in \
+         --extract ./plink/my_data_prune.prune.in \
          --make-bed \
          --out ./plink/my_data_pruned
 
