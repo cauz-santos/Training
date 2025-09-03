@@ -758,7 +758,7 @@ We need to extract chromosome and position information from our VCF file and the
 #!/bin/bash
 #SBATCH --job-name=snp_density_data
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=4G
+#SBATCH --mem=1G
 #SBATCH --time=00:30:00
 #SBATCH -o snp_density_data.out
 #SBATCH -e snp_density_data.err
@@ -767,7 +767,7 @@ We need to extract chromosome and position information from our VCF file and the
 module load bcftools
 
 # Define input VCF file (use the filtered VCF)
-INPUT_VCF="dataset120_chr18.vcf.gz"
+INPUT_VCF="/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"
 
 # Define window size (e.g., 100 kb = 100000 bp)
 WINDOW_SIZE=100000
@@ -782,7 +782,7 @@ awk -v WS=$WINDOW_SIZE
 'BEGIN {OFS="\t"} {print $1, int($2/WS)*WS, int($2/WS)*WS + WS - 1}
 ' | \
 sort -k1,1 -k2,2n | \
-uniq -c > snp_density.txt
+uniq -c > ./snv_density/snp_density.txt
 
 echo "SNP density data generated: snp_density.txt"
 ```
