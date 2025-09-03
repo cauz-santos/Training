@@ -640,17 +640,13 @@ cd ./plink
 # Backup the original .bim file
 cp my_data_pruned.bim my_data_pruned.bim.backup
 
-# Remove 'chr' prefix if present
-sed -i 's/^chr//' my_data_pruned.bim
-
-# Replace any non-numeric codes with 0 (ADMIXTURE accepts 0 for unplaced markers)
+# Rewrite the first column: remove "chrLG" prefix and keep only the number
 awk '{
-  if ($1 ~ /^[0-9]+$/) {
-    print $0
-  } else {
-    $1 = 0; print $0
+  if ($1 ~ /^chrLG[0-9]+$/) {
+    gsub("chrLG","",$1)
   }
-}' my_data_pruned.bim > tmp && mv tmp my_data_pruned.bim
+  print
+}' OFS='\t' my_data_pruned.bim.backup > my_data_pruned.bim
 ```
 
 ### Step 1 - Run ADMIXTURE for different K values
