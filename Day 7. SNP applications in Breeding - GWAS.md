@@ -40,6 +40,18 @@ PDAC255_Sin_S,21.24
 
 ### Part 0 — Prepare Genotypes, Phenotypes, and Covariates
 
+First create a folder for the file outputs of day 7 in your home directory:
+   ```bash
+   mkdir 07_gwas_selection
+   ```
+Now, enter the folder with the command `cd`
+
+Then create some subfolders, for each specific analysis we will perform:
+   ```bash
+   mkdir plink gwas mas gs-lite
+   ```
+
+
 ### Step 1 — Convert VCF → PLINK (binary)
 
 Create and submit:
