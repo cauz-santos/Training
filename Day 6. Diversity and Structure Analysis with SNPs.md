@@ -298,22 +298,24 @@ het <- read.table("diversity/plink_het.het", header=TRUE)
 # Load missingness results
 miss <- read.table("diversity/plink_missing.imiss", header=TRUE)
 
-# Save histogram of F
-pdf("diversity/het_F_hist.pdf")
+# Show plots directly in RStudio
 hist(het$F, main="Inbreeding coefficient (F)", xlab="F")
-dev.off()
-
-# Save histogram of missingness
-pdf("diversity/missingness_hist.pdf")
 hist(miss$F_MISS, main="Missing genotypes per individual", xlab="Fraction missing")
-dev.off()
-
-# Save scatterplot QC
-pdf("diversity/qc_scatterplot.pdf")
 plot(miss$F_MISS, het$F,
      xlab="Missingness (F_MISS)",
      ylab="Inbreeding coefficient (F)",
      main="QC: Missingness vs. Inbreeding")
+
+# Save all three plots to PDF
+pdf("diversity/qc_plots.pdf")
+
+hist(het$F, main="Inbreeding coefficient (F)", xlab="F")
+hist(miss$F_MISS, main="Missing genotypes per individual", xlab="Fraction missing")
+plot(miss$F_MISS, het$F,
+     xlab="Missingness (F_MISS)",
+     ylab="Inbreeding coefficient (F)",
+     main="QC: Missingness vs. Inbreeding")
+
 dev.off()
 ```
 
