@@ -145,7 +145,7 @@ vi 02_make_covariates.sh
 #!/bin/bash
 #SBATCH --job-name=make_covariates
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
+#SBATCH --mem=1G
 #SBATCH --time=00:05:00
 #SBATCH -o make_covariates.out
 #SBATCH -e make_covariates.err
