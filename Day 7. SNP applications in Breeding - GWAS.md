@@ -760,18 +760,18 @@ cat mas_markers/mas_markers.tsv
 ```
 
 **Example columns you’ll see:**  
-`SNP` – variant ID (e.g., chrLG14:3182914:C:T)
-`CHR / BP` – chromosome and 1-based position
-`A1(effect) / A2 – alleles`; BETA is the additive effect per copy of A1
-`BETA` – effect size from the linear model (units depend on how SUC was measured/scaled)
-`BETA` > 0: A1 increases SUC
-`BETA` < 0: A1 decreases SUC
-`P` – p-value for association (smaller = stronger evidence)
+`SNP` – variant ID (e.g., chrLG14:3182914:C:T)  
+`CHR / BP` – chromosome and 1-based position  
+`A1(effect) / A2 – alleles`; BETA is the additive effect per copy of A1  
+`BETA` – effect size from the linear model (units depend on how SUC was measured/scaled)  
+`BETA` > 0: A1 increases SUC  
+`BETA` < 0: A1 decreases SUC  
+`P` – p-value for association (smaller = stronger evidence)  
 
 **How to interpret a row:**  
 ```bash
 chrLG14:3182914:C:T  chrLG14  3182914  T  C  20.81  8.097e-12
-```bash
+```
 
 The effect allele is T (A1).
 Each additional T allele is associated with a +20.81 change in SUC (in your phenotype’s units).
