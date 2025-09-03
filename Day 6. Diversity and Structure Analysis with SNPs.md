@@ -99,7 +99,7 @@ What this produces:
    module load plink
 
    # Input VCF (from Day 5)
-   IN_VCF="my_filtered_variants.vcf.gz"
+   IN_VCF="dataset120_chr18.vcf.gz"
 
    echo "Converting ${IN_VCF} to PLINK binary format..."
    plink --vcf "${IN_VCF}" \
