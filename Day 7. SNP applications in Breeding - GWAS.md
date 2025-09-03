@@ -109,8 +109,8 @@ vi 01_make_pheno.sh
 
 set -euo pipefail
 
-PHENO_CSV="phenotypes.csv"   # columns: IID,SUC
-FAM="gwas_data.fam"
+PHENO_CSV="/lisc/scratch/course/pgbiow/data/metadata/gwas_phen_table_120.csv"   # columns: IID,SUC
+FAM="./plink/gwas_data.fam"
 
 # Create header
 echo -e "FID\tIID\tSUC" > pheno_suc.txt
