@@ -96,7 +96,7 @@ What this produces:
    #SBATCH -o vcf2plink.out
    #SBATCH -e vcf2plink.err
 
-   module load plink
+   module load PLINK
 
    # Input VCF (from Day 5)
    IN_VCF="dataset120_chr18.vcf.gz"
@@ -157,7 +157,7 @@ PLINK uses a **sliding window** approach:
    #SBATCH -o ld_prune.out
    #SBATCH -e ld_prune.err
 
-   module load plink
+   module load PLINK
 
    IN_BASE="my_data"  # from Step 0.1
 
@@ -213,7 +213,7 @@ Calculating heterozygosity and missingness is important because it allows us to 
    #SBATCH -o plink_div.out
    #SBATCH -e plink_div.err
 
-   module load plink
+   module load PLINK
 
    IN_BASE="my_data"  # unpruned dataset from Step 0.1
 
@@ -342,7 +342,7 @@ We will run PCA on the **LD-pruned** dataset produced in **Step 2** (`my_data_pr
    #SBATCH -o run_pca.out
    #SBATCH -e run_pca.err
 
-   module load plink
+   module load PLINK
 
    # LD-pruned dataset from Part 0
    INPUT_BASE_PRUNED="my_data_pruned"
