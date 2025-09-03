@@ -27,7 +27,7 @@ By the end of this session, you will be able to:
 ### Input Data
 
 The dataset we will use comes from the study by Hazzouri *et al.* (2019), published in *Nature Communications*:  
-*Genome-wide association mapping of date palm fruit traits.* 
+*Genome-wide association mapping of date palm fruit traits.*  
 **Link:** (https://www.nature.com/articles/s41467-019-12604-9)
 
 In this work, the authors:  
