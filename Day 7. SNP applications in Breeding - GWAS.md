@@ -685,50 +685,65 @@ Paste the following content:
 
 set -euo pipefail
 
-# ====== EDIT THESE 3 PATHS TO MATCH YOUR SETUP ======
-GWAS_DIR="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas"         # where bonferroni_hits_SUC.tsv / top20_hits_SUC.tsv live
-PLINK_BIM="/lisc/scratch/course/pgbiow/07_gwas_selection/plink/gwas_data_qc.bim"  # full path to the .bim file you used
-OUTDIR="/lisc/scratch/course/pgbiow/07_gwas_selection/mas_markers"    # where to write outputs
-# ====================================================
+# Make sort/join deterministic
+export LC_ALL=C
+export LANG=C
+
+# ====== EDIT THESE PATHS IF NEEDED ======
+GWAS_DIR="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas"               # has bonferroni_hits_SUC.tsv / top20_hits_SUC.tsv
+PLINK_BIM="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas_data_qc.bim"  # your .bim
+OUTDIR="/lisc/scratch/course/pgbiow/07_gwas_selection/mas_markers"          # output folder
+# ========================================
 
 mkdir -p "$OUTDIR"
 
-# 1) Pick the source of top hits (prefer Bonferroni, else Top20)
+# 1) Pick the GWAS source (prefer Bonferroni, else Top20)
 if [ -s "$GWAS_DIR/bonferroni_hits_SUC.tsv" ]; then
   SRC="$GWAS_DIR/bonferroni_hits_SUC.tsv"
 else
   SRC="$GWAS_DIR/top20_hits_SUC.tsv"
 fi
 
-# 2) From PLINK BIM, build a lookup: SNP -> CHR BP A1 A2
-#                 SNP  CHR  BP   A1   A2
-awk 'BEGIN{OFS="\t"}{print $2, $1, $4, $5, $6}' "$PLINK_BIM" > "$OUTDIR/bim.lookup"
+# 2) BIM lookup: SNP -> CHR BP A1 A2
+#                 SNP    CHR   BP    A1    A2
+awk 'BEGIN{OFS="\t"}{print $2,   $1,   $4,   $5,   $6}' \
+  "$PLINK_BIM" > "$OUTDIR/bim.lookup"
 
-# 3) From the hits table, extract SNP, P, BETA by header names (keeps header first)
+# 3) GWAS slim (NO HEADER here): SNP  P  BETA
 awk 'BEGIN{FS=OFS="\t"}
-NR==1 {for(i=1;i<=NF;i++) h[$i]=i; print "SNP","P","BETA"; next}
-      {print $h["SNP"], $h["P"], $h["BETA"]}' "$SRC" > "$OUTDIR/assoc.slim"
+  NR==1 {for(i=1;i<=NF;i++) h[$i]=i; next}
+  {print $h["SNP"], $h["P"], $h["BETA"]}
+' "$SRC" > "$OUTDIR/assoc.slim"
 
-# 4) Join hits with BIM to add CHR/BP/A1/A2, then reorder columns and add a header
-LC_ALL=C sort -t $'\t' -k1,1 "$OUTDIR/assoc.slim" > "$OUTDIR/a"
-LC_ALL=C sort -t $'\t' -k1,1 "$OUTDIR/bim.lookup" > "$OUTDIR/b"
+# 4) Sort both by key (col 1 = SNP)
+sort -t $'\t' -k1,1 "$OUTDIR/assoc.slim"  > "$OUTDIR/a"
+sort -t $'\t' -k1,1 "$OUTDIR/bim.lookup" > "$OUTDIR/b"
 
+# (Optional) show any SNPs present in GWAS but missing in BIM
+join -t $'\t' -1 1 -2 1 -v1 "$OUTDIR/a" "$OUTDIR/b" | cut -f1 > "$OUTDIR/missing_in_bim.snps" || true
+
+# 5) Join and reorder columns → SNP CHR BP A1 A2 BETA P
+# join columns after key: a has [P BETA], b has [CHR BP A1 A2]
 join -t $'\t' -1 1 -2 1 "$OUTDIR/a" "$OUTDIR/b" \
-  | awk 'BEGIN{OFS="\t"}{print $1,$4,$5,$6,$7,$3,$2}' \
-  > "$OUTDIR/mas_markers.tsv"
+| awk 'BEGIN{OFS="\t"}{print $1, $4, $5, $6, $7, $3, $2}' \
+> "$OUTDIR/mas_markers.body.tsv"
 
-(echo -e "SNP\tCHR\tBP\tA1(effect)\tA2\tBETA\tP"; cat "$OUTDIR/mas_markers.tsv") \
-  > "$OUTDIR/tmp" && mv "$OUTDIR/tmp" "$OUTDIR/mas_markers.tsv"
+# Add header
+{
+  echo -e "SNP\tCHR\tBP\tA1(effect)\tA2\tBETA\tP"
+  cat "$OUTDIR/mas_markers.body.tsv"
+} > "$OUTDIR/mas_markers.tsv"
 
-# 5) (Optional) Also write a plain SNP list (no header)
-cut -f1 "$OUTDIR/mas_markers.tsv" | tail -n +2 > "$OUTDIR/mas_markers.snplist"
+# 6) (Optional) plain SNP list (no header)
+tail -n +2 "$OUTDIR/mas_markers.tsv" | cut -f1 > "$OUTDIR/mas_markers.snplist"
 
-# Clean temp
-rm -f "$OUTDIR/a" "$OUTDIR/b" "$OUTDIR/bim.lookup" "$OUTDIR/assoc.slim"
+# Cleanup temps
+rm -f "$OUTDIR/a" "$OUTDIR/b" "$OUTDIR/assoc.slim" "$OUTDIR/bim.lookup" "$OUTDIR/mas_markers.body.tsv"
 
 echo "Created:"
-echo "  $OUTDIR/mas_markers.tsv"
-echo "  $OUTDIR/mas_markers.snplist"
+echo "  $OUTDIR/mas_markers.tsv        (SNP, CHR, BP, A1, A2, BETA, P)"
+echo "  $OUTDIR/mas_markers.snplist    (just SNP IDs)"
+[ -s "$OUTDIR/missing_in_bim.snps" ] && echo "Note: $(wc -l < "$OUTDIR/missing_in_bim.snps") SNP(s) missing in BIM → $OUTDIR/missing_in_bim.snps" || true
 ```
 
 Save and submit:
@@ -736,6 +751,37 @@ Save and submit:
 ```bash
 sbatch 40_build_mas_markers.sh
 ```
+
+### MAS markers (top GWAS SNPs for SUC)
+Show the table:
+
+```bash
+cat mas_markers/mas_markers.tsv
+```
+
+**Example columns you’ll see:**  
+`SNP` – variant ID (e.g., chrLG14:3182914:C:T)
+`CHR / BP` – chromosome and 1-based position
+`A1(effect) / A2 – alleles`; BETA is the additive effect per copy of A1
+`BETA` – effect size from the linear model (units depend on how SUC was measured/scaled)
+`BETA` > 0: A1 increases SUC
+`BETA` < 0: A1 decreases SUC
+`P` – p-value for association (smaller = stronger evidence)
+
+**How to interpret a row:**  
+```bash
+chrLG14:3182914:C:T  chrLG14  3182914  T  C  20.81  8.097e-12
+```bash
+
+The effect allele is T (A1).
+Each additional T allele is associated with a +20.81 change in SUC (in your phenotype’s units).
+P = 8.1×10⁻¹² is genome-wide significant (very strong signal).
+
+Sort the results by significance:
+
+```bash
+(head -n1 mas_markers/mas_markers.tsv && tail -n +2 mas_markers/mas_markers.tsv | sort -k7,7g) | column -t
+```bash
 
 > Relevance: A clean list of deployable markers (effect allele, effect size, position) to design assays and screen parents/progeny.
 
