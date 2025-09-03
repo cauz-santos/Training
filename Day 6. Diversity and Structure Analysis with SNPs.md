@@ -290,24 +290,32 @@ Log in with your cluster username and password.
 This gives you an RStudio session running on the cluster.
 
 Once logged in, open a new R script and paste:
-   ```r
+
+```r
 # Load heterozygosity results
 het <- read.table("diversity/plink_het.het", header=TRUE)
 
 # Load missingness results
 miss <- read.table("diversity/plink_missing.imiss", header=TRUE)
 
-# Quick histograms
+# Save histogram of F
+pdf("diversity/het_F_hist.pdf")
 hist(het$F, main="Inbreeding coefficient (F)", xlab="F")
-hist(miss$F_MISS, main="Missing genotypes per individual", xlab="Fraction missing")
+dev.off()
 
-# Scatterplot for QC
+# Save histogram of missingness
+pdf("diversity/missingness_hist.pdf")
+hist(miss$F_MISS, main="Missing genotypes per individual", xlab="Fraction missing")
+dev.off()
+
+# Save scatterplot QC
+pdf("diversity/qc_scatterplot.pdf")
 plot(miss$F_MISS, het$F,
      xlab="Missingness (F_MISS)",
      ylab="Inbreeding coefficient (F)",
      main="QC: Missingness vs. Inbreeding")
-   ```
-
+dev.off()
+```
 
 ### Step 2 — VCFtools: MAF, Heterozygosity, Missingness  
 
