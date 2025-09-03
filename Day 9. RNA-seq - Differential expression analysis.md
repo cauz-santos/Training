@@ -649,10 +649,19 @@ This two-week intensive bioinformatics training course has provided a comprehens
 
 ---
 
-## References
+### References
 - Kong, L. et al. (2021). Comparative transcriptome analysis reveals novel insights into transcriptional responses to phosphorus starvation in oil palm root. *BMC Genomic Data*. https://pmc.ncbi.nlm.nih.gov/articles/PMC7863428/
 - STAR — https://github.com/alexdobin/STAR
 - Subread/featureCounts — http://subread.sourceforge.net/
 - Trinity DE and GOseq wrappers — https://github.com/trinityrnaseq/trinityrnaseq/wiki
 - edgeR — https://bioconductor.org/packages/edgeR
 - g:Profiler — https://cran.r-project.org/package=gprofiler2
+
+### Useful Tutorials and Resources
+
+- [Introduction to RNAseq](https://scienceparkstudygroup.github.io/rna-seq-lesson/)  
+- [RNAseq tutorial](https://sbc.shef.ac.uk/ngs_intro_workshop/03-rna-seq.nb.html)
+- [Reference-based RNA-Seq data analysis](https://training.galaxyproject.org/training-material/topics/transcriptomics/tutorials/ref-based/tutorial.html)
+- [Informatics for RNA-seq](https://github.com/griffithlab/rnaseq_tutorial)
+- [RNA-seq workflow](https://master.bioconductor.org/packages/release/workflows/vignettes/rnaseqGene/inst/doc/rnaseqGene.html)
+
