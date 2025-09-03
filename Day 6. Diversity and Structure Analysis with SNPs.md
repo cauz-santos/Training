@@ -380,6 +380,70 @@ While PLINK is strong for data preparation and sample-level summaries, VCFtools 
 > - Detects individuals with **low diversity** that may reduce genetic gain.  
 > - Identifies **outliers or contaminated samples** early.  
 > - Guides decisions on which individuals to advance or discard in breeding pipelines.
+
+### Step 3 — FST Between Two Populations (VCFtools)
+
+We can calculate **Weir & Cockerham’s FST** between two populations using VCFtools.
+
+
+**1. Create population files**  
+
+From the metadata CSV, extract the sample IDs for each population. Each file must contain **one sample ID per line**.
+
+```bash
+# Metadata file
+META=/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv
+
+# Create pop1.txt (example: Al-Ain - Abu Dhabi)
+awk -F',' 'NR>1 {gsub(/"/,""); if($2=="Al-Ain - Abu Dhabi") print $1}' $META > pop1.txt
+
+# Create pop2.txt (replace with the second population name)
+awk -F',' 'NR>1 {gsub(/"/,""); if($2=="OTHER_POPULATION") print $1}' $META > pop2.txt
+
+# Check that both lists have samples
+wc -l pop1.txt pop2.txt
+```
+
+**2. Create a script 12_vcftools_fst.sh:**
+
+1. Open:
+   ```bash
+   vi 12_vcftools_fst.sh
+   ```
+2. Press `i`.  
+3. **Copy & paste**:
+   
+```bash
+#!/bin/bash
+#SBATCH --job-name=vcftools_fst
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:10:00
+#SBATCH -o diversity/vcftools_fst.out
+#SBATCH -e diversity/vcftools_fst.err
+
+module load vcftools
+
+vcftools --gzvcf /lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz \
+         --weir-fst-pop ./diversity/pop1.txt \
+         --weir-fst-pop ./diversity/pop2.txt \
+         --out ./diversity/fst_result
+```
+To save: `Esc`, `:wq`, `Enter`.  
+
+Submit:
+```bash
+sbatch 12_vcftools_fst.sh
+```
+Inspect results:
+```bash
+head ./diversity/fst_result.weir.fst
+```
+
+To compute the mean FST:
+awk 'NR>1 && $3!="nan"{s+=$3; n++} END{if(n>0) print "Mean FST = " s/n; else print "No valid sites"}' ./diversity/fst_result.weir.fst
+```
+
 ---
 
 ## Part 3 — Principal Component Analysis (PCA) with PLINK
@@ -408,7 +472,7 @@ We will run PCA on the **LD-pruned** dataset produced in **Step 2** (`my_data_pr
    #!/bin/bash
    #SBATCH --job-name=run_pca
    #SBATCH --cpus-per-task=1
-   #SBATCH --mem=8G
+   #SBATCH --mem=1G
    #SBATCH --time=00:30:00
    #SBATCH -o run_pca.out
    #SBATCH -e run_pca.err
