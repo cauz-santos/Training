@@ -69,6 +69,12 @@ The tools we explore today — like PCA and ADMIXTURE — are **foundational met
 
 ## Part 0 — Data Preparation (VCF → PLINK + LD Pruning)
 
+First create a folder for the file outputs of day 6 in your home directory:
+   ```bash
+   mkdir 06_diversity_structure
+   ```
+Now, enter the folder with the command `cd`
+
 We will convert a **filtered VCF** into PLINK format and perform **LD pruning**. The pruned dataset will be used for **PCA** (and later for ADMIXTURE/GWAS).
 
 ### Step 1 — Convert VCF to PLINK format
@@ -99,7 +105,7 @@ What this produces:
    module load PLINK
 
    # Input VCF (from Day 5)
-   IN_VCF="dataset120_chr18.vcf.gz"
+   IN_VCF="/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"
 
    echo "Converting ${IN_VCF} to PLINK binary format..."
    plink --vcf "${IN_VCF}" \
