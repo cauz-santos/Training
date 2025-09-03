@@ -110,6 +110,8 @@ What this produces:
    echo "Converting ${IN_VCF} to PLINK binary format..."
    plink --vcf "${IN_VCF}" \
          --make-bed \
+         --allow-extra-chr \
+         --double-id \
          --out my_data
 
    echo "Done. Created: my_data.bed / .bim / .fam"
