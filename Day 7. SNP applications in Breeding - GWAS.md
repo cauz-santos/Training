@@ -613,7 +613,7 @@ sbatch 30_prepare_bed_for_annotation.sh
 - `snps_in_genes_with_product.tsv` → if a SNP lies **within** a gene (exon/intron span)  
 - `snps_nearest_genes_with_product.tsv` → the **closest** gene and the **distance** (0 if overlapping)
 
-### SNP Annotation Results**
+### SNP Annotation Results
 We have annotated the top GWAS SNPs with nearby genes using the date palm genome annotation.
 
 Two result files are available inside the `annotation/` folder:
