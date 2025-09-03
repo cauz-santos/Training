@@ -256,10 +256,57 @@ Calculating heterozygosity and missingness is important because it allows us to 
    sbatch 10_plink_diversity.sh
    ```
 
-**How to read the outputs**
+you will get two main output files inside the `diversity/` folder:
 
-- `plink_het.het` → O(HOM), E(HOM), N_SNPs, **F** = (E - O) / E  
-- `plink_missing.imiss` → fraction of missing genotypes per individual
+1) `plink_het.het` — per-individual heterozygosity and inbreeding coefficient
+   ```bash
+   head diversity/plink_het.het
+   ```
+Columns:
+`O(HOM)` = Observed number of homozygous genotypes
+`E(HOM)` = Expected number of homozygous genotypes under Hardy–Weinberg
+`N(NM)` = Number of non-missing genotypes
+`F` = inbreeding coefficient per individual
+
+**Interpretation of F:**  
+**High positive values (~0.1 or higher)** → possible inbreeding or loss of diversity
+
+2) `plink_missing.imiss` — missing data per individual
+   ```bash
+   head diversity/plink_missing.imiss
+   ```
+Columns:
+`N_MISS` = Number of missing genotypes
+`F_MISS` = Fraction of missing data per individual
+
+### Open RStudio on the Cluster
+On the LiSC cluster, you do not run RStudio directly from the terminal.
+Instead, you:
+
+Open a browser and go to:
+https://rstudio.lisc.univie.ac.at
+
+Log in with your cluster username and password.
+This gives you an RStudio session running on the cluster.
+
+Once logged in, open a new R script and paste:
+   ```r
+# Load heterozygosity results
+het <- read.table("diversity/plink_het.het", header=TRUE)
+
+# Load missingness results
+miss <- read.table("diversity/plink_missing.imiss", header=TRUE)
+
+# Quick histograms
+hist(het$F, main="Inbreeding coefficient (F)", xlab="F")
+hist(miss$F_MISS, main="Missing genotypes per individual", xlab="Fraction missing")
+
+# Scatterplot for QC
+plot(miss$F_MISS, het$F,
+     xlab="Missingness (F_MISS)",
+     ylab="Inbreeding coefficient (F)",
+     main="QC: Missingness vs. Inbreeding")
+   ```
 
 
 ### Step 2 — VCFtools: MAF, Heterozygosity, Missingness  
