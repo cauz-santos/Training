@@ -901,10 +901,10 @@ The folder (`gs-lite/`) contains the outputs from the simple PGS run. Use the co
 
 ```bash
 # Show the per-line PGS file (look for the SCORE column)
-cat gs-lite/gs_pgs.profile
+head -n 30 gs-lite/gs_pgs.profile
 
 # Show the ranked table (PGS + observed SUC), already sorted
-cat gs-lite/pgs_ranked.tsv
+head -n 30 gs-lite/pgs_ranked.tsv
 
 # Top 20 lines by PGS
 cat gs-lite/top20_by_PGS.tsv
