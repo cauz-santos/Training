@@ -4,7 +4,7 @@
 
 Day 9 is dedicated to RNA sequencing (RNA-seq) data analysis, a powerful high-throughput technology used to measure gene expression levels, discover novel transcripts, and identify gene fusions. We will cover the entire workflow, from experimental design and pre-processing to mapping, quantification, and differential expression analysis.
 
-**Morning Session 1: RNA-seq Experimental Design and Pre-processing**
+**RNA-seq Experimental Design and Pre-processing**
 
 As discussed on Day 5, robust experimental design is critical for RNA-seq studies. This session will reiterate key design principles specific to RNA-seq and then dive into the initial steps of data pre-processing.
 
@@ -17,194 +17,462 @@ As discussed on Day 5, robust experimental design is critical for RNA-seq studie
 *   **RNA Quality and Integrity:** High-quality RNA is crucial. RNA Integrity Number (RIN) scores are commonly used to assess RNA degradation. Degraded RNA can lead to biased results.
 *   **Batch Effects:** As mentioned, samples processed at different times or by different personnel can introduce systematic biases. Randomization of samples across batches is important.
 
-**RNA-seq Pre-processing Steps:**
 
-After sequencing, raw RNA-seq reads (FASTQ files) need to be pre-processed to remove low-quality data and artifacts before alignment and quantification.
+## Learning outcomes
+By the end of this session you will be able to:
+- Build a **STAR** genome index and align paired‑end RNA‑seq reads (demo sample).
+- Generate a **gene‑level count matrix** using **featureCounts** (strandedness‑aware).
+- Perform **differential expression (DE)** with **edgeR via Trinity** helper scripts.
+- Run **GO enrichment** (GOseq via Trinity or g:Profiler) and interpret pathways.
+- Tie RNA‑seq findings to **plant breeding** decisions (candidate pathways/genes for P‑use efficiency).
 
-1.  **Quality Control (QC):** Use tools like FastQC (covered on Day 5) to assess the quality of raw reads. Look for issues like low quality scores, adapter contamination, and GC content bias.
-2.  **Trimming and Filtering:** Use tools like Trimmomatic (covered on Day 5) or Cutadapt to remove adapter sequences, low-quality bases, and short reads. This step is crucial for improving alignment accuracy and reducing computational burden.
+---
 
-    ```bash
-    # Example using Cutadapt (alternative to Trimmomatic)
-    cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -A AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT \
-             -o trimmed_R1.fastq.gz -p trimmed_R2.fastq.gz \
-             raw_reads_R1.fastq.gz raw_reads_R2.fastq.gz
-    ```
+## Dataset used in this class (Oil palm, Pi‑starvation, 28 days)
+**Species/tissue:** *Elaeis guineensis* (oil palm), roots.  
+**Design:** 6 libraries at **28‑day** timepoint — **Pi‑starved (−P)** vs **Pi‑sufficient (+P)**; **3 biological replicates per group**.  
+**Source:** Kong *et al.* (2021) “Comparative transcriptome analysis reveals novel insights into transcriptional responses to phosphorus starvation in oil palm root.” (BioProject PRJNA673667).  
+**Link:** https://pmc.ncbi.nlm.nih.gov/articles/PMC7863428/
 
-**Morning Session 2: Mapping and Quantification (e.g., STAR)**
+| Group | Time | Tissue | Rep | SRA Run | Suggested sample name |
+|---|---|---|---:|---|---|
+| −P (Pi‑starved) | 28 d | root | 1 | SRR12959886 | Pminus_28d_rep1 |
+| −P (Pi‑starved) | 28 d | root | 2 | SRR12959894 | Pminus_28d_rep2 |
+| −P (Pi‑starved) | 28 d | root | 3 | SRR12959895 | Pminus_28d_rep3 |
+| +P (Pi‑sufficient) | 28 d | root | 1 | SRR12959887 | Pplus_28d_rep1 |
+| +P (Pi‑sufficient) | 28 d | root | 2 | SRR12959888 | Pplus_28d_rep2 |
+| +P (Pi‑sufficient) | 28 d | root | 3 | SRR12959889 | Pplus_28d_rep3 |
 
-Once reads are pre-processed, the next step is to align them to a reference genome and then quantify gene or transcript expression levels.
+> **Note:** We **start from trimmed FASTQs** and **pre‑mapped BAMs** (except one demo sample we’ll map live).
 
-**Read Mapping (Alignment):**
 
-RNA-seq reads are aligned to a reference genome to determine their genomic origin. Unlike DNA sequencing, RNA-seq reads originate from transcribed regions (exons) and often span exon-exon junctions. Therefore, specialized splice-aware aligners are required.
+**`metadata/rnaseq_samples.txt` (Trinity format)**
+```
+Pminus    Pminus_28d_rep1,Pminus_28d_rep2,Pminus_28d_rep3
+Pplus     Pplus_28d_rep1,Pplus_28d_rep2,Pplus_28d_rep3
+```
 
-*   **STAR (Spliced Transcripts Alignment to a Reference):** One of the fastest and most accurate splice-aware aligners for RNA-seq reads. It uses an uncompressed suffix array index to achieve high mapping speeds.
+**`metadata/rnaseq_sample_sheet.csv`**
+```csv
+sample_id,group,batch
+Pminus_28d_rep1,minus,B1
+Pminus_28d_rep2,minus,B1
+Pminus_28d_rep3,minus,B1
+Pplus_28d_rep1,plus,B1
+Pplus_28d_rep2,plus,B1
+Pplus_28d_rep3,plus,B2
+```
 
-    **STAR Workflow:**
+> **Breeding relevance:** Phosphorus is costly and often limiting; identifying transcriptional responses underpinning **P‑use efficiency (PUE)** enables **marker development**, **line selection**, and **reduced fertilizer** strategies.
 
-    1.  **Genome Indexing:** Build a STAR genome index from the reference genome FASTA file and gene annotation (GTF/GFF3).
-        ```bash
-        STAR --runMode genomeGenerate \
-             --genomeDir /path/to/STAR_index \
-             --genomeFastaFiles /path/to/reference.fasta \
-             --sjdbGTFfile /path/to/annotation.gtf \
-             --sjdbOverhang 100 # (ReadLength - 1)
-        ```
-    2.  **Read Alignment:** Align trimmed FASTQ reads to the generated index.
-        ```bash
-        STAR --runMode alignReads \
-             --genomeDir /path/to/STAR_index \
-             --readFilesIn trimmed_R1.fastq.gz trimmed_R2.fastq.gz \
-             --readFilesCommand zcat \
-             --outFileNamePrefix sample_ \
-             --outSAMtype BAM SortedByCoordinate \
-             --outSAMunmapped Within \
-             --outSAMattributes Standard
-        ```
+---
 
-**Quantification:**
+## Cluster modules (LISC)
+```bash
+module purge
+module load Trinity/2.15.2-foss-2023a   # or: module load trinityrnaseq/2.15.2-5.40.2-5.3.28
+module load STAR/2.7.10a                # use the closest STAR available
+module load SAMtools/1.20
+module load Subread/2.0.3               # provides featureCounts
+export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
+```
 
-After alignment, the next step is to quantify how many reads map to each gene or transcript. This provides a measure of gene expression.
+---
 
-*   **FeatureCounts:** A highly efficient and flexible program for counting reads to genomic features (genes, exons, etc.) from BAM files. It is often used after STAR alignment.
 
-    ```bash
-    featureCounts -p -t exon -g gene_id \
-                  -a /path/to/annotation.gtf \
-                  -o gene_counts.txt \
-                  sample_Aligned.sortedByCoord.out.bam
-    ```
-    *   `-p`: Paired-end reads.
-    *   `-t exon`: Count reads mapping to exons.
-    *   `-g gene_id`: Group counts by gene ID.
-    *   `-a`: Path to the GTF annotation file.
+### 1) STAR genome index (Slurm)
 
-**Morning Session 3: Differential Expression Analysis in R (DESeq2, edgeR)**
+**What are we doing and why?**  
+We will **build a STAR genome index** from a reference **FASTA** and **GTF**. STAR needs this index to align reads quickly and to detect **splice junctions** accurately.  
+**Breeding relevance:** robust splice-aware alignment preserves signals from genes and isoforms involved in **phosphorus-use efficiency (PUE)** and other stress responses—exactly the biology we want to prioritize for selection, marker design, and follow-up validation.
 
-The ultimate goal of many RNA-seq experiments is to identify genes that are differentially expressed (DEGs) between different conditions (e.g., treated vs. control, disease vs. healthy). This involves statistical modeling to account for variability and normalization.
+**Create the script with `vi`:**  
+Open a new file:
+```bash
+vi 01_star_index.sh
+```
 
-**Normalization:**
+When `vi` opens, press `i` to enter insert mode.
 
-Raw read counts cannot be directly compared between samples due to differences in sequencing depth, gene length, and RNA composition. Normalization methods adjust raw counts to make them comparable. Common methods include TPM (Transcripts Per Million), FPKM (Fragments Per Kilobase of transcript per Million mapped reads), and methods used by DESeq2/edgeR.
+Paste the script below :
 
-**Differential Expression Analysis (DEA):**
+```bash
+#!/usr/bin/env bash
+#SBATCH -p standard
+#SBATCH -c 16
+#SBATCH --mem=64G
+#SBATCH -t 00:25:00
+#SBATCH -J day9_star_index
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
+set -euo pipefail
 
-DEA uses statistical models (often based on negative binomial distribution) to identify genes whose expression levels are significantly different between experimental groups.
+module purge
+module load Trinity/2.15.2-foss-2023a
+module load STAR/2.7.10a
 
-**R Packages for DEA:**
+REF=ref/reference.fa
+GTF=ref/annotation.gtf
+IDX=ref/STAR_index
+READLEN=${READLEN:-100}          # set to your read length (100 or 150)
+SJDB=$((READLEN-1))
 
-    *   **DESeq2:** A popular Bioconductor package for differential gene expression analysis based on the negative binomial distribution. It is robust to outliers and provides good control over false discovery rates.
+mkdir -p "$IDX"
+STAR --runThreadN 16 \
+     --runMode genomeGenerate \
+     --genomeDir "$IDX" \
+     --genomeFastaFiles "$REF" \
+     --sjdbGTFfile "$GTF" \
+     --sjdbOverhang $SJDB
+```
+To save and exit `vi`: press `Esc`, then type `:wq` and press `Enter`.
 
-    **DESeq2 Workflow (Conceptual):**
+Submit:
+```bash
+sbatch 01_star_index.sh
+```
 
-    1.  **Load Data:** Read gene count matrix (e.g., from FeatureCounts) and sample metadata into R.
-    2.  **Create DESeqDataSet Object:** Combine counts and metadata.
-    3.  **Run DESeq:** Perform normalization and differential expression testing.
-    4.  **Extract Results:** Get a table of differentially expressed genes with p-values, adjusted p-values, and fold changes.
-    5.  **Visualization:** Create MA plots, volcano plots, and heatmaps to visualize results.
+**How to check success:**  
+STAR will populate ref/STAR_index/ with many small files (e.g., SA, Genome, sjdbList.out.tab).
 
-    ```R
-    # Example R code for DESeq2
-    library(DESeq2)
+Inspect the Slurm log for any error messages:
+```bash
+tail -n +1 logs/day9_star_index_*.out
+tail -n +1 logs/day9_star_index_*.err
+```
 
-    # Assuming \'counts_matrix\' is your gene counts and \'colData\' is your sample metadata
-    # colData should be a data.frame with row names matching column names of counts_matrix
-    # and a column indicating experimental condition (e.g., \'condition\')
+> *Breeding note:* Accurate splice‑aware mapping preserves signals from **splicing/TF regulation** linked to PUE traits.
 
-    # Create a dummy counts matrix and colData for demonstration
-    # In a real scenario, counts_matrix would come from featureCounts output
-    # and colData from your experimental design file.
-    set.seed(123)
-    counts_matrix <- matrix(rnbinom(n=100*6, size=10, mu=100), ncol=6)
-    rownames(counts_matrix) <- paste0("gene", 1:100)
-    colnames(counts_matrix) <- paste0("sample", 1:6)
 
-    colData <- data.frame(condition = factor(c("control", "control", "control", "treated", "treated", "treated")))
-    rownames(colData) <- colnames(counts_matrix)
+### 2) Map **one** demo sample (Slurm)
+We will align **one** paired-end RNA-seq sample to the STAR index you just built. This produces a **coordinate-sorted, indexed BAM** plus STAR logs. Mapping only one sample live keeps the session fast while still showing you every critical decision (flags, resources, and checks).  
+**Breeding relevance:** consistent, high-quality alignment across treatments (−P vs +P) is essential to avoid false differential expression and to capture splice-aware signals in genes underlying **phosphorus-use efficiency (PUE)**.
 
-    dds <- DESeqDataSetFromMatrix(countData = counts_matrix,
-                                  colData = colData,
-                                  design = ~ condition)
+#### What to look for in the output
+- `Aligned.sortedByCoord.out.bam` (+ `.bai` index) for the demo sample  
+- `Log.final.out` with key metrics:  
+  - **Number of input reads**  
+  - **Uniquely mapped %** (aim high)  
+  - **% mapped to multiple loci** (too high can indicate repeats/contamination)  
+  - **Mismatch rate per base** (quality/adapter issues)  
+  - **Chimeric reads** (usually low for bulk RNA-seq)
 
-    # Pre-filtering (optional but recommended for large datasets)
-    keep <- rowSums(counts(dds)) >= 10
-    dds <- dds[keep,]
+**Create the script with `vi`:**  
+1) Open the file:
+```bash
+vi 02_star_map_one.sh
+```
+2) **Press `i`** to enter *insert* mode.  
+3) Paste the script.  
+4) Save & quit: **`Esc`**, then **`:wq`**.
 
-    dds <- DESeq(dds)
-    res <- results(dds)
+```bash
+#!/usr/bin/env bash
+#SBATCH -p standard
+#SBATCH -c 16
+#SBATCH --mem=64G
+#SBATCH -t 00:35:00
+#SBATCH -J day9_star_map1
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
+set -euo pipefail
 
-    # Order by adjusted p-value
-    res_ordered <- res[order(res$padj),]
+module purge
+module load Trinity/2.15.2-foss-2023a
+module load STAR/2.7.10a
+module load SAMtools/1.20
 
-    # Summary of results
-    summary(res)
+IDX=ref/STAR_index
+SAMPLE=${SAMPLE:-Pminus_28d_rep1}
+R1=fastq/${SAMPLE}_R1.fastq.gz
+R2=fastq/${SAMPLE}_R2.fastq.gz
+OUT=star/${SAMPLE}
+mkdir -p "$OUT"
 
-    # Plotting (e.g., MA plot)
-    plotMA(res, main="MA Plot")
+STAR --runThreadN 16 \
+  --genomeDir "$IDX" \
+  --readFilesIn "$R1" "$R2" \
+  --readFilesCommand zcat \
+  --outFileNamePrefix "$OUT/" \
+  --outSAMtype BAM SortedByCoordinate \
+  --outSAMunmapped Within \
+  --outSAMattributes NH HI AS nM XS \
+  --twopassMode Basic
 
-    # Export results
-    # write.csv(as.data.frame(res_ordered), file="deseq2_results.csv")
-    ```
+samtools index -@ 8 ${OUT}/Aligned.sortedByCoord.out.bam
 
-*   **edgeR:** Another widely used Bioconductor package for differential expression analysis of RNA-seq data, also based on the negative binomial distribution. It offers similar functionalities to DESeq2.
+# Quick mapping summary
+echo "==== ${SAMPLE} mapping summary ===="
+grep -E "Number of input reads|Uniquely mapped|% of reads mapped to multiple|Mismatch rate" ${OUT}/Log.final.out || true
+```
 
-    **edgeR Workflow (Conceptual):**
+Submit:
+```bash
+SAMPLE=Pminus_28d_rep1 sbatch 02_star_map_one.sh
+```
 
-    1.  **Load Data:** Read gene count matrix and sample metadata into R.
-    2.  **Create DGEList Object:** Create an edgeR DGEList object from counts and group information.
-    3.  **Normalization:** Perform TMM (Trimmed Mean of M-values) normalization.
-    4.  **Estimate Dispersion:** Estimate common, trended, and tagwise dispersions.
-    5.  **Fit Model and Test:** Fit a negative binomial generalized linear model and perform statistical tests for differential expression.
-    6.  **Extract Results:** Get a table of differentially expressed genes.
+After submission, we’ll **inspect `Log.final.out`** together and discuss whether the metrics support reliable downstream DE analysis.
+*(All other samples are pre‑mapped and already under `star/`.)*
 
-    ```R
-    # Example R code for edgeR
-    library(edgeR)
 
-    # Assuming \'counts_matrix\' and \'colData\' from DESeq2 example
-    group <- colData$condition
+### 3) featureCounts → counts matrix (Slurm)
 
-    y <- DGEList(counts=counts_matrix, group=group)
+### What are we doing and why?
+We will convert the per-sample **aligned BAM files** (from STAR) into a single **gene-level count matrix** using **featureCounts** (part of Subread). This step assigns read pairs to **exons** and sums them by **gene_id** from the GTF.  
+**Breeding relevance:** accurate gene counts are the backbone of **edgeR** differential expression. This is where nutrient/stress pathways (e.g., phosphate transport, root development) first become **quantifiable** for ranking candidates and informing selection decisions.
 
-    # Pre-filtering
-    keep <- filterByExpr(y)
-    y <- y[keep,,keep.lib.sizes=FALSE]
+### Inputs and outputs
+- **Inputs**
+  - Sorted BAMs for all samples: `star/*/Aligned.sortedByCoord.out.bam`
+  - Gene annotation (GTF): `ref/annotation.gtf`
+- **Outputs**
+  - Raw featureCounts table: `counts/featureCounts.txt`
+  - Clean **genes × samples** matrix (TSV): `counts/counts_matrix.tsv`
+  - `gene_lengths.txt` (for GOseq length bias correction): `counts/gene_lengths.txt`
 
-    # Normalization
-    y <- calcNormFactors(y)
+### About strandedness (`-s`)
+- `-s 0` = **unstranded**, `-s 1` = **forward**, `-s 2` = **reverse** (common for dUTP/Illumina TruSeq Stranded).  
+- Using the wrong value can **halve** your counts or inflate antisense signal. If unsure, confirm with your library kit notes or a quick `RSeQC infer_experiment.py` test.  
+- In this course, set it via an environment variable at submission (see **Submit** section).
 
-    # Estimate dispersion
-    y <- estimateDisp(y)
+**Create the script with `vi`:**  
+1) Open the file:
+```bash
+vi 03_featurecounts.sh
+```
+2) **Press `i`** to enter *insert* mode.  
+3) Paste the script below.  
+4) Save & quit: **`Esc`**, **`:wq`**.
 
-    # Fit GLM and test for differential expression
-    fit <- glmQLFit(y, design)
-    qlf <- glmQLFTest(fit, coef=2) # Assuming \'conditiontreated\' is the second coefficient
+```bash
+#!/usr/bin/env bash
+#SBATCH -p standard
+#SBATCH -c 16
+#SBATCH --mem=32G
+#SBATCH -t 00:25:00
+#SBATCH -J day9_featureCounts
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
+set -euo pipefail
 
-    # Extract results
-    results_edgeR <- topTags(qlf, n=nrow(y))
-    print(results_edgeR)
+module purge
+module load Trinity/2.15.2-foss-2023a
+module load Subread/2.0.3
 
-    # Plotting (e.g., MDS plot, MA plot)
-    # plotMDS(y)
-    # plotSmear(qlf, de.tags=rownames(results_edgeR$table))
-    ```
+GTF=ref/annotation.gtf
+OUT=counts
+mkdir -p "$OUT"
 
-**Afternoon Session 4: Discussion: Issues Arising from the Course**
+# collect all BAMs (pre-mapped + demo)
+ls star/*/Aligned.sortedByCoord.out.bam > ${OUT}/bam_list.txt
 
-This final session of the course is dedicated to an open discussion, allowing participants to reflect on the topics covered, ask questions, and discuss challenges or issues they encountered during the two weeks. It\'s an opportunity to consolidate learning and address any remaining uncertainties.
+# set strandedness: 0=unstranded, 1=forward, 2=reverse
+STRAND=${STRAND:-0}
 
-**Potential Discussion Topics:**
+featureCounts -T 16 -p -B -C -s ${STRAND} \
+  -t exon -g gene_id \
+  -a "$GTF" \
+  -o ${OUT}/featureCounts.txt \
+  $(cat ${OUT}/bam_list.txt)
 
-*   **Troubleshooting:** Common errors encountered during command-line operations, scripting, or tool execution.
-*   **Data Interpretation:** Challenges in interpreting QC reports, alignment statistics, variant calls, or differential expression results.
-*   **Choosing the Right Tool:** When to use which tool for a specific task (e.g., GATK vs. bcftools for SNP calling, DESeq2 vs. edgeR for DEA).
-*   **Computational Resources:** Strategies for managing large datasets and utilizing HPC resources effectively.
-*   **Experimental Design Revisited:** How to design future experiments to minimize common pitfalls.
-*   **Next Steps:** Resources for continued learning, advanced topics not covered in the course, and how to apply these skills to individual research projects.
-*   **Feedback:** Constructive feedback on the course content, pace, and delivery.
+# Clean genes x samples matrix
+python - << 'PY'
+import pandas as pd
+fc = pd.read_csv('counts/featureCounts.txt', sep='\\t', comment='#')
+cts = fc.iloc[:, [0] + list(range(6, fc.shape[1]))].copy()
+cts.rename(columns={'Geneid':'gene_id'}, inplace=True)
+cts.to_csv('counts/counts_matrix.tsv', sep='\\t', index=False)
+# gene lengths for GOseq
+fc[['Geneid','Length']].rename(columns={'Geneid':'gene_id','Length':'length'}) \
+  .to_csv('counts/gene_lengths.txt', sep='\\t', index=False, header=False)
+PY
+```
 
-This session aims to ensure that all participants leave the course with a clear understanding of the foundational concepts and practical skills, and feel confident in applying them to their own bioinformatics challenges. It also provides an opportunity for networking and building a community of practice among the participants.
+Submit:
+```bash
+# Example: reverse-stranded libraries
+STRAND=2 sbatch 03_featurecounts.sh
+```
+
+> *Breeding note:* Gene‑level counts quantify **stress and nutrient pathways** driving resilience and yield stability under low‑P.
+
+### After featureCounts: how to inspect your outputs
+
+#### 1) Inspect the summary table
+The file `featureCounts.txt.summary` reports, **per sample**, how many fragments were `Assigned` (counted to a gene) and how many were `Unassigned_*` for various reasons.
+
+```bash
+# Quick view
+less -S featureCounts.txt.summary
+
+# Nicely aligned columns (press q to quit)
+column -t featureCounts.txt.summary | less -S
+```
+**What to look for:**
+- `Assigned` should be the **largest** row across samples.
+- Large `Unassigned_NoFeatures` → GTF mismatch (wrong genome/annotation).
+- Large `Unassigned_Strand` → wrong `-s` value (strandedness).
+- Large `Unassigned_MultiMapping` → repetitive regions or liberal aligner settings.
+
+**Compute Assigned % per sample (quick check):**
+```bash
+awk 'NR==1{for(i=2;i<=NF;i++) S[i]=$i; next} {for(i=2;i<=NF;i++) T[i]+=$i} $1=="Assigned"{for(i=2;i<=NF;i++) A[i]=$i}
+     END{for(i=2;i<=NF;i++){pct=(A[i]/T[i])*100; printf "%s\t%.2f%% Assigned\n", S[i], pct}}' featureCounts.txt.summary
+```
+
+#### 2) Spot-check the clean counts matrix
+The file `counts/counts_matrix.tsv` is **genes × samples** and is what you’ll feed into Trinity/edgeR.
+
+```bash
+# Header line (gene_id and sample names, check order!)
+head -n 1 counts_matrix.tsv
+
+# First 10 data rows
+head counts_matrix.tsv | column -t
+```
+
+**Check total library sizes (sum of counts) per sample:**
+```bash
+awk -F'\t' 'NR==1{for(i=2;i<=NF;i++) name[i]=$i; next}
+            {for(i=2;i<=NF;i++) lib[i]+=$i}
+            END{for(i=2;i<=NF;i++) printf "%s\t%d\n", name[i], lib[i]}' counts_matrix.tsv | column -t
+```
+
+**Sanity check for all-zero genes (should be few or none):**
+```bash
+awk -F'\t' 'NR>1{sum=0; for(i=2;i<=NF;i++) sum+=$i; if(sum==0) print $1}' counts_matrix.tsv | head
+```
+
+**Ensure sample order matches Trinity’s `samples.txt`:**
+```bash
+echo "Counts header:"
+head -n1 counts_matrix.tsv
+
+echo -e "\nTrinity groups/samples:"
+cat metadata/samples.txt
+```
+
+**Common red flags & fixes**
+- **Assigned < 60%** across samples → check `-s` and GTF/genome match.
+- **One sample much smaller library size** → expect more dispersion; check `Log.final.out` and earlier QC.
+- **Header/sample name mismatch** → rename BAMs consistently or regenerate the matrix with correct order.
+
+
+### 4) Differential expression with **edgeR via Trinity** (Slurm)
+Create `metadata/samples.txt` as shown above. Then create `scripts/04_trinity_edger.sh`:
+```bash
+#!/usr/bin/env bash
+#SBATCH -p standard
+#SBATCH -c 8
+#SBATCH --mem=32G
+#SBATCH -t 00:45:00
+#SBATCH -J day9_edgeR
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
+set -euo pipefail
+
+module purge
+module load Trinity/2.15.2-foss-2023a
+export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
+TRINITY_DE="$TRINITY_HOME/Analysis/DifferentialExpression"
+
+OUTDE=edger_trinity
+mkdir -p "$OUTDE"
+
+$TRINITY_DE/run_DE_analysis.pl \
+  --matrix counts/counts_matrix.tsv \
+  --method edgeR \
+  --samples_file metadata/samples.txt \
+  --output "$OUTDE" \
+  --min_cpm 1 --min_reps_min_cpm 2
+
+# Optional: clustering/PCA/heatmaps
+$TRINITY_DE/analyze_diff_expr.pl \
+  --matrix ${OUTDE}/counts_TMM_normalized.matrix \
+  --samples metadata/samples.txt \
+  --min_rowSum_counts 10 \
+  --P 0.05 --C 1 \
+  --output ${OUTDE}/diffexpr_plots
+```
+Submit:
+```bash
+sbatch scripts/04_trinity_edger.sh
+```
+
+**Outputs of interest**
+- `edger_trinity/edgeR.DE_results/*DE_results` (per-contrast gene tables with logFC, FDR)
+- `edger_trinity/diffexpr_plots/` (PCA, heatmaps, volcano/MA)
+
+> *Breeding note:* DE highlights candidate genes/TFs for **marker design**, **introgression**, or **editing** to improve PUE.
+
+---
+
+## 5) Functional enrichment of DEGs
+### Option A — GOseq via Trinity (length bias aware)
+Create `scripts/05_trinity_goseq.sh`:
+```bash
+#!/usr/bin/env bash
+#SBATCH -p standard
+#SBATCH -c 4
+#SBATCH --mem=16G
+#SBATCH -t 00:25:00
+#SBATCH -J day9_GOseq
+#SBATCH -o logs/%x_%j.out
+#SBATCH -e logs/%x_%j.err
+set -euo pipefail
+
+module purge
+module load Trinity/2.15.2-foss-2023a
+export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
+TRINITY_DE="$TRINITY_HOME/Analysis/DifferentialExpression"
+
+# Choose your contrast name produced by Trinity (adjust as needed)
+CONTR=Pminus_vs_Pplus
+
+UP="edger_trinity/edgeR.DE_results/${CONTR}.DE_up.genes"
+DOWN="edger_trinity/edgeR.DE_results/${CONTR}.DE_down.genes"
+G2GO="metadata/gene2go.tsv"          # gene_id \t GO:xxxx;GO:yyyy
+GLEN="counts/gene_lengths.txt"       # produced above from featureCounts
+
+$TRINITY_DE/run_GOseq.pl \
+  --genes_single_factor "$UP" \
+  --gene2GO "$G2GO" \
+  --lengths "$GLEN" \
+  --out_prefix results_GOseq_up
+
+$TRINITY_DE/run_GOseq.pl \
+  --genes_single_factor "$DOWN" \
+  --gene2GO "$G2GO" \
+  --lengths "$GLEN" \
+  --out_prefix results_GOseq_down
+```
+Submit:
+```bash
+sbatch scripts/05_trinity_goseq.sh
+```
+
+### Option B — g:Profiler (quick)
+```r
+# Run interactively or via Rscript
+library(gprofiler2)
+up <- readLines('edger_trinity/edgeR.DE_results/Pminus_vs_Pplus.DE_up.genes')
+res <- gost(query = up, organism = 'athaliana', correction_method = 'fdr')
+write.csv(res$result, 'gprofiler_up.csv', row.names = FALSE)
+```
+> If you have an *Elaeis guineensis* gene2go, prefer **Option A** to stay species‑specific.
+
+> *Breeding note:* Enrichment pinpoints processes (e.g., **phosphate transport**, **root development**, **ABA signaling**) to prioritize for selection and validation.
+
+
+---
+
+## Troubleshooting
+- **STAR mapping slow:** ensure `--readFilesCommand zcat` for gz FASTQs; check I/O throttling.
+- **Few reads counted:** verify `-s` (strandedness) in featureCounts; wrong setting can halve counts.
+- **No DE genes:** check replicate concordance (PCA), batch effects, and library sizes; consider increasing `--min_cpm` leniency for demo.
+- **GOseq errors:** confirm `gene2go.tsv` format and `gene_lengths.txt` paths.
+
+---
 
 **Conclusion:**
 
@@ -212,36 +480,12 @@ This two-week intensive bioinformatics training course has provided a comprehens
 
 # Congratulations!!! You have completed the training
 
-
+---
 
 ## References
-
-[1] The Linux Documentation Project. Available at: https://www.tldp.org/
-[2] Python Documentation. Available at: https://docs.python.org/3/
-[3] Biopython Project. Available at: https://biopython.org/
-[4] R Project for Statistical Computing. Available at: https://www.r-project.org/
-[5] NCBI (National Center for Biotechnology Information). Available at: https://www.ncbi.nlm.nih.gov/
-[6] European Bioinformatics Institute (EMBL-EBI). Available at: https://www.ebi.ac.uk/
-[7] FastQC. Available at: https://www.bioinformatics.babraham.ac.uk/projects/fastqc/
-[8] MultiQC. Available at: https://multiqc.info/
-[9] Trimmomatic. Available at: http://www.usadellab.org/cms/?page=trimmomatic
-[10] GATK (Genome Analysis Toolkit). Available at: https://gatk.broadinstitute.org/hc/en-us
-[11] Stacks. Available at: http://catchenlab.com/stacks/
-[12] bcftools. Available at: http://samtools.github.io/bcftools/
-[13] VCFtools. Available at: https://vcftools.github.io/index.html
-[14] SnpEff. Available at: http://pcingola.github.io/SnpEff/
-[15] PLINK. Available at: https://www.cog-genomics.org/plink/
-[16] SNPRelate. Available at: https://bioconductor.org/packages/release/bioc/html/SNPRelate.html
-[17] TreeMix. Available at: https://bitbucket.org/nygcresearch/treemix/wiki/Home
-[18] Dsuite. Available at: https://github.com/millanek/Dsuite
-[19] STAR (Spliced Transcripts Alignment to a Reference). Available at: https://github.com/alexdobin/STAR
-[20] FeatureCounts. Available at: http://subread.sourceforge.net/
-[21] DESeq2. Available at: https://bioconductor.org/packages/release/bioc/html/DESeq2.html
-[22] edgeR. Available at: https://bioconductor.org/packages/release/bioc/html/edgeR.html
-[23] scikit-learn. Available at: https://scikit-learn.org/stable/
-[24] pandas. Available at: https://pandas.pydata.org/
-[25] numpy. Available at: https://numpy.org/
-[26] matplotlib. Available at: https://matplotlib.org/
-[27] seaborn. Available at: https://seaborn.pydata.org/
-
-
+- Kong, L. et al. (2021). Comparative transcriptome analysis reveals novel insights into transcriptional responses to phosphorus starvation in oil palm root. *BMC Genomic Data*. https://pmc.ncbi.nlm.nih.gov/articles/PMC7863428/
+- STAR — https://github.com/alexdobin/STAR
+- Subread/featureCounts — http://subread.sourceforge.net/
+- Trinity DE and GOseq wrappers — https://github.com/trinityrnaseq/trinityrnaseq/wiki
+- edgeR — https://bioconductor.org/packages/edgeR
+- g:Profiler — https://cran.r-project.org/package=gprofiler2
