@@ -790,38 +790,76 @@ After GWAS, we know which SNPs are significantly associated with sucrose and the
 
 Here we build a **Polygenic Score (PGS)**: for each plant, we multiply the genotype (0/1/2 copies of the allele) by the SNP’s effect size (BETA) and sum across top SNPs. This gives one number per line = the “genomic score.” If PGS correlates with observed sucrose, we can already prioritize top candidates. "Plants with higher scores should, on average, have higher sucrose. This is a mini version of Genomic Selection (GS)."
 
+Create the file `50_gs_lite_min.sh`using `vi`:
+
 ```bash
-# 1) Build weights file for PLINK --score (columns: SNP  A1  BETA)
-awk 'BEGIN{FS=OFS="\t"} NR>1 {print $1,$4,$6}' mas_markers.tsv > gs_weights.tsv
-echo "Wrote gs_weights.tsv (SNP A1 BETA)"
+#!/bin/bash
+#SBATCH --job-name=gs_lite_min
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:05:00
+#SBATCH -o gs_lite_min.out
+#SBATCH -e gs_lite_min.err
 
-# 2) Compute per-line polygenic score (PGS) using PLINK
+set -euo pipefail
+
+# Folders/files (keep it simple, relative paths)
+OUTDIR="gs-lite"
+MARKERS="mas_markers/mas_markers.tsv"   # has columns: SNP, CHR, BP, A1(effect), A2, BETA, P
+BFILE="plink/gwas_data_qc"                    # PLINK prefix (bed/bim/fam)
+PHENO="pheno_suc.txt"                   # 3 cols: FID IID SUC
+
+mkdir -p "$OUTDIR"
+
+# 1) Build PLINK --score weights: SNP  A1(effect)  BETA
+awk 'BEGIN{FS=OFS="\t"} NR>1 {print $1,$4,$6}' "$MARKERS" > "$OUTDIR/gs_weights.tsv"
+echo "Wrote: $OUTDIR/gs_weights.tsv (SNP  A1  BETA)"
+
+# 2) Compute PGS with PLINK
 module load plink
-plink --bfile gwas_data_qc \
-      --score gs_weights.tsv 1 2 3 header sum \
-      --out gs_pgs
-# Output: gs_pgs.profile  (contains FID IID SCORE)
+plink --bfile "$BFILE" \
+      --score "$OUTDIR/gs_weights.tsv" 1 2 3 header sum \
+      --allow-extra-chr \
+      --out "$OUTDIR/gs_pgs"
 
-# 3) Rank lines by PGS and compare to observed SUC phenotype
-awk 'NR==1{for(i=1;i<=NF;i++)if($i=="SCORE")s=i; next}{print $1"\t"$2"\t"$s}' gs_pgs.profile > pgs.tsv
-awk -F, 'NR>1{print $1"\t"$2}' phenotypes.csv | sort -k1,1 > pheno.tsv
-sort -k2,2 pgs.tsv > pgs.sorted
-join -t $'\t' -1 2 -2 1 pgs.sorted pheno.tsv | awk 'BEGIN{OFS="\t"}{print $2,$1,$3,$4}' > pgs_with_suc.tsv
-(echo -e "FID\tIID\tPGS\tSUC"; cat pgs_with_suc.tsv) > tmp && mv tmp pgs_with_suc.tsv
-sort -k3,3gr pgs_with_suc.tsv > pgs_ranked.tsv
-head -n 21 pgs_ranked.tsv > top20_by_PGS.tsv
-echo "Created: pgs_ranked.tsv (all ranked) and top20_by_PGS.tsv"
-
-# 4) Quick R plot: check correlation between PGS and SUC
+# 3) Rank and correlate in a tiny R snippet (no shell joins)
+module load R
 R --vanilla <<'EOF'
-d <- read.table("pgs_ranked.tsv", header=TRUE, sep="\t")
-png("PGS_vs_SUC.png", 1000, 800, res=150)
-plot(d$PGS, d$SUC, xlab="Polygenic Score (PGS)", ylab="Sucrose (SUC)", main="PGS vs SUC (quick check)")
-abline(lm(SUC ~ PGS, data=d))
-legend("topleft", bty="n", legend=paste0("r = ", round(cor(d$PGS, d$SUC, use='complete.obs'),3)))
+d <- read.table("gs-lite/gs_pgs.profile", header=TRUE)
+score_col <- grep("^SCORE", names(d), value=TRUE)[1]
+pgs <- d[, c("FID","IID", score_col)]; names(pgs) <- c("FID","IID","PGS")
+
+ph <- read.table("pheno_suc.txt", header=FALSE)
+if(ncol(ph) < 3) stop("pheno_suc.txt must have ≥3 cols: FID IID SUC")
+colnames(ph)[1:3] <- c("FID","IID","SUC")
+
+m <- merge(pgs, ph[,c("FID","IID","SUC")], by=c("FID","IID"), all.x=TRUE)
+write.table(m, "gs-lite/pgs_with_suc.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+
+mr <- m[order(-m$PGS),]
+write.table(mr, "gs-lite/pgs_ranked.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+write.table(head(mr, 20), "gs-lite/top20_by_PGS.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+
+png("gs-lite/PGS_vs_SUC.png", width=1000, height=800, res=150)
+plot(m$PGS, m$SUC, xlab="Polygenic Score (PGS)", ylab="Sucrose (SUC)",
+     main="PGS vs SUC (quick check)")
+abline(lm(SUC ~ PGS, data=m))
+legend("topleft", bty="n",
+       legend=paste0("r = ", round(cor(m$PGS, m$SUC, use='complete.obs'), 3)))
 dev.off()
 EOF
-echo "Saved: PGS_vs_SUC.png"
+
+echo "Done."
+echo "Show tables with:"
+echo "  cat gs-lite/gs_pgs.profile"
+echo "  cat gs-lite/pgs_ranked.tsv"
+echo "Plot:"
+echo "  gs-lite/PGS_vs_SUC.png"
+```
+
+Submit the job:
+```bash
+sbatch 50_gs_lite_min.sh
 ```
 
 **Interpretation:**  
