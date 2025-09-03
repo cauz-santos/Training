@@ -510,11 +510,11 @@ Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **p
 We are using the **Date Palm genome** from NCBI  
 👉 [GCA_009389715.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_009389715.1/)
 
-These files are available on the cluster:
-`/lisc/scratch/course/pgbiow/data/genomes/`
-├── date_palm_genome.fna # reference genome (FASTA)
-├── date_palm_genomic.gff # annotation in GFF3 format
-└── date_palm_genomic.gtf # annotation in GTF format (alternative)
+These files are available on the cluster:  
+`/lisc/scratch/course/pgbiow/data/genomes/`  
+date_palm_genome.fna # reference genome (FASTA)  
+date_palm_genomic.gff # annotation in GFF3 format  
+date_palm_genomic.gtf # annotation in GTF format (alternative)  
  
 **Make a BED of top SNPs:**  
 
@@ -538,37 +538,52 @@ vi 30_prepare_bed_for_annotation.sh
 
 set -euo pipefail
 
-GENOME_GFF="reference.gff3"   # <-- CHANGE to your GFF3 path
+# --- Reference annotation (Date Palm genome from NCBI) ---
+GENOME_GFF="/lisc/scratch/course/pgbiow/data/genomes/date_palm_genomic.gff"
 
-# 1) Pick SNPs to annotate (prefer Bonferroni; fallback top20)
+# --- Create output folder ---
+OUTDIR="annotation"
+mkdir -p $OUTDIR
+
+# --- Step 1) Pick SNPs to annotate (Bonferroni first, else top20) ---
 if [ -s bonferroni_hits_SUC.tsv ]; then
-  awk 'NR==1 || $0 ~ /ADD/' bonferroni_hits_SUC.tsv | \
-  awk 'NR>1{print $1, $2, $3, $12}' OFS='\t' > snps_for_annot.tsv
-  # CHR BP SNP P (columns per your assoc file; adjust if needed)
+  echo "Using Bonferroni-significant SNPs..."
+  awk 'NR>1 {print $1, $3, $2, $9}' OFS='\t' bonferroni_hits_SUC.tsv > $OUTDIR/snps_for_annot.tsv
 else
-  awk 'NR==1 || $0 ~ /ADD/' top20_hits_SUC.tsv | \
-  awk 'NR>1{print $1, $2, $3, $12}' OFS='\t' > snps_for_annot.tsv
+  echo "No Bonferroni file, using Top20 hits..."
+  awk 'NR>1 {print $1, $3, $2, $9}' OFS='\t' top20_hits_SUC.tsv > $OUTDIR/snps_for_annot.tsv
 fi
+# Output columns: CHR BP SNP P
 
-# 2) Convert to 0-based BED: chrom, start(BP-1), end(BP), name=SNP
-awk 'BEGIN{OFS="\t"} { if(NR==1 && $1=="CHR"){next} start=$2-1; end=$2; print $1, start, end, $3 }' \
-    snps_for_annot.tsv > top_snps.bed
+echo "Wrote: $OUTDIR/snps_for_annot.tsv"
 
-echo "Wrote: top_snps.bed"
+# --- Step 2) Convert SNPs into 0-based BED format ---
+awk 'BEGIN{OFS="\t"} {start=$2-1; end=$2; print $1, start, end, $3}' $OUTDIR/snps_for_annot.tsv > $OUTDIR/top_snps.bed
 
-# 3) Extract gene features from GFF3 into BED (chrom, start-1, end, gene_id|name|product)
-awk 'BEGIN{OFS="\t"} $3=="gene" {
+echo "Wrote: $OUTDIR/top_snps.bed"
+
+# --- Step 3) Extract gene features from GFF3 into BED ---
+awk -v OFS="\t" '$3=="gene" {
   split($9,a,";"); id="NA"; name="NA"; prod="NA";
   for(i in a){
     if(a[i] ~ /^ID=/){sub(/^ID=/,"",a[i]); id=a[i]}
     if(a[i] ~ /^Name=/){sub(/^Name=/,"",a[i]); name=a[i]}
     if(a[i] ~ /^product=/){sub(/^product=/,"",a[i]); prod=a[i]}
-    if(a[i] ~ /^gene=/){sub(/^gene=/,"",a[i]); name=a[i]} # fallback
+    if(a[i] ~ /^gene=/){sub(/^gene=/,"",a[i]); name=a[i]} # fallback if only "gene=" exists
   }
   print $1, $4-1, $5, id "|" name "|" prod
-}' "reference.gff3" > genes.bed
+}' "$GENOME_GFF" > $OUTDIR/genes.bed
 
-echo "Wrote: genes.bed (gene features)"
+echo "Wrote: $OUTDIR/genes.bed (gene features)"
+
+# --- Step 4) Intersect SNPs with genes ---
+module load BEDTools/2.30.0  # adjust module name if different on your cluster
+
+bedtools intersect -a $OUTDIR/top_snps.bed -b $OUTDIR/genes.bed -wa -wb > $OUTDIR/snps_in_genes.tsv
+bedtools closest   -a $OUTDIR/top_snps.bed -b $OUTDIR/genes.bed > $OUTDIR/snps_nearest_genes.tsv
+
+echo "Wrote: $OUTDIR/snps_in_genes.tsv (overlaps)"
+echo "Wrote: $OUTDIR/snps_nearest_genes.tsv (closest genes)"
 ```
 
 ```bash
