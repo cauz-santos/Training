@@ -763,28 +763,30 @@ We need to extract chromosome and position information from our VCF file and the
 #SBATCH -o snp_density_data.out
 #SBATCH -e snp_density_data.err
 
-# Load necessary modules
 module load bcftools
 
-# Define input VCF file (use the filtered VCF)
+# Input VCF
 INPUT_VCF="/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"
 
-# Define window size (e.g., 100 kb = 100000 bp)
+# Window size (100 kb)
 WINDOW_SIZE=100000
+
+# Make sure output folder exists
+mkdir -p ./snv_density
 
 echo "Extracting SNP positions and calculating density..."
 
-# Extract CHROM and POS, then calculate window for each SNP
-bcftools query -f 
-'[%CHROM\t%POS\n]
-' $INPUT_VCF | \
-awk -v WS=$WINDOW_SIZE 
-'BEGIN {OFS="\t"} {print $1, int($2/WS)*WS, int($2/WS)*WS + WS - 1}
-' | \
+# Correct bcftools + awk command
+bcftools query -f '%CHROM\t%POS\n' "$INPUT_VCF" | \
+awk -v WS=$WINDOW_SIZE 'BEGIN {OFS="\t"} {
+    win_start = int($2/WS)*WS
+    win_end   = win_start + WS - 1
+    print $1, win_start, win_end
+}' | \
 sort -k1,1 -k2,2n | \
 uniq -c > ./snv_density/snp_density.txt
 
-echo "SNP density data generated: snp_density.txt"
+echo "SNP density data generated: ./snv_density/snp_density.txt"
 ```
 
 **Explanation of `awk` command:**
