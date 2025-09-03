@@ -69,7 +69,7 @@ copy and paste:
 #SBATCH -o vcf2plink_gwas.out
 #SBATCH -e vcf2plink_gwas.err
 
-module load plink
+module load PLINK
 
 IN_VCF="/lisc/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"
 
@@ -78,7 +78,7 @@ plink --vcf "${IN_VCF}" \
       --make-bed \
       --allow-extra-chr \
       --double-id \
-      --out gwas_data
+      --out ./plink/gwas_data
 
 echo "Done: gwas_data.bed/.bim/.fam"
 ```
