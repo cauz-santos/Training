@@ -395,13 +395,13 @@ From the metadata CSV, extract the sample IDs for each population. Each file mus
 META=/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv
 
 # Create pop1.txt (example: Al-Ain - Abu Dhabi)
-awk -F',' 'NR>1 {gsub(/"/,""); if($2=="Al-Ain - Abu Dhabi") print $1}' $META > pop1.txt
+awk -F',' 'NR>1 {gsub(/"/,""); if($2=="Al-Ain - Abu Dhabi") print $1}' $META > ./diversity/pop1.txt
 
 # Create pop2.txt (replace with the second population name)
-awk -F',' 'NR>1 {gsub(/"/,""); if($2=="OTHER_POPULATION") print $1}' $META > pop2.txt
+awk -F',' 'NR>1 {gsub(/"/,""); if($2=="Ras al-Khaimah") print $1}' $META > ./diversity/pop2.txt
 
 # Check that both lists have samples
-wc -l pop1.txt pop2.txt
+wc -l ./diversity/pop1.txt ./diversity/pop2.txt
 ```
 
 **2. Create a script 12_vcftools_fst.sh:**
