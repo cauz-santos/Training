@@ -421,6 +421,7 @@ We will run PCA on the **LD-pruned** dataset produced in **Step 2** (`my_data_pr
    echo "Running PCA on ${INPUT_BASE_PRUNED}..."
    plink --bfile "${INPUT_BASE_PRUNED}" \
          --pca \
+         --allow-extra-chr \
          --out ./pca/pca_results
 
    echo "Done. Outputs: pca_results.eigenval, pca_results.eigenvec"
