@@ -227,7 +227,7 @@ Calculating heterozygosity and missingness is important because it allows us to 
    #!/bin/bash
    #SBATCH --job-name=plink_div
    #SBATCH --cpus-per-task=1
-   #SBATCH --mem=8G
+   #SBATCH --mem=1G
    #SBATCH --time=00:20:00
    #SBATCH -o plink_div.out
    #SBATCH -e plink_div.err
@@ -239,11 +239,13 @@ Calculating heterozygosity and missingness is important because it allows us to 
    echo "Calculating heterozygosity and inbreeding coefficient (per sample)..."
    plink --bfile "${IN_BASE}" \
          --het \
+         --allow-extra-chr \
          --out ./diversity/plink_het
 
    echo "Calculating per-individual missingness..."
    plink --bfile "${IN_BASE}" \
          --missing \
+         --allow-extra-chr \
          --out ./diversity/plink_missing
 
    echo "Done. Outputs: plink_het.het, plink_missing.imiss"
