@@ -505,11 +505,11 @@ Then open the PDFs/PNGs locally.
 - **Weird direction** (e.g., expected transporter genes are “down”) → Make sure you’re reading `A_vs_B` correctly; “up” is **A over B**.
 - **Gene IDs look unfamiliar in enrichment** → Ensure your enrichment mapping (`gene2go.tsv`) matches the same gene identifiers used in `DE_results`.
 
-## 5) Functional enrichment of DEGs
-### What are we doing and why?
+### 5) Functional enrichment of DEGs
+#### What are we doing and why?
 We’ll test whether DEGs are **over-represented** in **biological processes/pathways** (e.g., phosphate transport, root morphogenesis, ABA signaling). This connects statistics to **biology** and helps prioritize candidates that sit inside agronomically relevant pathways.
 
-### Option A — GOseq via Trinity 
+#### Option A — GOseq via Trinity 
 Create with `vi`:
 ```bash
 vi 05_trinity_goseq.sh
@@ -557,7 +557,7 @@ Submit:
 sbatch 05_trinity_goseq.sh
 ```
 
-### Option B — g:Profiler (Optional)
+#### Option B — g:Profiler (Optional)
 If species-specific GO is unavailable, we can demo with *Arabidopsis*:
 ```r
 # Run interactively or via Rscript
