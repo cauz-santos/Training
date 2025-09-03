@@ -803,11 +803,10 @@ Create the file `50_gs_lite_min.sh`using `vi`:
 
 set -euo pipefail
 
-# Folders/files (keep it simple, relative paths)
 OUTDIR="gs-lite"
-MARKERS="mas_markers/mas_markers.tsv"   # has columns: SNP, CHR, BP, A1(effect), A2, BETA, P
+MARKERS="mas_markers/mas_markers.tsv"   # columns: SNP, CHR, BP, A1(effect), A2, BETA, P
 BFILE="plink/gwas_data_qc"                    # PLINK prefix (bed/bim/fam)
-PHENO="pheno_suc.txt"                   # 3 cols: FID IID SUC
+PHENO="pheno_suc.txt"                   # should contain: FID IID SUC (may have a header)
 
 mkdir -p "$OUTDIR"
 
@@ -816,42 +815,57 @@ awk 'BEGIN{FS=OFS="\t"} NR>1 {print $1,$4,$6}' "$MARKERS" > "$OUTDIR/gs_weights.
 echo "Wrote: $OUTDIR/gs_weights.tsv (SNP  A1  BETA)"
 
 # 2) Compute PGS with PLINK
-module load plink
+module load PLINK
 plink --bfile "$BFILE" \
-      --score "$OUTDIR/gs_weights.tsv" 1 2 3 header sum \
       --allow-extra-chr \
+      --score "$OUTDIR/gs_weights.tsv" 1 2 3 header sum \
       --out "$OUTDIR/gs_pgs"
 
-# 3) Rank and correlate in a tiny R snippet (no shell joins)
+# 3) Rank and correlate (robust R: coerce numerics, drop any header rows)
 module load R
 R --vanilla <<'EOF'
-d <- read.table("gs-lite/gs_pgs.profile", header=TRUE)
-score_col <- grep("^SCORE", names(d), value=TRUE)[1]
-pgs <- d[, c("FID","IID", score_col)]; names(pgs) <- c("FID","IID","PGS")
+# Read PLINK profile and pick the SCORE column
+prof <- read.table("gs-lite/gs_pgs.profile", header=TRUE, sep="", stringsAsFactors=FALSE)
+score_col <- grep("^SCORE", names(prof), value=TRUE)[1]
+pgs <- prof[, c("FID","IID", score_col)]
+names(pgs) <- c("FID","IID","PGS")
+# Force numeric PGS (in case of weird formatting)
+pgs$PGS <- suppressWarnings(as.numeric(pgs$PGS))
 
-ph <- read.table("pheno_suc.txt", header=FALSE)
-if(ncol(ph) < 3) stop("pheno_suc.txt must have ≥3 cols: FID IID SUC")
-colnames(ph)[1:3] <- c("FID","IID","SUC")
+# Read phenotype (allow optional header; take first 3 columns as FID IID SUC)
+ph <- read.table("pheno_suc.txt", header=FALSE, sep="", stringsAsFactors=FALSE, fill=TRUE, quote="")
+# If the first row looks like a header, drop it
+if (nrow(ph) > 0 && (grepl("FID", ph[1,1], ignore.case=TRUE) || grepl("IID", ph[1,2], ignore.case=TRUE))) {
+  ph <- ph[-1, , drop=FALSE]
+}
+# Keep only first 3 cols; name them
+ph <- ph[, 1:3, drop=FALSE]
+names(ph) <- c("FID","IID","SUC")
+# Coerce types
+ph$FID <- as.character(ph$FID); ph$IID <- as.character(ph$IID)
+# Handle possible comma decimals, blanks, or "NA" strings
+ph$SUC <- suppressWarnings(as.numeric(gsub(",", ".", ph$SUC)))
 
-m <- merge(pgs, ph[,c("FID","IID","SUC")], by=c("FID","IID"), all.x=TRUE)
+# Merge and write tables
+m <- merge(pgs, ph, by=c("FID","IID"), all.x=TRUE)
 write.table(m, "gs-lite/pgs_with_suc.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 
-mr <- m[order(-m$PGS),]
+mr <- m[order(-m$PGS), ]
 write.table(mr, "gs-lite/pgs_ranked.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 write.table(head(mr, 20), "gs-lite/top20_by_PGS.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 
+# Plot (only if SUC numeric & available)
 png("gs-lite/PGS_vs_SUC.png", width=1000, height=800, res=150)
 plot(m$PGS, m$SUC, xlab="Polygenic Score (PGS)", ylab="Sucrose (SUC)",
      main="PGS vs SUC (quick check)")
-abline(lm(SUC ~ PGS, data=m))
-legend("topleft", bty="n",
-       legend=paste0("r = ", round(cor(m$PGS, m$SUC, use='complete.obs'), 3)))
+abline(lm(SUC ~ PGS, data=m), col="black")
+r <- suppressWarnings(cor(m$PGS, m$SUC, use="complete.obs"))
+if (!is.na(r)) legend("topleft", bty="n", legend=paste0("r = ", round(r, 3)))
 dev.off()
 EOF
 
 echo "Done."
-echo "Show tables with:"
-echo "  cat gs-lite/gs_pgs.profile"
+echo "Show tables:"
 echo "  cat gs-lite/pgs_ranked.tsv"
 echo "Plot:"
 echo "  gs-lite/PGS_vs_SUC.png"
