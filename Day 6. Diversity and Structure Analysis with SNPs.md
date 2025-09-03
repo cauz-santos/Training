@@ -429,13 +429,13 @@ vcftools --gzvcf /lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.
          --weir-fst-pop ./diversity/pop2.txt \
          --out ./diversity/fst_result
 ```
-To save: `Esc`, `:wq`, `Enter`.  
+4. To save: `Esc`, `:wq`, `Enter`.  
 
-Submit:
+5. Submit:
 ```bash
 sbatch 12_vcftools_fst.sh
 ```
-Inspect results:
+6. Inspect results:
 ```bash
 head ./diversity/fst_result.weir.fst
 ```
