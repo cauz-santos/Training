@@ -546,7 +546,7 @@ OUTDIR="annotation"
 mkdir -p $OUTDIR
 
 # --- Step 1) Pick SNPs to annotate (Bonferroni first, else top20) ---
-if [ -s bonferroni_hits_SUC.tsv ]; then
+if [ -s ./gwas/bonferroni_hits_SUC.tsv ]; then
   echo "Using Bonferroni-significant SNPs..."
   awk 'NR>1 {print $1, $3, $2, $9}' OFS='\t' bonferroni_hits_SUC.tsv > $OUTDIR/snps_for_annot.tsv
 else
