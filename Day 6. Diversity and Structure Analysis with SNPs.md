@@ -102,7 +102,7 @@ What this produces:
    #!/bin/bash
    #SBATCH --job-name=vcf2plink
    #SBATCH --cpus-per-task=1
-   #SBATCH --mem=8G
+   #SBATCH --mem=1G
    #SBATCH --time=00:30:00
    #SBATCH -o vcf2plink.out
    #SBATCH -e vcf2plink.err
@@ -165,7 +165,7 @@ PLINK uses a **sliding window** approach:
    #!/bin/bash
    #SBATCH --job-name=ld_prune
    #SBATCH --cpus-per-task=1
-   #SBATCH --mem=8G
+   #SBATCH --mem=1G
    #SBATCH --time=00:30:00
    #SBATCH -o ld_prune.out
    #SBATCH -e ld_prune.err
