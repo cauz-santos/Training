@@ -176,7 +176,7 @@ sbatch 02_make_covariates.sh
 We’ll apply minimal QC commonly used before association:
 
 - **MAF filter**: remove very rare variants (e.g., MAF < 0.05)  
-- **Missingness per SNP**: remove poorly genotyped sites (e.g., >5% missing)  
+- **Missingness per SNP**: remove poorly genotyped sites (e.g., >20% missing)  
 
 > We apply MAF, missingness, and HWE filters to remove rare, error-prone, or inconsistent SNPs so GWAS tests high-quality markers, improving power and reducing false positives.
 
@@ -197,7 +197,7 @@ module load PLINK
 
 plink --bfile ./plink/gwas_data \
       --maf 0.05 \
-      --geno 0.05 \
+      --geno 0.20 \
       --make-bed \
       --allow-extra-chr \
       --out ./plink/gwas_data_qc
@@ -239,21 +239,22 @@ vi 20_run_gwas_suc.sh
 #!/bin/bash
 #SBATCH --job-name=gwas_suc
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=8G
+#SBATCH --mem=2G
 #SBATCH --time=01:00:00
 #SBATCH -o gwas_suc.out
 #SBATCH -e gwas_suc.err
 
-module load plink
+module load PLINK
 
-plink --bfile gwas_data_qc \
+plink --bfile ./plink/gwas_data_qc \
       --pheno pheno_suc.txt \
       --pheno-name SUC \
       --covar covar_pcs.txt \
       --covar-name PC1,PC2,PC3,PC4,PC5 \
+      --allow-extra-chr \
       --linear hide-covar \
       --allow-no-sex \
-      --out gwas_suc_linear
+      --out ./gwas/gwas_suc_linear
 
 echo "Done: gwas_suc_linear.assoc.linear"
 ```
