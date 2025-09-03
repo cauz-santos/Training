@@ -538,84 +538,71 @@ vi 30_prepare_bed_for_annotation.sh
 
 set -euo pipefail
 
-# Paths
+# --- Paths (adjust IN_GWAS if you prefer top20) ---
 GENOME_GFF="/lisc/scratch/course/pgbiow/data/genomes/date_palm_genomic.gff"
-IN_GWAS="gwas/bonferroni_hits_SUC.tsv"   # change to top20_hits_SUC.tsv if needed
+GENOME_GTF="/lisc/scratch/course/pgbiow/data/genomes/date_palm_genomic.gtf"
+IN_GWAS="gwas/bonferroni_hits_SUC.tsv"
 OUTDIR="annotation"
 mkdir -p "$OUTDIR"
 
-echo "== 1) Make SNP BED in chrLG coordinates =="
-# From your TSV: CHR, BP, SNP, P (columns 1,3,2,9)
-# Normalize CHR: if numeric, prefix with chrLG; if already chrLG*, keep it.
-awk 'BEGIN{OFS="\t"} NR>1{
-  chr=$1
-  if (chr ~ /^chrLG[0-9]+$/) c=chr
-  else if (chr ~ /^[0-9]+$/) c="chrLG" chr
-  else c=chr
-  print c, $3-1, $3, $2
+# 1) SNPs → BED (chrLG, 0-based)
+awk 'BEGIN{FS=OFS="\t"} NR>1{
+  c = ($1 ~ /^chrLG[0-9]+$/) ? $1 : "chrLG"$1
+  print c, $3-1, $3, $2   # chr, start, end, SNP
 }' "$IN_GWAS" > "$OUTDIR/snps.chrLG.bed"
 
-echo "SNP BED preview:"
-head "$OUTDIR/snps.chrLG.bed" || true
-
-echo "== 2) Build genes BED in chrLG coordinates from GFF =="
-# Build a map of seqid (NC_052...) -> chrLGN using 'region' lines with chromosome=N,
-# then emit only 'gene' features and replace seqid with chrLGN.
+# 2) Genes (GFF) → BED in chrLG (region lines carry chromosome=N)
 awk -v FS="\t" -v OFS="\t" '
-  # First pass over GFF: build map of seqid -> chrLGN
   FNR==NR && $3=="region" && $9 ~ /chromosome=/ {
     n=split($9,a,";"); chr=""
-    for(i=1;i<=n;i++){ split(a[i],kv,"="); if(kv[1]=="chromosome") chr=kv[2] }
+    for(i=1;i<=n;i++){split(a[i],kv,"="); if(kv[1]=="chromosome") chr=kv[2]}
     if(chr!="") map[$1]="chrLG" chr
     next
   }
-  # Second pass over GFF: print gene features with chrLG names
-  FNR!=NR && $3=="gene" {
-    if (map[$1]!="") {
-      # parse attributes for id/name/product
-      n=split($9,a,";"); id="NA"; name="NA"; prod="NA"
-      for(i=1;i<=n;i++){
-        split(a[i],kv,"=")
-        if(kv[1]=="ID")      id=kv[2]
-        if(kv[1]=="Name")    name=kv[2]
-        if(kv[1]=="product") prod=kv[2]
-        if(kv[1]=="gene" && name=="NA") name=kv[2]
-      }
-      print map[$1], $4-1, $5, id "|" name "|" prod
+  FNR!=NR && $3=="gene" && map[$1] {
+    n=split($9,a,";"); id="NA"; name="NA"; prod="NA"
+    for(i=1;i<=n;i++){
+      split(a[i],kv,"=")
+      if(kv[1]=="ID")   id=kv[2]
+      if(kv[1]=="Name") name=kv[2]
+      if(kv[1]=="gene" && name=="NA") name=kv[2]
+      if(kv[1]=="product") prod=kv[2]     # often missing at gene level
     }
+    print map[$1], $4-1, $5, id"|"name"|"prod
   }' "$GENOME_GFF" "$GENOME_GFF" > "$OUTDIR/genes.chrLG.bed"
 
-echo "Genes BED preview:"
-head "$OUTDIR/genes.chrLG.bed" || true
-
-echo "== 3) Sort and annotate with bedtools (overlap + nearest + window) =="
-sort -k1,1 -k2,2n "$OUTDIR/snps.chrLG.bed"  > "$OUTDIR/snps.chrLG.sorted.bed"
-sort -k1,1 -k2,2n "$OUTDIR/genes.chrLG.bed" > "$OUTDIR/genes.chrLG.sorted.bed"
-
+# 3) Sort + bedtools (overlaps + nearest)
+sort -k1,1 -k2,2n "$OUTDIR/snps.chrLG.bed"  > "$OUTDIR/snps.sorted.bed"
+sort -k1,1 -k2,2n "$OUTDIR/genes.chrLG.bed" > "$OUTDIR/genes.sorted.bed"
 module load BEDTools
 
-# a) SNPs inside genes
-bedtools intersect -a "$OUTDIR/snps.chrLG.sorted.bed" -b "$OUTDIR/genes.chrLG.sorted.bed" -wa -wb \
-  > "$OUTDIR/snps_in_genes.tsv"
+bedtools intersect -a "$OUTDIR/snps.sorted.bed" -b "$OUTDIR/genes.sorted.bed" -wa -wb > "$OUTDIR/snps_in_genes.tsv"
+bedtools closest  -a "$OUTDIR/snps.sorted.bed" -b "$OUTDIR/genes.sorted.bed" -d -t first > "$OUTDIR/snps_nearest_genes.tsv"
 
-# b) Nearest gene (with distance)
-bedtools closest -a "$OUTDIR/snps.chrLG.sorted.bed" -b "$OUTDIR/genes.chrLG.sorted.bed" -d -t first \
-  > "$OUTDIR/snps_nearest_genes.tsv"
+# 4) Build gene_id -> product map from GTF (prefer transcript, fallback CDS)
+awk -F'\t' '
+  $3=="transcript" && $9~/gene_id/ && $9~/product/ {match($9,/gene_id "([^"]+)"/,g); match($9,/product "([^"]+)"/,p); if(g[1]&&p[1]&&!seen[g[1]]++){prod[g[1]]=p[1]}; next}
+  $3=="CDS"        && $9~/gene_id/ && $9~/product/ {match($9,/gene_id "([^"]+)"/,g); match($9,/product "([^"]+)"/,p); if(g[1]&&p[1]&&!(g[1] in prod)){prod[g[1]]=p[1]}; next}
+  END{for(k in prod) print k"\t"prod[k]}
+' "$GENOME_GTF" > "$OUTDIR/gene_products.tsv"
 
-# c) Genes within ±50 kb window (great for teaching)
-bedtools window -a "$OUTDIR/snps.chrLG.sorted.bed" -b "$OUTDIR/genes.chrLG.sorted.bed" -w 50000 \
-  > "$OUTDIR/snps_genes_50kb.tsv"
+# 5) Fill product in col8 (id|name|product) for both outputs
+awk 'BEGIN{FS=OFS="\t"} NR==FNR{p[$1]=$2; next}{
+  split($8,f,"|"); id=f[1]; name=f[2]; pr=f[3]
+  if((pr=="NA"||pr==".") && (name in p)) pr=p[name]
+  $8=id"|"name"|"pr; print
+}' "$OUTDIR/gene_products.tsv" "$OUTDIR/snps_in_genes.tsv" > "$OUTDIR/snps_in_genes_with_product.tsv"
 
-echo "== 4) Quick summary =="
-echo "SNPs total:          $(wc -l < "$OUTDIR/snps.chrLG.bed" | tr -d " ")"
-echo "Overlaps (in genes): $(wc -l < "$OUTDIR/snps_in_genes.tsv" | tr -d " ")"
-echo "Nearest rows:        $(wc -l < "$OUTDIR/snps_nearest_genes.tsv" | tr -d " ")"
-echo "Within ±50kb rows:   $(wc -l < "$OUTDIR/snps_genes_50kb.tsv" | tr -d " ")"
+awk 'BEGIN{FS=OFS="\t"} NR==FNR{p[$1]=$2; next}{
+  split($8,f,"|"); id=f[1]; name=f[2]; pr=f[3]
+  if((pr=="NA"||pr==".") && (name in p)) pr=p[name]
+  $8=id"|"name"|"pr; print
+}' "$OUTDIR/gene_products.tsv" "$OUTDIR/snps_nearest_genes.tsv" > "$OUTDIR/snps_nearest_genes_with_product.tsv"
 
-echo "Done. Open:"
-echo "  $OUTDIR/snps_in_genes.tsv"
-echo "  $OUTDIR/snps_nearest_genes.tsv"
-echo "  $OUTDIR/snps_genes_50kb.tsv"
+# Summary
+echo "Wrote:"
+echo "  $OUTDIR/snps_in_genes_with_product.tsv"
+echo "  $OUTDIR/snps_nearest_genes_with_product.tsv"
 ```
 
 ```bash
@@ -623,8 +610,8 @@ sbatch 30_prepare_bed_for_annotation.sh
 ```
 
 **Interpreting outputs:**
-- `snps_in_genes.tsv` → if a SNP lies **within** a gene (exon/intron span)  
-- `snps_nearest_genes.tsv` → the **closest** gene and the **distance** (0 if overlapping)
+- `snps_in_genes_with_product.tsv` → if a SNP lies **within** a gene (exon/intron span)  
+- `snps_nearest_genes_with_product.tsv` → the **closest** gene and the **distance** (0 if overlapping)
 
 **Summarize mappings (friendly table)**
 
