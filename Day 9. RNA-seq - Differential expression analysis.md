@@ -557,6 +557,68 @@ Submit:
 sbatch 05_trinity_goseq.sh
 ```
 
+### GOseq — Quick Evaluation (View Terms + Plot)
+Minimal steps: **see enriched GO terms** (FDR ≤ 0.05) and **plot top terms**. Works for UP or DOWN outputs.
+
+**1) View enriched GO terms (FDR ≤ 0.05)**  
+
+**Pick the file** you want to inspect (replace with your actual filename):
+```bash
+# Examples (adjust to your real filenames produced by run_GOseq.pl)
+UPTAB=results_GOseq_up.enriched.tsv
+DOWNTAB=results_GOseq_down.enriched.tsv
+```
+
+**Print the top 20 enriched terms by FDR (header-aware):**  
+```bash
+TAB="$UPTAB"   # or: TAB="$DOWNTAB"
+
+# Find the FDR column automatically and show the 20 best terms
+awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) if(tolower($i) ~ /fdr|adj/) f=i; print; next}
+            NR>1 && f>0 && $f!~"NA" {print}' "$TAB" \
+| sort -t$'\t' -k${f},${f}g \
+| head -n 20 \
+| column -t
+```
+
+> If sorting fails because your shell doesn’t expand `${f}`, just open the file and skim:
+```bash
+column -t "$UPTAB" | less -S
+```
+
+**2) Plot top GO terms (simple barplot in R)**  
+
+Create a tiny script **on the fly** and run it:
+```bash
+TAB="$UPTAB"   # or: TAB="$DOWNTAB"
+Rscript - <<'RS'
+tabfile <- Sys.getenv("TAB", "results_GOseq_up.enriched.tsv")
+x <- read.table(tabfile, header=TRUE, sep="\t", quote="", comment.char="")
+# Try to detect FDR and term/description columns
+fdrcol <- grep("fdr|adj", tolower(colnames(x)), value=FALSE)[1]
+termcol <- grep("term|description|name", tolower(colnames(x)), value=FALSE)[1]
+if(is.na(fdrcol) || is.na(termcol)) stop("Could not find FDR or term column; open the file to check headers.")
+x <- x[!is.na(x[,fdrcol]), ]
+x$score <- -log10(pmax(x[,fdrcol], 1e-300))
+o <- order(x$score, decreasing=TRUE)
+x <- x[o, ]
+topn <- head(x, 15)
+pngfile <- sub("\\.\\w+$","",tabfile)
+png(paste0(pngfile, "_top15.png"), width=900, height=600)
+par(mar=c(5,20,2,2))
+barplot(rev(topn$score), horiz=TRUE, names.arg=rev(topn[,termcol]), las=1,
+        xlab="-log10(FDR)")
+mtext("GOseq enrichment (top 15)", side=3, line=0.5)
+dev.off()
+cat("Wrote: ", paste0(pngfile, "_top15.png"), "\n")
+RS
+```
+
+The script writes a PNG next to your table, e.g. `results_GOseq_up.enriched_top15.png`. Copy it to your laptop if needed:
+```bash
+scp USER@login.cluster:/work/USER/day09_rnaseq/results_GOseq_up.enriched_top15.png .
+```
+
 #### Option B — g:Profiler (Optional)
 If species-specific GO is unavailable, we can demo with *Arabidopsis*:
 ```r
