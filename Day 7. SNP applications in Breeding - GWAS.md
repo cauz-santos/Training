@@ -177,7 +177,6 @@ We’ll apply minimal QC commonly used before association:
 
 - **MAF filter**: remove very rare variants (e.g., MAF < 0.05)  
 - **Missingness per SNP**: remove poorly genotyped sites (e.g., >5% missing)  
-- **HWE filter** (optional for unrelated, non-selected populations): e.g., p < 1e-6
 
 > We apply MAF, missingness, and HWE filters to remove rare, error-prone, or inconsistent SNPs so GWAS tests high-quality markers, improving power and reducing false positives.
 
@@ -189,19 +188,19 @@ vi 10_qc_make_subset.sh
 #!/bin/bash
 #SBATCH --job-name=gwas_qc
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=8G
-#SBATCH --time=00:20:00
+#SBATCH --mem=1G
+#SBATCH --time=00:40:00
 #SBATCH -o gwas_qc.out
 #SBATCH -e gwas_qc.err
 
-module load plink
+module load PLINK
 
-plink --bfile gwas_data \
+plink --bfile ./plink/gwas_data \
       --maf 0.05 \
       --geno 0.05 \
-      --hwe 1e-6 midp \
       --make-bed \
-      --out gwas_data_qc
+      --allow-extra-chr \
+      --out ./plink/gwas_data_qc
 
 echo "QC subset: gwas_data_qc.*"
 ```
