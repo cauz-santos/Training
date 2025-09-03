@@ -1,6 +1,6 @@
 ## Week 2: Applied Bioinformatics for Genomics and Breeding
 
-### Day 9: RNA-seq Data Analysis
+## Day 9: RNA-seq Data Analysis
 
 Day 9 is dedicated to RNA sequencing (RNA-seq) data analysis, a powerful high-throughput technology used to measure gene expression levels, discover novel transcripts, and identify gene fusions. We will cover the entire workflow, from experimental design and pre-processing to mapping, quantification, and differential expression analysis.
 
