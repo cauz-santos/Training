@@ -658,8 +658,8 @@ ADMIXTURE takes PLINK BED files as input. We will run it for `K=2` to `K=5` as a
 ```bash
 #!/bin/bash
 #SBATCH --job-name=run_admixture
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=4G
 #SBATCH --time=02:00:00
 #SBATCH -o admixture/admixture.out
 #SBATCH -e admixture/admixture.err
@@ -673,7 +673,7 @@ INPUT_BASE_PRUNED="./plink/my_data_pruned"
 mkdir -p admixture
 
 # Loop through different K values
-for K in {2..5}
+for K in {2..6}
 do
     echo "Running ADMIXTURE for K=$K"
     admixture --cv -j4 ${INPUT_BASE_PRUNED}.bed $K | tee admixture/admixture_K${K}.log
@@ -704,7 +704,7 @@ To find the optimal `K`, you typically look for the `K` value with the lowest cr
 
 ```bash
 # Extract CV errors from log files
-grep "CV error" admixture_K*.log
+grep "CV error" ./admixture/admixture_K*.log
 ```
 
 ### Step 3 — Visualization of ADMIXTURE Results in R
