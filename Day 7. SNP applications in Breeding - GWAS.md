@@ -498,16 +498,24 @@ cat("✅ Saved: GWAS_SUC_RegionalTop_labeled.png\n")
 
 Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **putative function**.
 
->**You need:**  
+> **You need:**  
 > - The **same reference genome** used for alignment & variant calling (FASTA)  
 > - Its **annotation** in **GFF3** (gene coordinates + attributes, e.g., `ID`, `Name`, `product`)  
 > - **BEDTools** module (for genomic intersections)
 
-Set your annotation filenames (replace with your actual files):
+---
 
-- `GENOME_GFF="reference.gff3"`  
-  (e.g., `GCF_000442705.2_EG11_genomic.gff` if using Elaeis guineensis EG11)  
+### 📂 Files for Date Palm Genome
 
+We are using the **Date Palm genome** from NCBI  
+👉 [GCA_009389715.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_009389715.1/)
+
+These files are available on the cluster:
+`/lisc/scratch/course/pgbiow/data/genomes/`
+├── date_palm_genome.fna # reference genome (FASTA)
+├── date_palm_genomic.gff # annotation in GFF3 format
+└── date_palm_genomic.gtf # annotation in GTF format (alternative)
+ 
 **Make a BED of top SNPs:**  
 
 We’ll map **Bonferroni-significant** hits (or top 20 if none pass) to genes. This script creates:  
