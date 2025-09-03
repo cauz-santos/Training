@@ -569,6 +569,41 @@ dev.off()
 
 > This script will open a PCA scatterplot window with individuals colored by population.
 
+**PCA with Sample Labels**
+
+Sometimes we want to check whether any individuals look like outliers.  
+We can plot **PC1 vs PC2** and label each point with its **sample ID (IID)**.
+
+```r
+# Basic PCA plot with sample labels
+plot(pca_merged$PC1, pca_merged$PC2,
+     col=as.factor(pca_merged$Population),
+     pch=19,
+     xlab="PC1",
+     ylab="PC2",
+     main="PCA with Sample Names")
+
+# Add text labels (sample IDs)
+text(pca_merged$PC1, pca_merged$PC2,
+     labels=pca_merged$IID,
+     pos=3, cex=0.6)
+
+#To save as pdf
+pdf("pca/pca_plot_labeled.pdf")
+
+plot(pca_merged$PC1, pca_merged$PC2,
+     col=as.factor(pca_merged$Population),
+     pch=19,
+     xlab="PC1",
+     ylab="PC2",
+     main="PCA with Sample Names")
+
+text(pca_merged$PC1, pca_merged$PC2,
+     labels=pca_merged$IID,
+     pos=3, cex=0.6)
+
+dev.off()
+```
 
 **Interpreting PCA**
 
