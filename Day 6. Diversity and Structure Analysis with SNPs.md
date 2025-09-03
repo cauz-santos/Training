@@ -176,11 +176,13 @@ PLINK uses a **sliding window** approach:
 
    echo "Selecting approximately independent SNPs (LD pruning)..."
    plink --bfile "${IN_BASE}" \
+         --allow-extra-chr \
          --indep-pairwise 50 5 0.2 \
          --out ./plink/my_data_prune
 
    echo "Creating pruned dataset..."
    plink --bfile "${IN_BASE}" \
+         --allow-extra-chr \
          --extract my_data_prune.prune.in \
          --make-bed \
          --out ./plink/my_data_pruned
