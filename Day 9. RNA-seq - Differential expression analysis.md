@@ -34,7 +34,7 @@ By the end of this session you will be able to:
 **Source:** Kong *et al.* (2021) “Comparative transcriptome analysis reveals novel insights into transcriptional responses to phosphorus starvation in oil palm root.” (BioProject PRJNA673667).  
 **Link:** https://pmc.ncbi.nlm.nih.gov/articles/PMC7863428/
 
-| Group | Time | Tissue | Rep | SRA Run | Suggested sample name |
+| Group | Time | Tissue | Rep | SRA Run | Sample name |
 |---|---|---|---:|---|---|
 | −P (Pi‑starved) | 28 d | root | 1 | SRR12959886 | Pminus_28d_rep1 |
 | −P (Pi‑starved) | 28 d | root | 2 | SRR12959894 | Pminus_28d_rep2 |
