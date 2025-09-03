@@ -201,6 +201,10 @@ PLINK uses a **sliding window** approach:
 - `my_data_prune.prune.out` — SNPs removed  
 - `my_data_pruned.*` — **LD-pruned** PLINK dataset (use this for **PCA**)
 
+Open the .log file to check how many SNPs were removed after filtering:
+   ```bash
+   cat ld_prune.out
+   ```
 ---
 ## Part 1 — Genetic Diversity Estimation (PLINK + VCFtools)
 
