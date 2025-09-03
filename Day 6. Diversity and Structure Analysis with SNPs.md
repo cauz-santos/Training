@@ -722,38 +722,83 @@ This gives a clear picture of how individuals are structured genetically and whe
 Copy this into your R session (on the cluster with graphics enabled or in RStudio):
 
 ```r
-# ================================
-# ADMIXTURE Visualization Script
-# ================================
+# ======================================
+# ADMIXTURE barplot grouped + labeled
+# - shows sample (IID) labels
+# - shows population blocks + names
+# ======================================
 
-# Load library
 library(ggplot2)
-
-# --- Step 1: Load Q file (change K value as needed) ---
-# Example for K=3
-Qfile <- "my_data_pruned.3.Q"
-
-q_df <- read.table(Qfile, header = FALSE)
-colnames(q_df) <- paste0("Cluster", 1:ncol(q_df))
-
-# --- Step 2: Add individual IDs ---
-# Read sample IDs from PLINK .fam file
-fam <- read.table("my_data_pruned.fam")
-q_df$IID <- fam$V2   # Second column is individual ID
-
-# --- Step 3: Reshape data for ggplot ---
 library(reshape2)
-q_melt <- melt(q_df, id.vars = "IID", variable.name = "Cluster", value.name = "Ancestry")
+library(dplyr)
 
-# --- Step 4: Plot barplot ---
-ggplot(q_melt, aes(x = IID, y = Ancestry, fill = Cluster)) +
+# ---- 1) Load Q (set the K you want) ----
+Qfile <- "./admixture/my_data_pruned.2.Q"   # change to .3.Q, .4.Q, etc.
+q_df  <- read.table(Qfile, header = FALSE)
+K     <- ncol(q_df)                         # infer K
+colnames(q_df) <- paste0("Cluster", seq_len(K))
+
+# ---- 2) Add IIDs from PLINK .fam ----
+fam <- read.table("./plink/my_data_pruned.fam", header = FALSE)
+q_df$IID <- fam$V2
+
+# ---- 3) Add populations ----
+popinfo <- read.csv("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv",
+                    header = TRUE, stringsAsFactors = FALSE)
+colnames(popinfo) <- c("IID","Population")
+
+q_df <- merge(q_df, popinfo, by = "IID")
+
+# ---- 4) Long format + ordering by population ----
+q_long <- melt(q_df, id.vars = c("IID","Population"),
+               variable.name = "Cluster", value.name = "Ancestry")
+
+# Order individuals by Population then IID
+ordered_ids <- q_long %>%
+  distinct(IID, Population) %>%
+  arrange(Population, IID) %>%
+  mutate(Index = row_number())
+
+# Add the numeric index back to long table
+q_plot <- q_long %>% left_join(ordered_ids, by = c("IID","Population"))
+
+# Compute group boundaries and label positions
+pop_sizes  <- ordered_ids %>% count(Population, name = "n")
+bounds     <- head(cumsum(pop_sizes$n), -1) + 0.5         # vertical lines between pops
+centers    <- cumsum(pop_sizes$n) - pop_sizes$n/2          # label positions
+
+# ---- 5) Plot (interactive in RStudio first) ----
+p <- ggplot(q_plot, aes(x = Index, y = Ancestry, fill = Cluster)) +
   geom_bar(stat = "identity", width = 1) +
-  theme_minimal(base_size = 14) +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6)) +
-  labs(title = "ADMIXTURE Results (K=3)",
-       x = "Individuals",
-       y = "Ancestry Proportion") +
-  scale_fill_brewer(palette = "Set2")
+  # sample IDs along x (rotated)
+  scale_x_continuous(breaks = ordered_ids$Index, labels = ordered_ids$IID) +
+  # cosmetics
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x  = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5),
+    panel.grid   = element_blank(),
+    legend.position = "bottom",
+    plot.margin  = margin(t = 10, r = 10, b = 40, l = 10)  # extra bottom space for pop labels
+  ) +
+  labs(
+    title = paste0("ADMIXTURE Results (K=", K, ")"),
+    x = "Individuals (ordered by Population)",
+    y = "Ancestry Proportion"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  # vertical separators between populations
+  geom_vline(xintercept = bounds, linetype = "dashed", color = "grey30") +
+  # population names under the bars
+  annotate("text", x = centers, y = -0.06, label = pop_sizes$Population,
+           vjust = 1, size = 3.2, fontface = "bold") +
+  coord_cartesian(ylim = c(-0.1, 1), clip = "off")  # allow labels below 0
+
+print(p)  # see it in RStudio first
+
+# ---- 6) Save to PDF (optional, after checking) ----
+dir.create("admixture", showWarnings = FALSE)
+ggsave(filename = "admixture/admixture_K2_byPop_labeled.pdf", plot = p,
+       width = 14, height = 6, units = "in")
 ```
 
 This will generate a **stacked bar plot** of ADMIXTURE proportions for all individuals.
