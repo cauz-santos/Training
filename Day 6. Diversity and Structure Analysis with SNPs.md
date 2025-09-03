@@ -441,6 +441,7 @@ head ./diversity/fst_result.weir.fst
 ```
 
 To compute the mean FST:
+```bash
 awk 'NR>1 && $3!="nan"{s+=$3; n++} END{if(n>0) print "Mean FST = " s/n; else print "No valid sites"}' ./diversity/fst_result.weir.fst
 ```
 
