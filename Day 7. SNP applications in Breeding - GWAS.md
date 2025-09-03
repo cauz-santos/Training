@@ -287,61 +287,138 @@ Open an **interactive R** session (with graphics) on the cluster or RStudio.
 
 ```r
 # ================================
-# GWAS Visualization: SUC
+# GWAS Visualization: SUC (Manhattan plot)
 # ================================
-# Install once if needed:
-# install.packages(c("qqman","data.table","ggrepel"))
 
-library(qqman)
 library(data.table)
+library(ggplot2)
 library(ggrepel)
+library(dplyr)
 
-# Load PLINK linear results
-dt <- fread("gwas_suc_linear.assoc.linear")
+# --- Load PLINK linear results ---
+dt <- fread("./gwas/gwas_suc_linear.assoc.linear")
+table(dt$TEST, useNA = "ifany")
 
-# Keep additive model rows
+# --- Keep only additive model and valid P-values ---
 dt <- dt[TEST == "ADD"]
-
-# Remove missing p-values
+dt[, P := as.numeric(P)]
 dt <- dt[!is.na(P)]
 
+# --- Fix CHR column: extract numeric index from labels like "chrLG1", "chrLG2", etc. ---
+dt[, CHR := as.numeric(gsub("chrLG", "", CHR))]
+dt <- dt[!is.na(CHR) & !is.na(BP)]
+
 # --- Genomic inflation (lambda) ---
-# chisq ~ qchisq(1 - P, df=1)
 dt[, CHISQ := qchisq(1 - P, df = 1)]
 lambda <- median(dt$CHISQ, na.rm = TRUE) / 0.456
 cat("Genomic inflation factor (lambda):", round(lambda, 3), "\n")
 
-# --- Bonferroni and FDR thresholds ---
+# --- Multiple testing thresholds ---
 M <- nrow(dt)
 bonf <- 0.05 / M
-cat("Bonferroni threshold (alpha=0.05):", signif(bonf, 3), "\n")
-
 dt[, FDR_BH := p.adjust(P, method = "BH")]
+cat("Bonferroni threshold (alpha = 0.05):", signif(bonf, 3), "\n")
+
+# --- Cumulative position for Manhattan plot ---
+setorder(dt, CHR, BP)
+chr_sizes <- dt[, .(chr_len = max(BP)), by = CHR]
+chr_sizes[, chr_start := cumsum(shift(chr_len, fill = 0))]
+dt <- merge(dt, chr_sizes[, .(CHR, chr_start)], by = "CHR", all.x = TRUE)
+dt[, BPcum := BP + chr_start]
+
+# --- Axis positions (center of each chromosome block) ---
+axis_df <- dt[, .(center = (min(BPcum) + max(BPcum)) / 2), by = CHR]
 
 # --- Manhattan plot ---
-# qqman expects CHR, BP, P, SNP columns
-png("GWAS_SUC_Manhattan.png", width = 1400, height = 600, res = 150)
-manhattan(dt,
-          chr = "CHR", bp = "BP", snp = "SNP", p = "P",
-          main = "GWAS for Sucrose (SUC) — Manhattan",
-          genomewideline = -log10(bonf), # Bonferroni line
-          suggestiveline = -log10(1e-5))
-dev.off()
+dt[, logP := -log10(P)]
+dt[, color := as.factor(CHR %% 2)]
+
+p_manhattan <- ggplot(dt, aes(x = BPcum, y = logP, color = color)) +
+  geom_point(alpha = 0.75, size = 1) +
+  scale_color_manual(values = c("steelblue", "darkgrey")) +
+  geom_hline(yintercept = -log10(bonf), linetype = "dashed", color = "red", linewidth = 0.7) +
+  scale_x_continuous(label = axis_df$CHR, breaks = axis_df$center) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(x = "Chromosome", y = "-log10(p-value)",
+       title = "GWAS Manhattan Plot — Sucrose (SUC)") +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none",
+        panel.grid.major.x = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Preview plot
+print(p_manhattan)
 
 # --- QQ plot ---
-png("GWAS_SUC_QQ.png", width = 800, height = 800, res = 150)
-qq(dt$P, main = sprintf("GWAS QQ Plot (SUC) — lambda=%.3f", lambda))
-dev.off()
+observed <- sort(dt$P)
+expected <- -log10(ppoints(length(observed)))
+observed_logp <- -log10(observed)
+
+qq_df <- data.frame(Expected = expected, Observed = observed_logp)
+
+p_qq <- ggplot(qq_df, aes(x = Expected, y = Observed)) +
+  geom_point(size = 1, alpha = 0.6) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  labs(title = sprintf("GWAS QQ Plot (SUC) — lambda = %.3f", lambda),
+       x = "Expected -log10(p)",
+       y = "Observed -log10(p)") +
+  theme_minimal(base_size = 14)
+
+# Preview plot
+print(p_qq)
+
+# --- Save plots to PDF after inspection ---
+ggsave("./gwas/GWAS_SUC_Manhattan.pdf", plot = p_manhattan, width = 10, height = 5)
+ggsave("./gwas/GWAS_SUC_QQ.pdf", plot = p_qq, width = 6, height = 6)
 
 # --- Export top hits ---
-# Top 20 by P and all Bonferroni-significant
 setorder(dt, P)
-fwrite(dt[1:20], "top20_hits_SUC.tsv", sep = "\t")
-fwrite(dt[P <= bonf], "bonferroni_hits_SUC.tsv", sep = "\t")
+fwrite(dt[1:20], "./gwas/top20_hits_SUC.tsv", sep = "\t")
+fwrite(dt[P <= bonf], "./gwas/bonferroni_hits_SUC.tsv", sep = "\t")
 
-cat("Plots saved: GWAS_SUC_Manhattan.png, GWAS_SUC_QQ.png\n")
+cat("PDFs saved: GWAS_SUC_Manhattan.pdf, GWAS_SUC_QQ.pdf\n")
 cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
 ```
+
+### Inspecting GWAS Bonferroni Hits (SUC)
+
+After running the analysis, a TSV file with all SNPs passing the Bonferroni correction (α = 0.05) is saved at:
+
+```bash
+cd ~/07_gwas_selection/gwas
+
+# View the first 10 lines
+head bonferroni_hits_SUC.tsv
+
+# Scroll interactively
+less bonferroni_hits_SUC.tsv
+
+# View just SNP and p-value columns
+cut -f2,9 bonferroni_hits_SUC.tsv | head
+```
+
+This file contains a list of SNPs that are **significantly associated with sucrose (SUC) concentration** based on the additive model (`TEST == "ADD"`). Each row represents one SNP that passed the Bonferroni threshold for genome-wide significance.
+
+#### What’s in the file?
+
+| Column         | Description |
+|----------------|-------------|
+| `CHR`          | Chromosome number (parsed from the original `chrLG` format) |
+| `SNP`          | SNP identifier, usually in the format `chr:position:alleles` |
+| `BP`           | Base-pair position on the chromosome |
+| `A1`           | Effect allele |
+| `TEST`         | Model used in GWAS (here, always `ADD`) |
+| `NMISS`        | Number of non-missing genotypes used in the association test |
+| `BETA`         | Estimated effect size of the allele on the phenotype |
+| `STAT`         | Test statistic (e.g., t-score) |
+| `P`            | Raw p-value for the association |
+| `CHISQ`        | Chi-square value computed from the p-value |
+| `FDR_BH`       | Adjusted p-value using Benjamini-Hochberg False Discovery Rate |
+| `chr_start`    | Cumulative base-pair offset used for Manhattan plotting |
+| `BPcum`        | Cumulative base-pair position for plotting across chromosomes |
+| `logP`         | -log10(P), used for plotting |
+| `color`        | Used internally to alternate Manhattan plot colors (e.g., 0/1) |
+
 
 **Interpretation checks:**  
 - Are there **clear peaks** in the Manhattan plot?  
