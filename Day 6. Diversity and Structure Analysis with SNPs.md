@@ -416,12 +416,12 @@ We will run PCA on the **LD-pruned** dataset produced in **Step 2** (`my_data_pr
    module load PLINK
 
    # LD-pruned dataset from Part 0
-   INPUT_BASE_PRUNED="my_data_pruned"
+   INPUT_BASE_PRUNED="./plink/my_data_pruned"
 
    echo "Running PCA on ${INPUT_BASE_PRUNED}..."
    plink --bfile "${INPUT_BASE_PRUNED}" \
          --pca \
-         --out pca_results
+         --out ./pca/pca_results
 
    echo "Done. Outputs: pca_results.eigenval, pca_results.eigenvec"
    ```
