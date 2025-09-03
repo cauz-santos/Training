@@ -359,7 +359,26 @@ cat metadata/samples.txt
 
 
 ### 4) Differential expression with **edgeR via Trinity** (Slurm)
-Create `metadata/samples.txt` as shown above. Then create `scripts/04_trinity_edger.sh`:
+#### What are we doing and why?
+We’ll use Trinity’s wrappers for **edgeR** to run a clean two-group DE analysis (`Pminus` vs `Pplus`) with **TMM normalization**, generate per-contrast DE tables, and optional QC plots.  
+**Breeding relevance:** DE highlights **candidate genes/TFs** and **pathways** that could be leveraged for **marker development**, **introgression**, or **editing** to improve PUE.
+
+**Prepare `samples.txt` (Trinity format)**  
+Create the file with `vi`:
+```bash
+vi metadata/samples.txt
+```
+Press **`i`**, paste, then **`Esc` → `:wq`**:
+```
+Pminus    Pminus_28d_rep1,Pminus_28d_rep2,Pminus_28d_rep3
+Pplus     Pplus_28d_rep1,Pplus_28d_rep2,Pplus_28d_rep3
+```
+**Create the DE script with `vi`**  
+```bash
+vi scripts/04_trinity_edger.sh
+```
+Press **`i`**, paste, then **`Esc` → `:wq`**:
+
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
@@ -405,11 +424,98 @@ sbatch scripts/04_trinity_edger.sh
 
 > *Breeding note:* DE highlights candidate genes/TFs for **marker design**, **introgression**, or **editing** to improve PUE.
 
----
+### Outputs to Inspect — Trinity edgeR Differential Expression
+
+This is how to quickly sanity-check what Trinity/edgeR produced and grab the numbers you need.
+
+**1) Find your contrast name(s)**  
+Trinity names outputs by contrast (e.g., `Pminus_vs_Pplus`). List them:
+```bash
+ls edger_trinity/edgeR.DE_results/*DE_results | sed 's#.*/##' | sed 's/\.DE_results.*$//' | sort -u
+```
+> The **first** group in `A_vs_B` is the one considered **“up”** in `A_vs_B.DE_up.genes`.
+
+
+**2) Inspect DE result tables**    
+Each contrast has a `...DE_results` table with columns like `logFC`, `logCPM`, `PValue`, `FDR`.
+
+***Preview a table (replace CONTR):***    
+```bash
+CONTR=Pminus_vs_Pplus
+DETAB=edger_trinity/edgeR.DE_results/${CONTR}.DE_results
+head -n 20 "$DETAB" | column -t
+```
+
+***Top 20 by lowest FDR (header-aware):***  
+```bash
+awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) if($i=="FDR") f=i; print; next}
+            NR>1{print $f "\t" $0}' "$DETAB" \
+| sort -t$'\t' -k1,1g \
+| cut -f2- \
+| head -n 20 \
+| column -t
+```
+
+***Top 20 by largest |logFC| (header-aware):***  
+```bash
+awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) if($i=="logFC") l=i; print; next}
+            NR>1{lf=$l; if(lf<0) lf=-lf; print lf "\t" $0}' "$DETAB" \
+| sort -t$'\t' -k1,1gr \
+| cut -f2- \
+| head -n 20 \
+| column -t
+```
+
+***Count significant DE genes at FDR ≤ 0.05:***  
+```bash
+awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) if($i=="FDR") f=i; next} NR>1 && $f!~"NA" && $f<=0.05{c++} END{print c+0}' "$DETAB"
+```
+
+
+**3) Quick look at “up”/“down” gene lists**  
+Trinity also writes simple lists of gene IDs:
+```bash
+ls edger_trinity/edgeR.DE_results/${CONTR}.DE_{up,down}.genes
+head edger_trinity/edgeR.DE_results/${CONTR}.DE_up.genes
+head edger_trinity/edgeR.DE_results/${CONTR}.DE_down.genes
+```
+> **Interpretation:** `A_vs_B.DE_up.genes` are higher in **A** than **B**; `DE_down.genes` are lower in **A** than **B**.
+
+
+**5) View plots (PCA, heatmaps, MA, Volcano)**  
+List the files:
+```bash
+ls edger_trinity/diffexpr_plots/
+```
+If you’re on a headless cluster, copy them to your laptop:
+```bash
+# From your laptop/desktop terminal
+scp -r USER@login.cluster:/work/USER/day09_rnaseq/edger_trinity/diffexpr_plots .
+```
+Then open the PDFs/PNGs locally.
+
+**What to look for:**  
+- **PCA**: replicates from the same group should cluster together; groups should separate along PC1/PC2 if the effect is strong.
+- **Heatmap**: clear block structure by group indicates consistent DE patterns.
+- **MA/Volcano**: many low-FDR points suggest robust signal; check symmetry and direction vs. expectations (e.g., P starvation up-regulates phosphate transport).
+
+
+**Common red flags & quick fixes**  
+- **Almost no DE genes** → Check replicate concordance (PCA), library sizes, or too-strict filters; consider reviewing strandedness/counting.
+- **Weird direction** (e.g., expected transporter genes are “down”) → Make sure you’re reading `A_vs_B` correctly; “up” is **A over B**.
+- **Gene IDs look unfamiliar in enrichment** → Ensure your enrichment mapping (`gene2go.tsv`) matches the same gene identifiers used in `DE_results`.
 
 ## 5) Functional enrichment of DEGs
-### Option A — GOseq via Trinity (length bias aware)
-Create `scripts/05_trinity_goseq.sh`:
+### What are we doing and why?
+We’ll test whether DEGs are **over-represented** in **biological processes/pathways** (e.g., phosphate transport, root morphogenesis, ABA signaling). This connects statistics to **biology** and helps prioritize candidates that sit inside agronomically relevant pathways.
+
+### Option A — GOseq via Trinity 
+Create with `vi`:
+```bash
+vi 05_trinity_goseq.sh
+```
+Press **`i`**, paste, then **`Esc` → `:wq`**:
+
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
@@ -448,10 +554,11 @@ $TRINITY_DE/run_GOseq.pl \
 ```
 Submit:
 ```bash
-sbatch scripts/05_trinity_goseq.sh
+sbatch 05_trinity_goseq.sh
 ```
 
-### Option B — g:Profiler (quick)
+### Option B — g:Profiler (Optional)
+If species-specific GO is unavailable, we can demo with *Arabidopsis*:
 ```r
 # Run interactively or via Rscript
 library(gprofiler2)
@@ -463,10 +570,8 @@ write.csv(res$result, 'gprofiler_up.csv', row.names = FALSE)
 
 > *Breeding note:* Enrichment pinpoints processes (e.g., **phosphate transport**, **root development**, **ABA signaling**) to prioritize for selection and validation.
 
-
 ---
-
-## Troubleshooting
+## RNAseq Troubleshooting
 - **STAR mapping slow:** ensure `--readFilesCommand zcat` for gz FASTQs; check I/O throttling.
 - **Few reads counted:** verify `-s` (strandedness) in featureCounts; wrong setting can halve counts.
 - **No DE genes:** check replicate concordance (PCA), batch effects, and library sizes; consider increasing `--min_cpm` leniency for demo.
