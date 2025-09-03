@@ -234,17 +234,17 @@ Calculating heterozygosity and missingness is important because it allows us to 
 
    module load PLINK
 
-   IN_BASE="my_data"  # unpruned dataset from Step 0.1
+   IN_BASE="./plink/my_data"  # unpruned dataset from Step 0.1
 
    echo "Calculating heterozygosity and inbreeding coefficient (per sample)..."
    plink --bfile "${IN_BASE}" \
          --het \
-         --out plink_het
+         --out ./diversity/plink_het
 
    echo "Calculating per-individual missingness..."
    plink --bfile "${IN_BASE}" \
          --missing \
-         --out plink_missing
+         --out ./diversity/plink_missing
 
    echo "Done. Outputs: plink_het.het, plink_missing.imiss"
    ```
