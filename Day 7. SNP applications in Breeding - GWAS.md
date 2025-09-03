@@ -102,7 +102,7 @@ vi 01_make_pheno.sh
 #!/bin/bash
 #SBATCH --job-name=make_pheno
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
+#SBATCH --mem=1G
 #SBATCH --time=00:05:00
 #SBATCH -o make_pheno.out
 #SBATCH -e make_pheno.err
