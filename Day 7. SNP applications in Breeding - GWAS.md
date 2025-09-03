@@ -541,17 +541,18 @@ set -euo pipefail
 # --- Reference annotation (Date Palm genome from NCBI) ---
 GENOME_GFF="/lisc/scratch/course/pgbiow/data/genomes/date_palm_genomic.gff"
 
-# --- Create output folder ---
+# --- Input/output folders ---
+IN_GWAS="gwas"
 OUTDIR="annotation"
 mkdir -p $OUTDIR
 
 # --- Step 1) Pick SNPs to annotate (Bonferroni first, else top20) ---
-if [ -s ./gwas/bonferroni_hits_SUC.tsv ]; then
+if [ -s $IN_GWAS/bonferroni_hits_SUC.tsv ]; then
   echo "Using Bonferroni-significant SNPs..."
-  awk 'NR>1 {print $1, $3, $2, $9}' OFS='\t' bonferroni_hits_SUC.tsv > $OUTDIR/snps_for_annot.tsv
+  awk 'NR>1 {print $1, $3, $2, $9}' OFS='\t' $IN_GWAS/bonferroni_hits_SUC.tsv > $OUTDIR/snps_for_annot.tsv
 else
   echo "No Bonferroni file, using Top20 hits..."
-  awk 'NR>1 {print $1, $3, $2, $9}' OFS='\t' top20_hits_SUC.tsv > $OUTDIR/snps_for_annot.tsv
+  awk 'NR>1 {print $1, $3, $2, $9}' OFS='\t' $IN_GWAS/top20_hits_SUC.tsv > $OUTDIR/snps_for_annot.tsv
 fi
 # Output columns: CHR BP SNP P
 
@@ -577,7 +578,7 @@ awk -v OFS="\t" '$3=="gene" {
 echo "Wrote: $OUTDIR/genes.bed (gene features)"
 
 # --- Step 4) Intersect SNPs with genes ---
-module load BEDTools/2.30.0  # adjust module name if different on your cluster
+module load BEDTools  # adjust module name if different on your cluster
 
 bedtools intersect -a $OUTDIR/top_snps.bed -b $OUTDIR/genes.bed -wa -wb > $OUTDIR/snps_in_genes.tsv
 bedtools closest   -a $OUTDIR/top_snps.bed -b $OUTDIR/genes.bed > $OUTDIR/snps_nearest_genes.tsv
