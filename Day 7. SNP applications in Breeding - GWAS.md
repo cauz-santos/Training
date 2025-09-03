@@ -439,36 +439,43 @@ Only change them if you want to zoom into a **specific SNP or region** (manual v
 
 ```r
 # --- Regional association plot around the top SNP (±250 kb) ---
-# Requires: data.table, ggplot2
+
 library(data.table)
 library(ggplot2)
 
-# Load additive-model p-values from PLINK
-dt <- fread("gwas_suc_linear.assoc.linear")[TEST == "ADD" & !is.na(P)]
+# Load additive model GWAS results
+dt <- fread("gwas/gwas_suc_linear.assoc.linear")[TEST == "ADD" & !is.na(P)]
 
-# Safety check: ensure required columns exist
-stopifnot(all(c("CHR","BP","SNP","P") %in% names(dt)))
+# Extract numeric chromosome from "chrLG14" format
+dt[, CHR_NUM := as.numeric(gsub("chrLG", "", CHR))]
 
-# Identify the top hit (smallest p-value)
+# Identify top SNP (lowest p-value)
 setorder(dt, P)
 lead <- dt[1]
-chr  <- lead$CHR
+chr  <- lead$CHR_NUM
 pos  <- lead$BP
 
-# Extract a ±250 kb window around the top hit
-win <- dt[CHR == chr & BP >= (pos - 250000) & BP <= (pos + 250000)]
+cat(sprintf("Top SNP: %s (CHR %s, POS %d, P = %.2e)\n", lead$SNP, chr, pos, lead$P))
 
-# Plot and save
-png("GWAS_SUC_RegionalTop.png", width = 1400, height = 500, res = 150)
-ggplot(win, aes(x = BP, y = -log10(P))) +
-  geom_point() +
-  geom_vline(xintercept = pos, linetype = "dashed") +
+# Subset ±250 kb window around top SNP
+win <- dt[CHR_NUM == chr & BP >= (pos - 250000) & BP <= (pos + 250000)]
+
+# --- Plot to screen ---
+p_regional <- ggplot(win, aes(x = BP, y = -log10(P))) +
+  geom_point(alpha = 0.7) +
+  geom_vline(xintercept = pos, linetype = "dashed", color = "red") +
   labs(
-    title = sprintf("Regional Association: chr%s ±250 kb around %s", chr, format(pos, big.mark=",")),
-    x = "Genomic Position (bp)", y = "-log10(P)"
+    title = sprintf("Regional Association: Chr %s ±250 kb around %s", chr, format(pos, big.mark = ",")),
+    x = "Genomic Position (bp)",
+    y = "-log10(P)"
   ) +
   theme_minimal(base_size = 14)
-dev.off()
+
+# Show the plot
+print(p_regional)
+
+# --- Save to file after inspection ---
+ggsave("GWAS_SUC_RegionalTop.png", plot = p_regional, width = 10, height = 4, dpi = 150)
 
 cat("Saved: GWAS_SUC_RegionalTop.png\n")
 ```
