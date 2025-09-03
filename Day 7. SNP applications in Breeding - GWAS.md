@@ -59,11 +59,13 @@ copy and paste:
 
 module load plink
 
-IN_VCF="my_filtered_variants.vcf.gz"
+IN_VCF="/lisc/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"
 
 echo "Converting VCF to PLINK binary..."
 plink --vcf "${IN_VCF}" \
       --make-bed \
+      --allow-extra-chr \
+      --double-id \
       --out gwas_data
 
 echo "Done: gwas_data.bed/.bim/.fam"
