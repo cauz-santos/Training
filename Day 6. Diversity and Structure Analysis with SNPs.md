@@ -117,7 +117,7 @@ What this produces:
          --make-bed \
          --allow-extra-chr \
          --double-id \
-         --out my_data
+         --out ./plink/my_data
 
    echo "Done. Created: my_data.bed / .bim / .fam"
    ```
