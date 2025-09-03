@@ -881,6 +881,35 @@ sbatch 50_gs_lite_min.sh
 `PGS_vs_SUC.png` → scatterplot showing how well the genomic score predicts sucrose.  
 If correlation (`r`) is positive and strong, even this “lite” version shows promise.  
 
+
+#### Results: Polygenic Scores (PGS) for SUC
+
+The folder (`gs-lite/`) contains the outputs from the simple PGS run. Use the commands below to **view** the results right in the terminal.
+
+**What’s there**  
+
+- `gs_pgs.profile` — per-line PGS from PLINK (`SCORE*` column)
+- `pgs_with_suc.tsv` — PGS joined with observed SUC (unsorted)
+- `pgs_ranked.tsv` — **ranked by PGS** (highest first)
+- `top20_by_PGS.tsv` — the top 20 lines by PGS
+- `PGS_vs_SUC.png` — scatter plot + regression line
+- `gs_weights.tsv` — SNP weights used by PLINK (`SNP`, `A1`, `BETA`)
+- `gs_pgs.log` / `gs_pgs.nosex` — PLINK logs
+
+
+**Quick look (just print to screen)**  
+
+```bash
+# Show the per-line PGS file (look for the SCORE column)
+cat gs-lite/gs_pgs.profile
+
+# Show the ranked table (PGS + observed SUC), already sorted
+cat gs-lite/pgs_ranked.tsv
+
+# Top 20 lines by PGS
+cat gs-lite/top20_by_PGS.tsv
+```
+
 > Relevance GS-lite:
 > This gives a fast, interpretable genomic ranking you can already use today for pre-selection, while waiting for larger training sets and more advanced GS models. It shows how GWAS results can directly feed into breeding decisions.
 
