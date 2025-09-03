@@ -781,7 +781,7 @@ Sort the results by significance:
 
 ```bash
 (head -n1 mas_markers/mas_markers.tsv && tail -n +2 mas_markers/mas_markers.tsv | sort -k7,7g) | column -t
-```bash
+```
 
 > Relevance: A clean list of deployable markers (effect allele, effect size, position) to design assays and screen parents/progeny.
 
