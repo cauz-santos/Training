@@ -578,10 +578,15 @@ awk -v OFS="\t" '$3=="gene" {
 echo "Wrote: $OUTDIR/genes.bed (gene features)"
 
 # --- Step 4) Intersect SNPs with genes ---
+# Sort both BED files
+sort -k1,1 -k2,2n $OUTDIR/top_snps.bed > $OUTDIR/top_snps.sorted.bed
+sort -k1,1 -k2,2n $OUTDIR/genes.bed    > $OUTDIR/genes.sorted.bed
+
 module load BEDTools  # adjust module name if different on your cluster
 
-bedtools intersect -a $OUTDIR/top_snps.bed -b $OUTDIR/genes.bed -wa -wb > $OUTDIR/snps_in_genes.tsv
-bedtools closest   -a $OUTDIR/top_snps.bed -b $OUTDIR/genes.bed > $OUTDIR/snps_nearest_genes.tsv
+bedtools intersect -a $OUTDIR/top_snps.sorted.bed -b $OUTDIR/genes.sorted.bed -wa -wb > $OUTDIR/snps_in_genes.tsv
+bedtools closest   -a $OUTDIR/top_snps.sorted.bed -b $OUTDIR/genes.sorted.bed > $OUTDIR/snps_nearest_genes.tsv
+
 
 echo "Wrote: $OUTDIR/snps_in_genes.tsv (overlaps)"
 echo "Wrote: $OUTDIR/snps_nearest_genes.tsv (closest genes)"
