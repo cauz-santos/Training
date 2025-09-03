@@ -613,64 +613,36 @@ sbatch 30_prepare_bed_for_annotation.sh
 - `snps_in_genes_with_product.tsv` → if a SNP lies **within** a gene (exon/intron span)  
 - `snps_nearest_genes_with_product.tsv` → the **closest** gene and the **distance** (0 if overlapping)
 
-**Summarize mappings (friendly table)**
+**SNP Annotation Results**
+We have annotated the top GWAS SNPs with nearby genes using the date palm genome annotation.
 
-We’ll produce an easy-to-read table linking **SNP → gene → putative function**.
+Two result files are available inside the `annotation/` folder:
 
-```bash
-vi 32_summarize_annotations.sh
-```
-
-```bash
-#!/bin/bash
-#SBATCH --job-name=sum_annot
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
-#SBATCH --time=00:05:00
-#SBATCH -o sum_annot.out
-#SBATCH -e sum_annot.err
-
-# If overlaps exist, prefer them; otherwise use nearest within 10kb
-# top_snps.bed: chr start end snp
-# genes.bed: chr start end id|name|product
-# snp_gene_overlaps.tsv / snp_gene_nearest.tsv: a(4 cols) + b(4 cols) + [distance]
-
-echo -e "SNP\tCHR\tBP\tGene_ID\tGene_Name\tProduct\tRelation\tDistance_bp" > snp_gene_summary.tsv
-
-# 1) Overlaps
-if [ -s snp_gene_overlaps.tsv ]; then
-  awk 'BEGIN{OFS="\t"}{
-    split($8,a,"|"); gid=a[1]; gname=a[2]; prod=a[3];
-    bp=$2+1;
-    print $4,$1,bp,gid,gname,prod,"overlap",0
-  }' snp_gene_overlaps.tsv >> snp_gene_summary.tsv
-fi
-
-# 2) Nearest within 10000 bp (10 kb), excluding those already printed
-# Build a set of SNPs already added
-cut -f1 snp_gene_summary.tsv | tail -n +2 | sort -u > already.tsv
-
-awk -vMAXD=10000 'BEGIN{OFS="\t"}
-  FNR==NR {seen[$1]=1; next}
-  {
-    split($8,a,"|"); gid=a[1]; gname=a[2]; prod=a[3]; dist=$9
-    snp=$4; chr=$1; bp=$2+1
-    if(!(snp in seen) && dist<=MAXD){
-      print snp, chr, bp, gid, gname, prod, "nearest", dist
-      seen[snp]=1
-    }
-  }' already.tsv snp_gene_nearest.tsv >> snp_gene_summary.tsv
-
-rm -f already.tsv
-
-echo "Wrote: snp_gene_summary.tsv"
-```
+### 1) SNPs located **inside genes**
 
 ```bash
-sbatch 32_summarize_annotations.sh
+cat annotation/snps_in_genes_with_product.tsv
 ```
 
-Open `snp_gene_summary.tsv` — you’ll see each top SNP, the overlapping/nearest gene, and a **product/description** (when present in GFF3 attributes).
+Each line shows:  
+- SNP coordinates and ID
+- The gene it overlaps
+- Gene name and product (function, if available)
+
+This file tells us which SNPs directly fall within annotated genes.
+
+### 2) The nearest gene to each SNP
+```bash
+cat annotation/snps_nearest_genes_with_product.tsv
+```
+
+Each line shows:  
+- SNP coordinates and ID
+- The closest gene
+- Gene name and product (function, if available)
+- Distance in base pairs
+
+This file helps identify candidate genes near but not directly overlapping the SNP.
 
 > **If function is missing:**  
 > - Your GFF annotation may not include `product`—try `Name`/`gene` attributes or consult the genome’s annotation README.  
