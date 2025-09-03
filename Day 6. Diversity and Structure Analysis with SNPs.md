@@ -626,6 +626,33 @@ ADMIXTURE is a software tool for estimating individual ancestries from multilocu
 
 We will run ADMIXTURE for different values of `K` (number of ancestral populations) and then determine the optimal `K`.
 
+### Step 0 — Preparing Data for ADMIXTURE
+
+ADMIXTURE requires chromosomes in the `.bim` file to be coded as **plain integers** (`1, 2, 3, …`).  
+If your `.bim` file contains labels like `chr1` or `chrLG1`, you must recode them before running ADMIXTURE.  
+Otherwise, you will get the error:
+
+**Fix chromosome codes in the `.bim` file**
+
+```bash
+cd ./plink
+
+# Backup the original .bim file
+cp my_data_pruned.bim my_data_pruned.bim.backup
+
+# Remove 'chr' prefix if present
+sed -i 's/^chr//' my_data_pruned.bim
+
+# Replace any non-numeric codes with 0 (ADMIXTURE accepts 0 for unplaced markers)
+awk '{
+  if ($1 ~ /^[0-9]+$/) {
+    print $0
+  } else {
+    $1 = 0; print $0
+  }
+}' my_data_pruned.bim > tmp && mv tmp my_data_pruned.bim
+```
+
 ### Step 1 - Run ADMIXTURE for different K values
 
 ADMIXTURE takes PLINK BED files as input. We will run it for `K=2` to `K=5` as an example. It is recommended to run ADMIXTURE multiple times for each K value with different random seeds to check for convergence.
