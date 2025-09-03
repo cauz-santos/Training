@@ -48,7 +48,7 @@ Now, enter the folder with the command `cd`
 
 Then create some subfolders, for each specific analysis we will perform:
    ```bash
-   mkdir plink gwas mas gs-lite
+   mkdir plink gwas mas_markers gs-lite
    ```
 
 
@@ -685,31 +685,50 @@ Paste the following content:
 
 set -euo pipefail
 
+# ====== EDIT THESE 3 PATHS TO MATCH YOUR SETUP ======
+GWAS_DIR="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas"         # where bonferroni_hits_SUC.tsv / top20_hits_SUC.tsv live
+PLINK_BIM="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas_data_qc.bim"  # full path to the .bim file you used
+OUTDIR="/lisc/scratch/course/pgbiow/07_gwas_selection/mas_markers"    # where to write outputs
+# ====================================================
+
+mkdir -p "$OUTDIR"
+
 # 1) Pick the source of top hits (prefer Bonferroni, else Top20)
-if [ -s bonferroni_hits_SUC.tsv ]; then SRC=bonferroni_hits_SUC.tsv; else SRC=top20_hits_SUC.tsv; fi
+if [ -s "$GWAS_DIR/bonferroni_hits_SUC.tsv" ]; then
+  SRC="$GWAS_DIR/bonferroni_hits_SUC.tsv"
+else
+  SRC="$GWAS_DIR/top20_hits_SUC.tsv"
+fi
 
 # 2) From PLINK BIM, build a lookup: SNP -> CHR BP A1 A2
 #                 SNP  CHR  BP   A1   A2
-awk 'BEGIN{OFS="\t"}{print $2, $1, $4, $5, $6}' gwas_data_qc.bim > bim.lookup
+awk 'BEGIN{OFS="\t"}{print $2, $1, $4, $5, $6}' "$PLINK_BIM" > "$OUTDIR/bim.lookup"
 
 # 3) From the hits table, extract SNP, P, BETA by header names (keeps header first)
 awk 'BEGIN{FS=OFS="\t"}
 NR==1 {for(i=1;i<=NF;i++) h[$i]=i; print "SNP","P","BETA"; next}
-      {print $h["SNP"], $h["P"], $h["BETA"]}' "$SRC" > assoc.slim
+      {print $h["SNP"], $h["P"], $h["BETA"]}' "$SRC" > "$OUTDIR/assoc.slim"
 
 # 4) Join hits with BIM to add CHR/BP/A1/A2, then reorder columns and add a header
-sort -k1,1 assoc.slim > a
-sort -k1,1 bim.lookup > b
-join -t $'\t' -1 1 -2 1 a b | awk 'BEGIN{OFS="\t"}{print $1,$4,$5,$6,$7,$3,$2}' > mas_markers.tsv
-(echo -e "SNP\tCHR\tBP\tA1(effect)\tA2\tBETA\tP"; cat mas_markers.tsv) > tmp && mv tmp mas_markers.tsv
+LC_ALL=C sort -t $'\t' -k1,1 "$OUTDIR/assoc.slim" > "$OUTDIR/a"
+LC_ALL=C sort -t $'\t' -k1,1 "$OUTDIR/bim.lookup" > "$OUTDIR/b"
+
+join -t $'\t' -1 1 -2 1 "$OUTDIR/a" "$OUTDIR/b" \
+  | awk 'BEGIN{OFS="\t"}{print $1,$4,$5,$6,$7,$3,$2}' \
+  > "$OUTDIR/mas_markers.tsv"
+
+(echo -e "SNP\tCHR\tBP\tA1(effect)\tA2\tBETA\tP"; cat "$OUTDIR/mas_markers.tsv") \
+  > "$OUTDIR/tmp" && mv "$OUTDIR/tmp" "$OUTDIR/mas_markers.tsv"
 
 # 5) (Optional) Also write a plain SNP list (no header)
-cut -f1 mas_markers.tsv | tail -n +2 > mas_markers.snplist
+cut -f1 "$OUTDIR/mas_markers.tsv" | tail -n +2 > "$OUTDIR/mas_markers.snplist"
 
 # Clean temp
-rm -f a b bim.lookup assoc.slim
+rm -f "$OUTDIR/a" "$OUTDIR/b" "$OUTDIR/bim.lookup" "$OUTDIR/assoc.slim"
 
-echo "Created: mas_markers.tsv  (and mas_markers.snplist)"
+echo "Created:"
+echo "  $OUTDIR/mas_markers.tsv"
+echo "  $OUTDIR/mas_markers.snplist"
 ```
 
 Save and submit:
