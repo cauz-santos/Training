@@ -75,6 +75,11 @@ First create a folder for the file outputs of day 6 in your home directory:
    ```
 Now, enter the folder with the command `cd`
 
+Then create some subfolders, for each specific analysis we will perform:
+   ```bash
+   mkdir plink pca admixture snv_density
+   ```
+
 We will convert a **filtered VCF** into PLINK format and perform **LD pruning**. The pruned dataset will be used for **PCA** (and later for ADMIXTURE/GWAS).
 
 ### Step 1 — Convert VCF to PLINK format
@@ -167,18 +172,18 @@ PLINK uses a **sliding window** approach:
 
    module load PLINK
 
-   IN_BASE="my_data"  # from Step 0.1
+   IN_BASE="./plink/my_data"  # from Step 0.1
 
    echo "Selecting approximately independent SNPs (LD pruning)..."
    plink --bfile "${IN_BASE}" \
          --indep-pairwise 50 5 0.2 \
-         --out my_data_prune
+         --out ./plink/my_data_prune
 
    echo "Creating pruned dataset..."
    plink --bfile "${IN_BASE}" \
          --extract my_data_prune.prune.in \
          --make-bed \
-         --out my_data_pruned
+         --out ./plink/my_data_pruned
 
    echo "Done. Use 'my_data_pruned' for PCA and structure analyses."
    ```
