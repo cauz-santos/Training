@@ -107,7 +107,7 @@ We will extract only those:
 
 ```bash
 # Keep only lines whose first field is exactly "RG" (bcftools ROH segments)
-awk -F'\t' '$1=="RG"{print $2,$3,$4,$5,$6}' OFS='\t' roh_results.txt > roh_segments.tsv
+awk -F'\t' '$1=="RG"{print $2,$3,$4,$5,$6}' OFS='\t' ./roh_runs/roh_results.txt > ./roh_runs/roh_segments.tsv
 ```
 This keeps only homozygous blocks with information such as sample ID, chromosome, start, end, length.
 
