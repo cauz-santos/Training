@@ -536,10 +536,15 @@ LD reflects **correlations between SNPs** due to shared ancestry, drift, or sele
 
 **1) Convert PLINK data to allele dosage format**  
 We need SNP genotypes coded as **0, 1, 2** (number of alternate alleles).  
+Remember to change in the command lines the `/path/to/your/home/folder/`
+
 Run:
+```bash
+module load PLINK
+```
 
 ```bash
-plink --bfile gwas_data_qc --recodeA --out gwas_for_linkage
+plink --bfile /path/to/your/home/folder/07_gwas_selection/plink/gwas_data_qc --recodeA --allow-extra-chr --out gwas_for_linkage
 ```
 
 **Output:**  
@@ -551,7 +556,7 @@ plink --bfile gwas_data_qc --recodeA --out gwas_for_linkage
 **2) Load genotype matrix into R**  
 In Rstudio:
 ```r
-geno <- read.csv("gwas_for_linkage.raw", sep=" ", header=TRUE)
+geno <- read.csv("./linkage/gwas_for_linkage.raw", sep=" ", header=TRUE)
 
 # Inspect first columns
 head(geno[,1:10])
@@ -562,7 +567,7 @@ head(geno[,1:10])
 PLINK can directly compute LD between SNP pairs:
 
 ```bash
-plink --bfile gwas_data_qc       --r2       --ld-window 99999       --ld-window-kb 1000       --ld-window-r2 0       --out gwas_ld
+plink --bfile /path/to/your/home/folder/07_gwas_selection/plink/gwas_data_qc --r2 --ld-window 99999 --ld-window-kb 1000 --ld-window-r2 0 --allow-extra-chr --out gwas_ld
 ```
 
 **Outputs:**  
@@ -578,7 +583,7 @@ library(data.table)
 library(ggplot2)
 
 # Load LD file
-ld <- fread("gwas_ld.ld")
+ld <- fread("./linkage/gwas_ld.ld")
 
 # Scatterplot: r² vs distance
 ggplot(ld, aes(x=BP_B - BP_A, y=R2)) +
