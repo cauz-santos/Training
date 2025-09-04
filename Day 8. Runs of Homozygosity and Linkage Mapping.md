@@ -39,7 +39,7 @@ Now, enter the folder with the command `cd`
 
 Then create some subfolders, for each specific analysis we will perform:
    ```bash
-   mkdir vcf rho_runs linkage ml_forest
+   mkdir vcf roh_runs linkage ml_forest
    ```
 
 ### Step 0 — Make sure the VCF exists
@@ -71,17 +71,26 @@ Now copy and paste the following script into the file:
 #!/bin/bash
 #SBATCH --job-name=roh_bcftools
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
-#SBATCH --time=00:30:00
+#SBATCH --mem=2G
+#SBATCH --time=01:00:00
 #SBATCH -o roh_bcftools.out
 #SBATCH -e roh_bcftools.err
 
 module load bcftools
 
-VCF="vcf/gwas_data_qc.vcf.gz"      # Input from Day 7
-OUT="rho_runs/roh_results.txt"
+# Input and output paths
+VCF="vcf/gwas_data_qc.vcf.gz"          # Input VCF (from Day 7)
+VCF_AF="vcf/gwas_data_qc.withAF.vcf.gz" # VCF with allele frequencies
+OUT="roh_runs/roh_results.txt"
 
-bcftools roh -G30 --rec-rate 1.4e-8 ${VCF} > ${OUT}
+# Step 1: Add AF tag to INFO field
+echo "Adding allele frequencies to VCF..."
+bcftools +fill-tags ${VCF} -Oz -o ${VCF_AF} -- -t AF
+tabix -p vcf ${VCF_AF}
+
+# Step 2: Run ROH calling
+echo "Running bcftools roh..."
+bcftools roh -G30 --rec-rate 1.4e-8 ${VCF_AF} > ${OUT}
 
 echo "ROH calling finished: ${OUT}"
 ```
