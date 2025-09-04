@@ -28,21 +28,35 @@ In plant breeding, **ROH are important because**:
 - They help identify **regions under selection**, where breeders may have fixed favorable alleles.  
 - They provide insights into **genetic diversity** and **effective population size**.  
 
-By detecting ROH in our GWAS dataset from Day 7, we can explore how much homozygosity exists in different lines, and which genomic regions may be under breeding pressure.  
+By detecting ROH in our GWAS dataset from Day 7, we can explore how much homozygosity exists in different lines, and which genomic regions may be under breeding pressure. 
+
+
+First create a folder for the file outputs of day 7 in your home directory:
+   ```bash
+   mkdir 08_rho_linkage
+   ```
+Now, enter the folder with the command `cd`
+
+Then create some subfolders, for each specific analysis we will perform:
+   ```bash
+   mkdir vcf rho_runs linkage ml_forest
+   ```
 
 ### Step 0 — Make sure the VCF exists
 
-Only if gwas_data_qc.vcf.gz doesn't already exist:
+Only if gwas_data_qc.vcf.gz doesn't already exist (Tip: We didn't created the vcf):
 ```bash
-module load plink
-plink --bfile gwas_data_qc --recode vcf bgz --out gwas_data_qc
-module load bcftools/1.17
+module load PLINK
+cd vcf
+plink --bfile .../07_gwas_selection/plink/gwas_data_qc --recode vcf bgz --out gwas_data_qc
+module load bcftools
 bcftools index -t gwas_data_qc.vcf.gz
 ```
 
 ### Step 1 — Run bcftools roh
 
 We first detect Runs of Homozygosity (ROH) using the `roh` plugin from **bcftools**.  
+First, use `cd` to move to directory `08_rho_linkage`
 
 ```bash
 vi bcftools_roh_job.sh
