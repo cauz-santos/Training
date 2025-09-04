@@ -234,6 +234,9 @@ ggplot(summed_roh, aes(x=Sample, y=total_length/1e6, fill=Category)) +
 > **Interpretation:**  
 > Short ROHs → reflect background relatedness (drift).  
 > Long ROHs → evidence of recent inbreeding.
+>
+> Short/medium ROHs reflect the base germplasm diversity.
+> Long ROHs are often introduced intentionally during line development.
 
 **C) Boxplot: FROH by Population**    
 If you have population metadata (e.g., Sample → Population), you can merge and plot:  
@@ -264,6 +267,8 @@ ggplot(data_with_pop, aes(x = Population, y = FROH, color = Population)) +
 > **Interpretation:**  
 > Higher FROH → stronger inbreeding.  
 > Compare populations to identify inbred vs diverse groups.
+>
+> Populations with higher FROH have reduced genetic diversity, which can lead to inbreeding depression (loss of vigor, yield).
 
 
 **Discussion Questions:**  
