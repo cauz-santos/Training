@@ -71,15 +71,15 @@ Now copy and paste the following script into the file:
 #!/bin/bash
 #SBATCH --job-name=roh_bcftools
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
+#SBATCH --mem=1G
 #SBATCH --time=00:30:00
 #SBATCH -o roh_bcftools.out
 #SBATCH -e roh_bcftools.err
 
-module load bcftools/1.17
+module load bcftools
 
-VCF="gwas_data_qc.vcf.gz"      # Input from Day 7
-OUT="roh_results.txt"
+VCF="vcf/gwas_data_qc.vcf.gz"      # Input from Day 7
+OUT="rho_runs/roh_results.txt"
 
 bcftools roh -G30 --rec-rate 1.4e-8 ${VCF} > ${OUT}
 
