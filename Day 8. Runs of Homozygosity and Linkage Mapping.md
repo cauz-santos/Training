@@ -640,25 +640,46 @@ We can zoom in and visualize LD as a heatmap:
 
 In Rstudio:
 ```r
-library(LDheatmap)
+library(data.table)
+library(reshape2)
+library(ggplot2)
+library(stringr)
 
-# Take a subset of SNPs from chromosome 1 (first 100 SNPs)
-snp_subset <- geno[, 7:106]   # skip metadata columns
-pos <- 1:ncol(snp_subset) * 10000   # fake positions, adjust if real BP available
+# ---- 1) Read a manageable SNP subset (adjust 7:206 as you like) ----
+geno <- fread("./linkage/gwas_for_linkage.raw")
+snp_subset <- geno[, 7:206, with = FALSE]           # ~200 SNPs is readable
+snps <- colnames(snp_subset)
 
-# Compute LD matrix
-ld_mat <- cor(snp_subset, use="pairwise.complete.obs")^2
+# ---- 2) LD matrix (r^2) ----
+ld_mat <- cor(snp_subset, use = "pairwise.complete.obs")^2
 
-# Plot heatmap
-LDheatmap(ld_mat, genetic.distances=pos,
-          color=heat.colors(20),
-          title="LD Heatmap (Chr1 subset)")
+# ---- 3) Long format + use numeric indices on axes ----
+ld_df <- reshape2::melt(ld_mat, varnames = c("SNP_A","SNP_B"), value.name = "R2")
+ld_df$A_i <- as.integer(factor(ld_df$SNP_A, levels = snps))
+ld_df$B_i <- as.integer(factor(ld_df$SNP_B, levels = snps))
 
-# Fallback heatmap if LDheatmap isn't available
-ld_mat <- cor(snp_subset, use="pairwise.complete.obs")^2
-png("LD_heatmap_base.png", 1000, 800, res=150)
-image(ld_mat, axes=FALSE, main="LD Heatmap (r^2) — base R")
-dev.off()
+# Keep upper triangle only (classic LD view). Comment this line if you want full square.
+ld_df <- ld_df[ld_df$A_i < ld_df$B_i, ]
+
+# ---- 4) Sparse, truncated tick labels every 10 SNPs ----
+idx_breaks <- seq(1, length(snps), by = 10)
+idx_labels <- str_trunc(snps[idx_breaks], 18)       # shorten long IDs
+
+p <- ggplot(ld_df, aes(A_i, B_i, fill = R2)) +
+  geom_tile() +
+  coord_fixed() +
+  scale_fill_gradient(limits = c(0,1), low = "white", high = "red", name = expression(r^2)) +
+  scale_x_continuous(breaks = idx_breaks, labels = idx_labels, expand = c(0,0)) +
+  scale_y_continuous(breaks = idx_breaks, labels = idx_labels, expand = c(0,0)) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 6),
+        axis.text.y = element_text(size = 6)) +
+  labs(title = "LD Heatmap (subset)", x = "SNP (index)", y = "SNP (index)")
+
+print(p)
+
+# Save a clean PDF
+ggsave("./linkage/LD_heatmap_subset.pdf", p, width = 6.5, height = 5.5)
 ```
 
 **Output:**  
@@ -666,12 +687,12 @@ dev.off()
 
 > **Interpretation:**  
 > **LD decay plot:**  
->  - Fast decay → high recombination, more diversity.  
+> - Fast decay → high recombination, more diversity.  
 > - Slow decay → strong structure, less recombination, possible selection.  
 >
-> **LD heatmap:**  
->  - Squares of high r² = **LD blocks** (haplotypes).  
->  - Boundaries between blocks show recombination hotspots.  
+> **LD heatmap:**
+> - Dark red (close to 1.0) → SNP pairs are in strong LD, meaning they are almost always inherited together (little to no recombination between them in your population).
+> - Light pink/white (close to 0.0) → SNP pairs are in weak or no LD, meaning they assort independently (lots of recombination, or just no correlation).
 
 **Key point:**   
 Even though we cannot build a **linkage map** without a controlled F2 cross,  
