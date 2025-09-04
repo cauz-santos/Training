@@ -110,9 +110,9 @@ Paste the script below :
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 16
-#SBATCH --mem=64G
-#SBATCH -t 00:25:00
+#SBATCH -c 2
+#SBATCH --mem=4G
+#SBATCH -t 01:00:00
 #SBATCH -J day9_star_index
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
