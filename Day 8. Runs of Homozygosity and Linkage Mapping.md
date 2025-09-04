@@ -67,7 +67,7 @@ Now copy and paste the following script into the file:
 #!/bin/bash
 #SBATCH --job-name=roh_bcftools
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
+#SBATCH --mem=1G
 #SBATCH --time=01:00:00
 #SBATCH -o roh_bcftools.out
 #SBATCH -e roh_bcftools.err
