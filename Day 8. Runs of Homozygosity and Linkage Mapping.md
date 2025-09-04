@@ -240,16 +240,25 @@ If you have population metadata (e.g., Sample → Population), you can merge and
 
 In Rstudio:  
 ```r
-# Example population file: popmap.txt (Sample \t Population)
-popmap <- read_delim("popmap.txt", delim="\t", col_names=c("Sample","Population"))
+library(readr)
+library(dplyr)
+library(ggplot2)
 
-data_with_pop <- left_join(summary_data, popmap, by="Sample")
+# Load your population table (CSV with header IID,Population)
+popmap <- read_csv("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv")
 
-ggplot(data_with_pop, aes(x=Population, y=FROH, color=Population)) +
-  geom_boxplot(outlier.shape=NA) +
-  geom_jitter(width=0.2, size=2) +
-  theme_minimal() +
-  labs(y="FROH (Inbreeding Coefficient)", title="Genomic Inbreeding by Population")
+# Merge with your summary data (assuming summary_data has a column "Sample")
+data_with_pop <- summary_data %>%
+  left_join(popmap, by = c("Sample" = "IID"))
+
+# Plot FROH per population
+ggplot(data_with_pop, aes(x = Population, y = FROH, color = Population)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.2, size = 2) +
+  theme_minimal(base_size = 14) +
+  labs(y = "FROH (Inbreeding Coefficient)", 
+       title = "Genomic Inbreeding by Population") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 > **Interpretation:**  
