@@ -562,6 +562,17 @@ geno <- read.csv("./linkage/gwas_for_linkage.raw", sep=" ", header=TRUE)
 head(geno[,1:10])
 ```
 
+Let’s break it down:
+`FID / IID` → Family ID and Individual ID (your sample names).
+`PAT / MAT / SEX / PHENOTYPE` → placeholders for pedigree, sex, and phenotype (here all 0 or -9 because you didn’t provide this info).
+
+The next columns are the SNP markers. Each column corresponds to one SNP (named by chromosome/position/alleles).
+Example: `chrLG1.83953.G.T_T` → SNP on chromosome LG1 at position 83,953 with alleles G/T.
+The values (0, 1, 2, NA) are genotypes coded as allele counts:
+               `0` = homozygous for the reference allele
+               `1` = heterozygous
+               `2` = homozygous for the alternate allele
+               `NA` = missing genotype
 
 **3) Compute pairwise LD with PLINK**  
 PLINK can directly compute LD between SNP pairs:
