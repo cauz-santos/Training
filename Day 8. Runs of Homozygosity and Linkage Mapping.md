@@ -590,25 +590,35 @@ We can check how LD decays with physical distance:
 
 In Rstudio:
 ```r
-library(data.table)
-library(ggplot2)
+set.seed(123)
+ld_sub <- ld[sample(.N, min(50000, .N))]   # take max 50k points
 
-# Load LD file
-ld <- fread("./linkage/gwas_ld.ld")
-
-# Scatterplot: r² vs distance
-ggplot(ld, aes(x=BP_B - BP_A, y=R2)) +
-  geom_point(alpha=0.3, size=0.7) +
-  geom_smooth(method="loess", color="red") +
+ggplot(ld_sub, aes(x = BP_B - BP_A, y = R2)) +
+  geom_point(alpha = 0.3, size = 0.7) +
+  geom_smooth(method = "loess", span = 0.2, color = "red") +
   theme_minimal() +
-  labs(x="Distance between SNPs (bp)", y=expression(r^2),
-       title="LD Decay Across Genome")
+  labs(x = "Distance between SNPs (bp)", y = expression(r^2),
+       title = "LD Decay (50k sampled SNP pairs)")
+library(dplyr)
+
+ld_binned <- ld %>%
+  mutate(bin = cut(BP_B - BP_A, breaks = seq(0, max(BP_B - BP_A), by = 50000))) %>%
+  group_by(bin) %>%
+  summarise(mean_dist = mean(BP_B - BP_A), mean_r2 = mean(R2, na.rm=TRUE))
+
+ggplot(ld_binned, aes(x = mean_dist, y = mean_r2)) +
+  geom_point(color = "blue") +
+  geom_line(color = "red") +
+  theme_minimal() +
+  labs(x = "Distance between SNPs (bp)", y = expression(r^2),
+       title = "LD Decay (binned averages)")
 ```
 
 **Output:**  
 - A scatterplot showing how r² decreases as SNP distance increases.  
 - The smoother line shows the **LD decay curve**.
 
+>The LD decay curve shows r² ≤ 0.08, meaning recombination has broken most marker associations — a hallmark of cross-pollinated crops like date palm, where mapping resolution is high but requires dense SNP genotyping.
 
 **5) LD heatmap for one chromosome region**  
 We can zoom in and visualize LD as a heatmap:
