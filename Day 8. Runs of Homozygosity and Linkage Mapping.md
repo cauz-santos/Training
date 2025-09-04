@@ -79,18 +79,12 @@ Now copy and paste the following script into the file:
 module load bcftools
 
 # Input and output paths
-VCF="vcf/gwas_data_qc.vcf.gz"          # Input VCF (from Day 7)
-VCF_AF="vcf/gwas_data_qc.withAF.vcf.gz" # VCF with allele frequencies
+VCF="vcf/gwas_data_qc.vcf.gz"      # Input from Day 7
 OUT="roh_runs/roh_results.txt"
 
-# Step 1: Add AF tag to INFO field
-echo "Adding allele frequencies to VCF..."
-bcftools +fill-tags ${VCF} -Oz -o ${VCF_AF} -- -t AF
-tabix -p vcf ${VCF_AF}
-
-# Step 2: Run ROH calling
+# Run ROH calling, estimate AF from all samples
 echo "Running bcftools roh..."
-bcftools roh -G30 --rec-rate 1.4e-8 ${VCF_AF} > ${OUT}
+bcftools roh -G30 --rec-rate 1.4e-8 --estimate-AF - ${VCF} > ${OUT}
 
 echo "ROH calling finished: ${OUT}"
 ```
