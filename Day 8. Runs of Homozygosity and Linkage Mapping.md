@@ -169,7 +169,7 @@ Open Rstudio and run:
 library(tidyverse)
 
 # Load ROH data (Sample, Chromosome, Length)
-roh <- readr::read_tsv("roh_segments.tsv",
+roh <- readr::read_tsv("roh_runs/roh_segments.tsv",
                        col_names=c("Sample","Chromosome","Start","End","Length"),
                        col_types="cciii")
 
