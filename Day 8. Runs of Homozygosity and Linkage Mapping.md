@@ -44,14 +44,10 @@ Then create some subfolders, for each specific analysis we will perform:
 
 ### Step 0 — Make sure the VCF exists
 
-Only if gwas_data_qc.vcf.gz doesn't already exist (Note: We didn't created the vcf yet, also remember to change the path to your home folder in plink):
-```bash
-module load PLINK
-cd vcf
-plink --bfile /path/to/your/folder/07_gwas_selection/plink/gwas_data_qc --recode vcf bgz --allow-extra-chr --out gwas_data_qc
-module load bcftools
-bcftools index -t gwas_data_qc.vcf.gz
-```
+**Tip:** ROH works best with dense marker sets. In real analyses you would use the full, unpruned dataset (~600k SNPs).  
+👉 For this *practice session*, we will use the file:
+`dataset120_chr18.vcf.gz` which is in `/lisc/data/scratch/course/pgbiow/data/VCF`
+
 
 ### Step 1 — Run bcftools roh
 
@@ -79,7 +75,7 @@ Now copy and paste the following script into the file:
 module load bcftools
 
 # Input and output paths
-VCF="vcf/gwas_data_qc.vcf.gz"      # Input from Day 7
+VCF="/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"      # Input from Day 7
 OUT="roh_runs/roh_results.txt"
 
 # Run ROH calling, estimate AF from all samples
