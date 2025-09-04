@@ -121,7 +121,7 @@ set -euo pipefail
 # --- Load modules ---
 module purge
 module load Trinity/2.15.2-foss-2023a
-module load STAR/2.7.10a
+module load STAR
 
 # --- Define paths ---
 GENOME_DIR="/lisc/scratch/course/pgbiow/data/genomes"
