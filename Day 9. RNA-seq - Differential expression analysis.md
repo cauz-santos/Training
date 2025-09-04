@@ -118,23 +118,42 @@ Paste the script below :
 #SBATCH -e logs/%x_%j.err
 set -euo pipefail
 
+# --- Load modules ---
 module purge
 module load Trinity/2.15.2-foss-2023a
 module load STAR/2.7.10a
 
-REF=ref/reference.fa
-GTF=ref/annotation.gtf
-IDX=ref/STAR_index
-READLEN=${READLEN:-100}          # set to your read length (100 or 150)
+# --- Define paths ---
+GENOME_DIR="/lisc/scratch/course/pgbiow/data/genomes"
+WORK_REF="reference"
+
+# --- Copy reference genome & annotations into your working folder ---
+mkdir -p "$WORK_REF"
+cp "${GENOME_DIR}/Elaeis_guineensis_genomic.fna" "$WORK_REF/reference.fa"
+cp "${GENOME_DIR}/Elaeis_guineensis_genomic.gtf" "$WORK_REF/annotation.gtf"
+# (optional: keep gff too if you need)
+cp "${GENOME_DIR}/Elaeis_guineensis_genomic.gff" "$WORK_REF/annotation.gff"
+
+# --- Define input files for STAR ---
+REF="$WORK_REF/reference.fa"
+GTF="$WORK_REF/annotation.gtf"
+IDX="$WORK_REF/STAR_index"
+
+READLEN=150          # set to your read length (100 or 150)
 SJDB=$((READLEN-1))
 
+# --- Make index directory ---
 mkdir -p "$IDX"
+
+# --- Run STAR genomeGenerate ---
 STAR --runThreadN 16 \
      --runMode genomeGenerate \
      --genomeDir "$IDX" \
      --genomeFastaFiles "$REF" \
      --sjdbGTFfile "$GTF" \
      --sjdbOverhang $SJDB
+
+echo "STAR index built successfully in $IDX"
 ```
 To save and exit `vi`: press `Esc`, then type `:wq` and press `Enter`.
 
