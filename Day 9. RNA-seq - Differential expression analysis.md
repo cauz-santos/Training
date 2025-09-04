@@ -80,6 +80,17 @@ export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
 ---
 
 
+First create a folder for the file outputs of day 9 in your home directory:
+   ```bash
+   mkdir 09_rnaseq_expression
+   ```
+Now, enter the folder with the command `cd`
+
+Then create some subfolders, for each specific analysis we will perform:
+   ```bash
+   mkdir reference star trinity go_terms
+   ```
+
 ### 1) STAR genome index (Slurm)
 
 **What are we doing and why?**  
