@@ -270,6 +270,50 @@ ggplot(data_with_pop, aes(x = Population, y = FROH, color = Population)) +
 >
 > Populations with higher FROH have reduced genetic diversity, which can lead to inbreeding depression (loss of vigor, yield).
 
+**D) Outliers**  
+Now we will go beyond population averages and identify **specific individuals** that deviate strongly from the expected inbreeding levels.  
+
+- Individuals with **very high FROH** are likely the result of **close-relative mating or selfing**, and may carry risks of **inbreeding depression**.  
+- Individuals with **very low FROH** could indicate **sample contamination, mislabeling, or unexpected admixture**.  
+- We will also flag individuals with an **excess of very long ROHs**, which are signatures of **recent inbreeding events**.  
+
+```r
+# ============================
+# Identify Outlier Individuals
+# ============================
+
+# --- Step 1: Calculate thresholds for FROH ---
+froh_mean <- mean(summary_data$FROH, na.rm = TRUE)
+froh_sd   <- sd(summary_data$FROH, na.rm = TRUE)
+
+high_cutoff <- froh_mean + 2 * froh_sd
+low_cutoff  <- froh_mean - 2 * froh_sd
+
+cat("FROH thresholds:\n",
+    "High outlier >", round(high_cutoff, 3), "\n",
+    "Low outlier <", round(low_cutoff, 3), "\n")
+
+# --- Step 2: Flag outliers ---
+outliers <- summary_data %>%
+  mutate(
+    OutlierReason = case_when(
+      FROH > high_cutoff ~ "High FROH (possible inbreeding)",
+      FROH < low_cutoff ~ "Low FROH (possible contamination/mislabel)",
+      SROH > quantile(SROH, 0.95, na.rm = TRUE) ~ "Excess total ROH length",
+      TRUE ~ NA_character_
+    )
+  ) %>%
+  filter(!is.na(OutlierReason)) %>%
+  left_join(popmap, by = c("Sample" = "IID"))
+
+# --- Step 3: Save outlier table ---
+readr::write_csv(outliers, "roh_runs/outliers.csv")
+
+# --- Step 4: Print preview for students ---
+print(outliers)
+
+cat("\n Outlier individuals saved to roh_runs/outliers.csv\n")
+```
 
 **Discussion Questions:**  
 - What does a high NROH but low SROH suggest about a population’s history?
