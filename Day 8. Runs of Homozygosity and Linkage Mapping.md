@@ -590,35 +590,50 @@ We can check how LD decays with physical distance:
 
 In Rstudio:
 ```r
-set.seed(123)
-ld_sub <- ld[sample(.N, min(50000, .N))]   # take max 50k points
-
-ggplot(ld_sub, aes(x = BP_B - BP_A, y = R2)) +
-  geom_point(alpha = 0.3, size = 0.7) +
-  geom_smooth(method = "loess", span = 0.2, color = "red") +
-  theme_minimal() +
-  labs(x = "Distance between SNPs (bp)", y = expression(r^2),
-       title = "LD Decay (50k sampled SNP pairs)")
+library(data.table)
+library(ggplot2)
 library(dplyr)
 
+# Load LD file
+ld <- fread("./linkage/gwas_ld.ld")
+
+# Subsample for speed
+ld_sub <- ld[sample(.N, min(20000, .N))]
+
+# Scatterplot with GAM smoother
+p1 <- ggplot(ld_sub, aes(x = BP_B - BP_A, y = R2)) +
+  geom_point(alpha = 0.3, size = 0.5) +
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs"), color = "red") +
+  theme_minimal(base_size = 14) +
+  labs(x = "Distance between SNPs (bp)", y = expression(r^2),
+       title = "LD Decay (subsampled SNP pairs)")
+
+# Binned averages (10 kb bins)
 ld_binned <- ld %>%
-  mutate(bin = cut(BP_B - BP_A, breaks = seq(0, max(BP_B - BP_A), by = 50000))) %>%
+  mutate(bin = cut(BP_B - BP_A, breaks = seq(0, max(BP_B - BP_A), by = 10000))) %>%
   group_by(bin) %>%
   summarise(mean_dist = mean(BP_B - BP_A), mean_r2 = mean(R2, na.rm=TRUE))
 
-ggplot(ld_binned, aes(x = mean_dist, y = mean_r2)) +
+p2 <- ggplot(ld_binned, aes(x = mean_dist, y = mean_r2)) +
   geom_point(color = "blue") +
   geom_line(color = "red") +
-  theme_minimal() +
+  theme_minimal(base_size = 14) +
   labs(x = "Distance between SNPs (bp)", y = expression(r^2),
-       title = "LD Decay (binned averages)")
+       title = "LD Decay (10 kb binned averages)")
+
+# Save both plots to PDF
+pdf("./linkage/LD_decay_plots.pdf", width = 10, height = 6)
+print(p1)
+print(p2)
+dev.off()
 ```
 
 **Output:**  
 - A scatterplot showing how r² decreases as SNP distance increases.  
 - The smoother line shows the **LD decay curve**.
 
->The LD decay curve shows r² ≤ 0.08, meaning recombination has broken most marker associations — a hallmark of cross-pollinated crops like date palm, where mapping resolution is high but requires dense SNP genotyping.
+> NOTE: The LD decay plot shows how linkage disequilibrium (r²) declines with increasing physical distance between SNPs. In our date palm populations, r² values remain low (≤0.08) even at short distances, indicating very rapid LD decay. This is a hallmark of cross-pollinated crops, where recombination quickly breaks associations between markers. For breeders, this means that mapping resolution is potentially very high, causal genes can be pinpointed with dense SNP data, but it also requires larger marker panels to capture meaningful associations, unlike in self-pollinating crops (e.g., rice or wheat) where LD extends across much longer genomic regions.
+
 
 **5) LD heatmap for one chromosome region**  
 We can zoom in and visualize LD as a heatmap:
