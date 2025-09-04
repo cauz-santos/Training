@@ -517,7 +517,7 @@ cat(" Outputs saved in linkage/: r_heatmap.pdf and linkage_map_true.pdf\n")
 > **How to Interpret the RF Heatmap**  
 > - **Dark blocks (low rf)** → tightly linked markers.   
 > - **Light blocks (high rf)** → unlinked markers (different chromosomes or very distant on the same chromosome).  
-> - You’ll see **3 dark diagonal blocks** (one per chromosome), which shows that markers group correctly into **linkage groups**.  
+> - You’ll see **5 dark diagonal blocks** (one per chromosome), which shows that markers group correctly into **linkage groups**.  
 >
 > 👉 This mimics what happens in **real linkage mapping**: you cluster markers into groups (chromosomes) based on recombination.
 
