@@ -562,7 +562,7 @@ geno <- read.csv("./linkage/gwas_for_linkage.raw", sep=" ", header=TRUE)
 head(geno[,1:10])
 ```
 
-Let’s break it down:  
+**Let’s break it down:**    
 `FID / IID` → Family ID and Individual ID (your sample names).  
 `PAT / MAT / SEX / PHENOTYPE` → placeholders for pedigree, sex, and phenotype (here all 0 or -9 because you didn’t provide this info).  
 
