@@ -196,11 +196,13 @@ head(summary_data)
 **A) Scatterplot: NROH vs. SROH**  
 In Rstudio:  
 ```r
-ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
+p1 <- ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
   geom_point(color="blue", size=3) +
   theme_minimal() +
   labs(x="Total ROH Length (Mb)", y="Number of ROHs",
        title="Relationship between ROH number and total length")
+
+print(p1)  # show in RStudio
 ```
 
 > **Interpretation:**  
@@ -210,6 +212,7 @@ ggplot(summary_data, aes(x=SROH/1e6, y=NROH)) +
 **B) Stacked Barplot: ROH Length Categories**  
 In Rstudio:  
 ```r
+# --- ROH categories ---
 roh_cat <- roh %>%
   mutate(Category = case_when(
     Length >= 1e6 & Length < 3e6 ~ "1–3 Mb",
@@ -223,12 +226,15 @@ summed_roh <- roh_cat %>%
   group_by(Sample, Category) %>%
   summarise(total_length = sum(Length), .groups="drop")
 
-ggplot(summed_roh, aes(x=Sample, y=total_length/1e6, fill=Category)) +
+# --- Plot 2: Distribution by ROH category ---
+p2 <- ggplot(summed_roh, aes(x=Sample, y=total_length/1e6, fill=Category)) +
   geom_bar(stat="identity") +
   theme_minimal() +
   labs(x="Sample", y="Total ROH Length (Mb)", fill="ROH Category",
        title="Distribution of ROH by Length Class") +
   theme(axis.text.x=element_text(angle=45,hjust=1))
+
+print(p2)
 ```
 
 > **Interpretation:**  
@@ -243,25 +249,31 @@ If you have population metadata (e.g., Sample → Population), you can merge and
 
 In Rstudio:  
 ```r
-library(readr)
-library(dplyr)
-library(ggplot2)
-
-# Load your population table (CSV with header IID,Population)
+# --- Load population table and merge ---
 popmap <- read_csv("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv")
 
-# Merge with your summary data (assuming summary_data has a column "Sample")
 data_with_pop <- summary_data %>%
   left_join(popmap, by = c("Sample" = "IID"))
 
-# Plot FROH per population
-ggplot(data_with_pop, aes(x = Population, y = FROH, color = Population)) +
+# --- Plot 3: FROH per population ---
+p3 <- ggplot(data_with_pop, aes(x = Population, y = FROH, color = Population)) +
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(width = 0.2, size = 2) +
   theme_minimal(base_size = 14) +
   labs(y = "FROH (Inbreeding Coefficient)", 
        title = "Genomic Inbreeding by Population") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+print(p3)
+
+# --- Save all plots as PDF in roh_runs/ ---
+pdf("roh_runs/roh_plots.pdf", width=10, height=7)
+print(p1)
+print(p2)
+print(p3)
+dev.off()
+
+cat("All plots saved to roh_runs/roh_plots.pdf\n")
 ```
 
 > **Interpretation:**  
