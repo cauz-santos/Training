@@ -683,7 +683,7 @@ ggsave("./linkage/LD_heatmap_subset.pdf", p, width = 6.5, height = 5.5)
 ```
 
 **Output:**  
-- Heatmap where **dark red = strong LD** and **yellow/white = weak LD**.  
+- Heatmap where **dark red = strong LD** and **pink/white = weak LD**.  
 
 > **Interpretation:**  
 > **LD decay plot:**  
