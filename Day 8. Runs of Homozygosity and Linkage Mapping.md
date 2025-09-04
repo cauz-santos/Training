@@ -28,7 +28,7 @@ In plant breeding, **ROH are important because**:
 - They help identify **regions under selection**, where breeders may have fixed favorable alleles.  
 - They provide insights into **genetic diversity** and **effective population size**.  
 
-By detecting ROH in our GWAS dataset from Day 7, we can explore how much homozygosity exists in different lines, and which genomic regions may be under breeding pressure. 
+By detecting ROH in our GWAS dataset from Day 8, we can explore how much homozygosity exists in different lines, and which genomic regions may be under breeding pressure. 
 
 
 First create a folder for the file outputs of day 7 in your home directory:
