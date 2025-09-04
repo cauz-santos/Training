@@ -375,29 +375,144 @@ Although the terms sound similar, **linkage maps** and **LD maps** describe diff
 Because linkage maps require **pedigreed crosses** (e.g., F2), we’ll simulate one in R to show how maps are built.
 
 ```r
-# Load R/qtl package
-library(qtl)
+## ==========================================
+## Linkage Mapping Basics (simulation)
+## ==========================================
+library(ggplot2)
+library(reshape2)
 
-# Simulate a small F2 cross with 100 individuals and 3 chromosomes
-fake <- sim.cross(map = sim.map(len=c(100,80,60), n.mar=11, anchor=TRUE), 
-                  n.ind=100, 
-                  type="f2")
+set.seed(123)
 
-# Estimate recombination fractions
-fake <- est.rf(fake)
+## -----------------------
+## Parameters
+## -----------------------
+N_ind           <- 300   # "sample size" controlling noise
+n_chr           <- 5     # number of chromosomes
+markers_per_chr <- 20    # markers per chromosome
+min_gap_cM      <- 2
+max_gap_cM      <- 10
 
-# Plot recombination fractions (rf) matrix
-png("Linkage_toy_rf.png",1000,800)
-plotRF(fake)
+## -----------------------
+## Haldane functions
+## -----------------------
+haldane_r_from_cM <- function(d_cM) {
+  d_M <- d_cM / 100
+  0.5 * (1 - exp(-2 * d_M))
+}
+haldane_cM_from_r <- function(r) {
+  r <- pmin(pmax(r, 0), 0.499999)
+  d_M <- -0.5 * log(1 - 2 * r)
+  100 * d_M
+}
+
+## -----------------------
+## 1) Build a true linkage map
+## -----------------------
+chroms <- paste0("Chr", seq_len(n_chr))
+make_chr_map <- function(chr, m, min_gap, max_gap) {
+  gaps <- runif(m, min_gap, max_gap)
+  cM   <- sort(cumsum(gaps))
+  data.frame(Chromosome = chr,
+             Marker = paste0(chr, "_M", seq_len(m)),
+             cM = cM,
+             stringsAsFactors = FALSE)
+}
+true_map <- do.call(rbind, lapply(chroms, make_chr_map,
+                                  m = markers_per_chr,
+                                  min_gap = min_gap_cM,
+                                  max_gap = max_gap_cM))
+
+markers <- true_map$Marker
+n_mark  <- length(markers)
+chr_of  <- setNames(true_map$Chromosome, true_map$Marker)
+cM_of   <- setNames(true_map$cM, true_map$Marker)
+
+## -----------------------
+## 2) Simulate pairwise r with noise
+## -----------------------
+r_exp <- matrix(0.5, n_mark, n_mark, dimnames = list(markers, markers))
+for (i in seq_len(n_mark)) {
+  for (j in seq_len(n_mark)) {
+    if (i == j) {
+      r_exp[i, j] <- 0
+    } else if (chr_of[markers[i]] == chr_of[markers[j]]) {
+      d_cM <- abs(cM_of[markers[i]] - cM_of[markers[j]])
+      r_exp[i, j] <- haldane_r_from_cM(d_cM)
+    }
+  }
+}
+noise_sd <- sqrt(r_exp * (1 - r_exp) / N_ind)
+r_obs    <- pmin(pmax(r_exp + rnorm(length(r_exp), 0, as.vector(noise_sd)), 0), 0.5)
+dimnames(r_obs) <- list(markers, markers)
+
+## -----------------------
+## 3) Plot recombination fraction heatmap
+## -----------------------
+r_melt <- reshape2::melt(r_obs, varnames = c("Marker1", "Marker2"), value.name = "r")
+
+ggplot(r_melt, aes(x = Marker1, y = Marker2, fill = r)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "yellow", name = "Recombination fraction (r)",
+                      limits = c(0, 0.5)) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, size = 5),
+        axis.text.y = element_text(size = 5)) +
+  labs(title = "Recombination Fraction Heatmap",
+       x = "Markers", y = "Markers")
+
+dir.create("linkage", showWarnings = FALSE)
+ggsave("linkage/r_heatmap.pdf", width = 9, height = 9)
+
+# ============================
+# Linkage Map Plot 
+# ============================
+
+# Range for y-axis (genetic distances in cM)
+yl <- range(0, tapply(true_map$cM, true_map$Chromosome, max))
+
+# Preview in RStudio
+plot(NA, xlim = c(0.5, n_chr + 0.5), ylim = yl,
+     xlab = "Chromosome", ylab = "Genetic distance (cM)",
+     xaxt = "n", main = "Linkage Map (true cM)")
+axis(1, at = seq_len(n_chr), labels = chroms)
+
+for (i in seq_along(chroms)) {
+  chr <- chroms[i]
+  chr_map <- true_map[true_map$Chromosome == chr, ]
+  # chromosome vertical line
+  lines(c(i, i), c(0, max(chr_map$cM)), lwd = 3, col = "grey40")
+  # marker positions
+  points(rep(i, nrow(chr_map)), chr_map$cM, pch = 19, col = "red")
+  # marker labels
+  text(rep(i + 0.15, nrow(chr_map)), chr_map$cM,
+       labels = chr_map$Marker, cex = 0.7, pos = 4)
+}
+
+# ============================
+# Save to PDF
+# ============================
+pdf("linkage/linkage_map_true.pdf", width = 10, height = 7)
+plot(NA, xlim = c(0.5, n_chr + 0.5), ylim = yl,
+     xlab = "Chromosome", ylab = "Genetic distance (cM)",
+     xaxt = "n", main = "Linkage Map (true cM)")
+axis(1, at = seq_len(n_chr), labels = chroms)
+
+for (i in seq_along(chroms)) {
+  chr <- chroms[i]
+  chr_map <- true_map[true_map$Chromosome == chr, ]
+  lines(c(i, i), c(0, max(chr_map$cM)), lwd = 3, col = "grey40")
+  points(rep(i, nrow(chr_map)), chr_map$cM, pch = 19, col = "red")
+  text(rep(i + 0.15, nrow(chr_map$cM)), chr_map$Marker, cex = 0.7, pos = 4)
+}
 dev.off()
 
-# Export dataset for inspection
-write.cross(fake, format="csv", filestem="toy_cross")
+
+cat(" Outputs saved in linkage/: r_heatmap.pdf and linkage_map_true.pdf\n")
 ```
 
 **Outputs:**  
-- `Linkage_toy_rf.png` → heatmap of recombination fractions.  
-- `toy_cross.csv` → toy dataset (can open in Excel to see genotypes).
+- `r_heatmap.pdf` → heatmap of recombination fractions.  
+- `linkage_map_true.pdf` → visualization of chromosomes with marker order and genetic distances (cM), i.e. the constructed linkage map.
 
 > **How to Interpret the RF Heatmap**  
 > - **Dark blocks (low rf)** → tightly linked markers.   
