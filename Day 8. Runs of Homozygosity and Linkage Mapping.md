@@ -44,11 +44,11 @@ Then create some subfolders, for each specific analysis we will perform:
 
 ### Step 0 — Make sure the VCF exists
 
-Only if gwas_data_qc.vcf.gz doesn't already exist (Tip: We didn't created the vcf):
+Only if gwas_data_qc.vcf.gz doesn't already exist (Note: We didn't created the vcf yet, also remember to change the path to your home folder in plink):
 ```bash
 module load PLINK
 cd vcf
-plink --bfile .../07_gwas_selection/plink/gwas_data_qc --recode vcf bgz --out gwas_data_qc
+plink --bfile /path/to/your/folder/07_gwas_selection/plink/gwas_data_qc --recode vcf bgz --allow-extra-chr --out gwas_data_qc
 module load bcftools
 bcftools index -t gwas_data_qc.vcf.gz
 ```
