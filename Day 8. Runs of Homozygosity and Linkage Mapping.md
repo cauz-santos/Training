@@ -151,12 +151,13 @@ Once we have detected Runs of Homozygosity (ROHs), we can summarize them with th
 > A) Make (or refresh) the FASTA index
 >If you don’t already have reference.fa.fai:
 > ```bash
-> samtools faidx reference.fa
+> module load samtools
+> samtools faidx /lisc/data/scratch/course/pgbiow/data/genomes/date_palm_genome.fna
 > ```
 > B) Sum the lengths of all contigs in the index
 >Total genome length (all contigs)
 > ```bash
-> awk '{sum+=$2} END{print sum}' reference.fa.fai > genome_length.txt
+> awk '{sum+=$2} END{print sum}' /lisc/data/scratch/course/pgbiow/data/genomes/date_palm_genome.fna.fai > genome_length.txt
 > cat genome_length.txt
 >```
 
@@ -183,7 +184,7 @@ sroh <- roh %>%
   summarise(SROH = sum(Length))
 
 # --- Merge and calculate FROH (fraction of genome in ROH)
-genome_size <- 1.2e9   # example genome length; replace with your species
+genome_size <- 773189301   # example genome length; replace with your species
 summary_data <- inner_join(nroh, sroh, by="Sample") %>%
   mutate(FROH = SROH / genome_size)
 
