@@ -526,8 +526,14 @@ This will create a folder qualimap_report_sample1/ containing:
 **Step 3 – Copy the report to your local computer**
 On your laptop:
 
-```bash
+On your laptop, create a folder for today’s results (e.g., inside your course folder):
 
+```bash
+mkdir -p ~/bioinformatics_training/day5/qualimap
+cd ~/bioinformatics_training/day4/qualimap
+```
+
+```bash
 scp your_username@login02.lisc.univie.ac.at:/path/to/qualimap_report_sample1/qualimapReport.html ~/bioinformatics_training/day5/
 ```
 
@@ -557,19 +563,31 @@ We will use `bcftools mpileup` and `bcftools call`.
 
 module load bcftools
 
-GENOME="GCF_000442705.2_EG11_genomic.fna"
+# Reference genome
+GENOME="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference/Elaeis_guineensis_genomic.fna"
+
+# Directories
+BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+OUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bcftools_variants"
+
+# Create output directory if it doesn’t exist
+mkdir -p "$OUT_DIR"
+
+# Move to BAM directory
+cd "$BAM_DIR" || exit 1
 
 # Create list of BAM files
-ls *.sorted.bam > bamlist.txt
+ls *.sorted.dedup.bam > bamlist.txt
 
-# Joint calling
-bcftools mpileup -Ou -f $GENOME -b bamlist.txt | \
-bcftools call -mv -Oz -o joint_variants.vcf.gz
+# Joint variant calling
+bcftools mpileup -Ou -f "$GENOME" -b bamlist.txt | \
+bcftools call -mv -Oz -o "$OUT_DIR/joint_variants.vcf.gz"
 
-# Index VCF
-bcftools index joint_variants.vcf.gz
+# Index the VCF
+bcftools index "$OUT_DIR/joint_variants.vcf.gz"
 
-echo "Variant calling complete."
+echo "Variant calling complete. Results saved to:"
+echo "$OUT_DIR/joint_variants.vcf.gz"
 ```
 
 **Submit the job:**
@@ -592,7 +610,7 @@ You can view the contents of a gzipped VCF file using `zless` or `bcftools view`
 
 ```bash
 # View the header and first few variant lines
-bcftools view joint_variants.vcf.gz | head -n 50
+bcftools view bcftools_variants/joint_variants.vcf.gz | head -n 50
 ```
 
 **The VCF file has two main parts:**
@@ -607,13 +625,13 @@ bcftools view joint_variants.vcf.gz | head -n 50
 `bcftools stats` provides a wealth of information about your VCF file, including the number of SNPs and indels, transition/transversion ratio, and more.
 
 ```bash
-bcftools stats joint_variants.vcf.gz > joint_variants.vcf.stats
+bcftools stats bcftools_variants/joint_variants.vcf.gz > bcftools_variants/joint_variants.vcf.stats
 ```
 
 You can then view the generated statistics file:
 
 ```bash
-less joint_variants.vcf.stats
+less bcftools_variants/joint_variants.vcf.stats
 ```
 
 **❓ Question:** What is the transition/transversion (Ts/Tv) ratio, and why is it a useful quality metric for SNP calls?
@@ -629,7 +647,7 @@ We’ll use **VCFtools**
 module load vcftools
 
 # Compute per-individual missingness
-vcftools --gzvcf joint_variants.vcf.gz --missing-indv --out qc_missing
+vcftools --gzvcf bcftools_variants/joint_variants.vcf.gz --missing-indv --out bcftools_variants/qc_missing
 ```
 This creates `qc_missing.imiss` with columns:
 - INDV — sample name
@@ -640,18 +658,18 @@ This creates `qc_missing.imiss` with columns:
 
 Quick look at the table:
 ```bash
-head qc_missing.imiss
+head bcftools_variants/qc_missing.imiss
 ```
 
 Convert **fraction** to **percent** and list the worst samples (highest missing first):
 ```bash
 # Tabular, percent missing, sorted descending
-awk 'NR>1 {printf "%s\t%.2f\n", $1, $5*100}' qc_missing.imiss | sort -k2,2nr | column -t | head
+awk 'NR>1 {printf "%s\t%.2f\n", $1, $5*100}' bcftools_variants/qc_missing.imiss | sort -k2,2nr | column -t | head
 ```
 
 Optional: compute the **mean missingness** across samples:
 ```bash
-awk 'NR>1 {sum+=$5; n++} END {printf "Mean missing (%%): %.2f\n", (sum/n)*100}' qc_missing.imiss
+awk 'NR>1 {sum+=$5; n++} END {printf "Mean missing (%%): %.2f\n", (sum/n)*100}' bcftools_variants/qc_missing.imiss
 ```
 
 **❓Questions (Missingness)**  
@@ -711,11 +729,15 @@ Press `i` to enter insert mode and paste:
 module load vcftools
 module load bcftools
 
-# Input joint VCF file (created earlier)
+# Directories
+VCF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bcftools_variants"
+cd "$VCF_DIR" || exit 1
+
+# Input joint VCF file
 IN_VCF="joint_variants.vcf.gz"
 
 # Apply filtering with VCFtools
-vcftools --gzvcf $IN_VCF \
+vcftools --gzvcf "$IN_VCF" \
   --remove-indels \
   --min-alleles 2 --max-alleles 2 \
   --maf 0.01 \
@@ -728,7 +750,11 @@ bgzip -f joint_variants.filtered.recode.vcf
 bcftools index -t joint_variants.filtered.recode.vcf.gz
 
 # Get new summary statistics
-bcftools stats joint_variants.filtered.recode.vcf.gz > filtered_stats.txt
+bcftools stats joint_variants.filtered.recode.vcf.gz > joint_variants.filtered.stats.txt
+
+echo "Filtering complete. Results saved to:"
+echo "$VCF_DIR/joint_variants.filtered.recode.vcf.gz"
+echo "$VCF_DIR/joint_variants.filtered.stats.txt"
 ```
 
 Save and exit (`ESC`, then `:wq`).
@@ -747,7 +773,7 @@ After the job completes, you should have:
 
 Please check the summary statistics after filtering:
 ```bash
-head -n 30 filtered_stats.txt
+head -n 30 bcftools_variants/filtered_stats.txt
 ```
 
 **❓Questions**  
