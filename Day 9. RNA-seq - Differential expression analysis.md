@@ -566,7 +566,7 @@ Then open the PDFs/PNGs locally.
 We’ll test whether DEGs are **over-represented** in **biological processes/pathways** (e.g., phosphate transport, root morphogenesis, ABA signaling). This connects statistics to **biology** and helps prioritize candidates that sit inside agronomically relevant pathways.
 
 ### Step 1 - topGO
-**Install topGO on the cluster (per user)**  
+**Install topGO on the cluster (per user):**  
 
 Load R on the cluster:
 ```bash
@@ -586,7 +586,7 @@ Check installation:
 library(topGO)
 
 
-**Script to prepare input gene lists**  
+**Script to prepare input gene lists:**  
 
 Save as `prepare_gene_lists.sh`:
 
@@ -644,7 +644,7 @@ Run the analysis with:
 sbatch prepare_gene_lists.sh
 ```
 
-**Running topGO**  
+**Running topGO:**  
 Create with `vi`:
 ```bash
 vi run_topGO.R
