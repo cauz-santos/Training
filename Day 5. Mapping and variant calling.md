@@ -218,8 +218,8 @@ But in other applications (e.g., RNA-seq or ChIP-seq), duplicates may carry biol
 ```bash
 #!/bin/bash
 #SBATCH --job-name=read_mapping
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=16G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=8G
 #SBATCH --time=02:00:00
 #SBATCH -o read_mapping.out
 #SBATCH -e read_mapping.err
