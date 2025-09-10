@@ -401,8 +401,12 @@ vi trinity/samples.txt
 ```
 Press **`i`**, paste, then **`Esc` → `:wq`**:
 ```
-Pminus    Pminus_28d_rep1,Pminus_28d_rep2,Pminus_28d_rep3
-Pplus     Pplus_28d_rep1,Pplus_28d_rep2,Pplus_28d_rep3
+Pminus	Pminus_28d_rep1
+Pminus	Pminus_28d_rep2
+Pminus	Pminus_28d_rep3
+Pplus	Pplus_28d_rep1
+Pplus	Pplus_28d_rep2
+Pplus	Pplus_28d_rep3
 ```
 **Create the DE script with `vi`**  
 ```bash
