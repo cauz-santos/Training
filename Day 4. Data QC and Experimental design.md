@@ -400,8 +400,8 @@ Create `fastqc_trimmed_job.sh`:
 ```bash
 #!/bin/bash
 #SBATCH --job-name=fastqc_trimmed
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=2G
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=1G
 #SBATCH --time=01:00:00
 #SBATCH -o fastqc_trimmed.out
 #SBATCH -e fastqc_trimmed.err
