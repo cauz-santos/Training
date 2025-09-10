@@ -293,7 +293,7 @@ set -euo pipefail
 
 module purge
 module load Trinity/2.15.2-foss-2023a
-module load Subread/2.0.3
+module load subread
 
 # Reference annotation
 GTF="/lisc/scratch/course/pgbiow/09_rnaseq_expression/reference/annotation.gtf"
