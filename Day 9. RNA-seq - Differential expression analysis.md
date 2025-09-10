@@ -384,20 +384,10 @@ awk -F'\t' 'NR==1{for(i=2;i<=NF;i++) name[i]=$i; next}
 awk -F'\t' 'NR>1{sum=0; for(i=2;i<=NF;i++) sum+=$i; if(sum==0) print $1}' counts/counts_matrix_clean.tsv | head
 ```
 
-**Ensure sample order matches Trinity’s `samples.txt`:**
-```bash
-echo "Counts header:"
-head -n1 counts_matrix_clean.tsv
-
-echo -e "\nTrinity groups/samples:"
-cat metadata/samples.txt
-```
 
 **Common red flags & fixes**
 - **Assigned < 60%** across samples → check `-s` and GTF/genome match.
 - **One sample much smaller library size** → expect more dispersion; check `Log.final.out` and earlier QC.
-- **Header/sample name mismatch** → rename BAMs consistently or regenerate the matrix with correct order.
-
 
 ### 4) Differential expression with **edgeR via Trinity** (Slurm)
 #### What are we doing and why?
@@ -407,7 +397,7 @@ We’ll use Trinity’s wrappers for **edgeR** to run a clean two-group DE analy
 **Prepare `samples.txt` (Trinity format)**  
 Create the file with `vi`:
 ```bash
-vi metadata/samples.txt
+vi trinity/samples.txt
 ```
 Press **`i`**, paste, then **`Esc` → `:wq`**:
 ```
@@ -416,7 +406,7 @@ Pplus     Pplus_28d_rep1,Pplus_28d_rep2,Pplus_28d_rep3
 ```
 **Create the DE script with `vi`**  
 ```bash
-vi scripts/04_trinity_edger.sh
+vi 04_trinity_edger.sh
 ```
 Press **`i`**, paste, then **`Esc` → `:wq`**:
 
@@ -436,20 +426,20 @@ module load Trinity/2.15.2-foss-2023a
 export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
 TRINITY_DE="$TRINITY_HOME/Analysis/DifferentialExpression"
 
-OUTDE=edger_trinity
+OUTDE=trinity
 mkdir -p "$OUTDE"
 
 $TRINITY_DE/run_DE_analysis.pl \
-  --matrix counts/counts_matrix.tsv \
+  --matrix counts/counts_matrix_clean.tsv \
   --method edgeR \
-  --samples_file metadata/samples.txt \
+  --samples_file trinity/samples.txt \
   --output "$OUTDE" \
   --min_cpm 1 --min_reps_min_cpm 2
 
 # Optional: clustering/PCA/heatmaps
 $TRINITY_DE/analyze_diff_expr.pl \
   --matrix ${OUTDE}/counts_TMM_normalized.matrix \
-  --samples metadata/samples.txt \
+  --samples trinity/samples.txt \
   --min_rowSum_counts 10 \
   --P 0.05 --C 1 \
   --output ${OUTDE}/diffexpr_plots
