@@ -229,27 +229,28 @@ for fq in *.fastq.gz; do
     base=$(basename "$fq" .fastq.gz)
     echo "Processing sample: $base"
 
-    # 1. Align reads with BWA-MEM → BAM
-    bwa mem -t $SLURM_CPUS_PER_TASK "$GENOME" "$fq" \
-        | samtools view -bS - > "$OUT_DIR/${base}.bam"
+    # 1. Align reads with BWA-MEM → SAM
+    bwa mem -t $SLURM_CPUS_PER_TASK "$GENOME" "$fq" > "$OUT_DIR/${base}.sam"
 
-    # 2. Sort BAM
+    # 2. Convert SAM to BAM
+    samtools view -bS "$OUT_DIR/${base}.sam" > "$OUT_DIR/${base}.bam"
+
+    # 3. Sort BAM
     samtools sort "$OUT_DIR/${base}.bam" -o "$OUT_DIR/${base}.sorted.bam"
 
-    # 3. Mark and remove PCR duplicates
+    # 4. Mark and remove PCR duplicates
     samtools markdup -r "$OUT_DIR/${base}.sorted.bam" "$OUT_DIR/${base}.sorted.dedup.bam"
 
-    # 4. Index deduplicated BAM
+    # 5. Index deduplicated BAM
     samtools index "$OUT_DIR/${base}.sorted.dedup.bam"
 
-    # 5. Clean up intermediates
+    # 6. Clean up intermediate BAMs (keep SAM for teaching)
     rm "$OUT_DIR/${base}.bam" "$OUT_DIR/${base}.sorted.bam"
 
     echo "Finished processing: $base"
 done
 
 echo "All samples processed successfully."
-
 ```
 
 **Submit the job:**
@@ -264,28 +265,22 @@ sbatch map_reads.sh
 
 
 **Quick Inspection of the SAM File**    
-By default, our pipeline writes alignments directly into compressed BAM files.
-However, sometimes it’s useful to look at the raw SAM format to understand what’s happening under the hood.
-
+Our pipeline now produces both the human-readable SAM file and the processed BAM file.
 The SAM (Sequence Alignment/Map) format is a plain-text, tab-delimited file that describes how each read aligns to the reference genome.
-It contains a header section (starting with @) and an alignment section (one line per read).
 
-To generate a .sam file for inspection, we can run BWA without piping into Samtools:
+It has two main parts:
+- Header section (lines starting with @) with reference and alignment metadata.
+- Alignment section (one line per read) describing the mapping result.
 
-1) Run BWA directly in the command line and save alignments as SAM text file 
-```bash
-bwa mem GCF_000442705.2_EG11_genomic.fna DRR070477.fastq.gz > DRR070477.sam
-```
-
-This will create a human-readable file DRR070477.sam in your working directory.
-Because SAM files are very large, we don’t usually keep them — they are mainly for demonstration or debugging.
-
-2) Let’s look at the first few lines:
+To inspect one of the SAM files, we can simply use head:
 
 ```bash
-# Look at the first 30 lines (you’ll see headers + alignments)
-head -n 30 DRR070477.sam
+#### Look at the first 30 lines of a SAM file
+head -n 30 EO_Ind10_trimmed.sam
 ```
+
+You should see a few header lines, followed by the first alignments.
+Because SAM files are very large, we normally don’t keep them long-term — they are mainly for teaching, demonstration, or debugging.
 
 **Example line of a mapped read:**  
 ```bash
