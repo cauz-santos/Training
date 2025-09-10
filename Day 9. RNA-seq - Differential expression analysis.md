@@ -423,30 +423,46 @@ Press **`i`**, paste, then **`Esc` → `:wq`**:
 #SBATCH -J day9_edgeR
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
+
 set -euo pipefail
 
+# Load required software
 module purge
 module load Trinity/2.15.2-foss-2023a
+module load R  # R must include edgeR, gplots, pheatmap, etc.
+
+# Set Trinity differential expression directory
 export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
-TRINITY_DE="$TRINITY_HOME/Analysis/DifferentialExpression"
+TRINITY_DE="${TRINITY_HOME}/Analysis/DifferentialExpression"
 
-OUTDE=trinity
-mkdir -p "$OUTDE"
+# Define output folder
+OUTDIR="trinity"
+mkdir -p "$OUTDIR"
 
+# Print session info for reproducibility
+echo "===== R session info ====="
+Rscript -e "sessionInfo(); library(edgeR)" || { echo "ERROR: edgeR not available."; exit 1; }
+
+echo "===== Running edgeR DE analysis ====="
 $TRINITY_DE/run_DE_analysis.pl \
   --matrix counts/counts_matrix_clean.tsv \
   --method edgeR \
   --samples_file trinity/samples.txt \
-  --output "$OUTDE" \
-  --min_cpm 1 --min_reps_min_cpm 2
+  --output "$OUTDIR" \
+  --min_reps_min_cpm 2,1
 
-# Optional: clustering/PCA/heatmaps
+# Run clustering, PCA, and heatmaps on the DE results
+echo "===== Running clustering and PCA (FDR ≤ 0.05, |log2FC| ≥ 1) ====="
+cd "$OUTDIR"
+
 $TRINITY_DE/analyze_diff_expr.pl \
-  --matrix ${OUTDE}/counts_TMM_normalized.matrix \
-  --samples trinity/samples.txt \
-  --min_rowSum_counts 10 \
-  --P 0.05 --C 1 \
-  --output ${OUTDE}/diffexpr_plots
+  --matrix ../counts/counts_matrix_clean.tsv \
+  --samples ../trinity/samples.txt \
+  -P 0.05 \
+  -C 1 \
+  --output diffexpr_plots
+
+echo "===== All done! Check 'trinity/diffexpr_plots/' for heatmaps and PCA ====="
 ```
 Submit:
 ```bash
