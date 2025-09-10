@@ -127,7 +127,7 @@ Now, enter the folder with the command `cd`
 
 Then create some subfolders, for each specific analysis we will perform:
    ```bash
-   mkdir fastq multiqc trimmed
+   mkdir fastq trimmed
    ```
 
 ### Section 1: Exploring FASTQ Files with UNIX Commands  
@@ -341,6 +341,76 @@ scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/*.html ~/bio
 
 Then open them in your browser to inspect the results.
 
+**Step 3.3 – Summarize with MultiQC**  
+After running FastQC on both **raw reads** and **trimmed reads**, you now have multiple `.html` reports (one per file).  
+Opening them one by one is time-consuming and makes it difficult to compare.  
+
+**MultiQC** solves this problem by **aggregating all FastQC reports** into a single, easy-to-navigate HTML summary.  
+This allows you to directly compare quality improvements before and after trimming.
+
+Create a new file called `multiqc_job_raw.sh`:
+
+```bash
+vi multiqc_job_raw.sh
+```
+
+Press `i` to enter insert mode and paste the script:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=multiqc
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:30:00
+#SBATCH -o multiqc.out
+#SBATCH -e multiqc.err
+
+set -euo pipefail
+
+# conda for non-interactive jobs
+source /lisc/app/conda/miniforge3/etc/profile.d/conda.sh
+
+ENV_NAME="multiqc-1.30"
+RAW_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/fastq"
+OUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/multiqc_raw"
+
+mkdir -p "$OUT_DIR"
+
+# Optional sanity check
+conda run --no-capture-output -n "$ENV_NAME" multiqc --version
+
+# Run on the raw FastQC outputs in RAW_DIR
+conda run --no-capture-output -n "$ENV_NAME" multiqc "$RAW_DIR" \
+  -o "$OUT_DIR" \
+  -n "multiqc_fastqc_raw_$(date +%F).html" \
+  --force
+```
+
+Save and exit (`ESC`, then `:wq`).
+
+Submit the job:
+
+```bash
+sbatch multiqc_job_raw.sh
+```
+
+**Step 3.4 – Copy the MultiQC report to your local computer**  
+On your laptop, create a folder for results:
+
+```bash
+mkdir -p ~/bioinformatics_training/day4/multiqc
+cd ~/bioinformatics_training/day4/multiqc
+```
+
+Then copy the HTML file from the cluster:
+
+```bash
+scp your_username@login02.lisc.univie.ac.at:/path/to/multiqc_summary/*.html .
+```
+
+Replace `/path/to/multiqc_summary/` with the actual path on the cluster for the `multiqc_raw` folder (check with pwd).
+
+Finally, open the report in your web browser by double-clicking it.
 
 
 **Step 3.3 – Trim Reads with Trimmomatic**  
@@ -504,16 +574,10 @@ scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_trimmed_reports/*.ht
 Open the `.html` files in your browser.
 
 **Step 3.5 – Summarize with MultiQC**  
-After running FastQC on both **raw reads** and **trimmed reads**, you now have multiple `.html` reports (one per file).  
-Opening them one by one is time-consuming and makes it difficult to compare.  
-
-**MultiQC** solves this problem by **aggregating all FastQC reports** into a single, easy-to-navigate HTML summary.  
-This allows you to directly compare quality improvements before and after trimming.
-
-Create a new file called `multiqc_job.sh`:
+Create a new file called `multiqc_job_trimmed.sh`:
 
 ```bash
-vi multiqc_job_raw.sh
+vi multiqc_job_trimmed.sh
 ```
 
 Press `i` to enter insert mode and paste the script:
@@ -533,8 +597,8 @@ set -euo pipefail
 source /lisc/app/conda/miniforge3/etc/profile.d/conda.sh
 
 ENV_NAME="multiqc-1.30"
-RAW_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/fastq"
-OUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/multiqc_raw"
+RAW_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
+OUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/multiqc_trimmed"
 
 mkdir -p "$OUT_DIR"
 
@@ -553,24 +617,17 @@ Save and exit (`ESC`, then `:wq`).
 Submit the job:
 
 ```bash
-sbatch multiqc_job_raw.sh
+sbatch multiqc_job_trimmed.sh
 ```
 
 **Step 3.6 – Copy the MultiQC report to your local computer**  
-On your laptop, create a folder for results:
+On your laptop, copy the HTML file from the cluster:
 
 ```bash
-mkdir -p ~/bioinformatics_training/day4/multiqc
-cd ~/bioinformatics_training/day4/multiqc
+scp your_username@login02.lisc.univie.ac.at:/path/to/multiqc_summary/*.html .
 ```
 
-Then copy the HTML file from the cluster:
-
-```bash
-scp your_username@login02.lisc.univie.ac.at:/path/to/multiqc_summary/multiqc_report.html .
-```
-
-Replace `/path/to/multiqc_summary/` with the actual path on the cluster (check with pwd).
+Replace `/path/to/multiqc_summary/` with the actual path on the cluster for the `multiqc_trimmed` folder (check with pwd).
 
 Finally, open the report in your web browser by double-clicking it.
 
