@@ -277,6 +277,39 @@ Please move back to the folder `04_qc_trimming` in your home directory:
 cd path/to/your/home/directory/04_qc_trimming/
 ```
 
+**Step 3.0 – Instructions on Creating and Editing Shell Scripts with `vi`**
+
+Throughout this training, we are creating and editing shell scripts. We will use the `vi` editor as in the previous days, a powerful text editor available on most UNIX-like systems. Here's a quick guide:
+
+1.  **Open or Create a File:**
+    To create a new file or open an existing one, type:
+    ```bash
+    vi <filename>
+    ```
+    For example, to create `index_genome.sh`:
+    ```bash
+    vi fastqc_job.sh
+    ```
+
+2.  **Insert Mode:**
+    When `vi` opens, you are in **command mode**. To start typing, you need to enter **insert mode**. Press the `i` key.
+    You should see `-- INSERT --` at the bottom of your terminal.
+
+3.  **Type your content:**
+    Now you can type or paste the script content.
+
+4.  **Exit Insert Mode:**
+    Once you are done typing, press the `Esc` key to return to **command mode**.
+
+5.  **Save and Quit:**
+    In command mode, type `:wq` (write and quit) and press `Enter`.
+    *   `:w` saves the file.
+    *   `:q` quits `vi`.
+    *   `:wq` saves and quits.
+    *   `:q!` quits without saving (use with caution!).
+
+
+
 **Step 3.1 – Run FastQC on all files**  
 Open a new file called `fastqc_job.sh` with the text editor `vi`:
 
