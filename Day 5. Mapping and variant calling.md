@@ -129,56 +129,38 @@ cd 05_mapping_varriant_calling
 let's create the `index_genome.sh` file:
 ```bash
 #!/bin/bash
-#SBATCH --job-name=bwa_pipeline
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=16G
-#SBATCH --time=06:00:00
-#SBATCH -o bwa_pipeline.out
-#SBATCH -e bwa_pipeline.err
+#SBATCH --job-name=bwa_index
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=8G
+#SBATCH --time=01:00:00
+#SBATCH -o bwa_index.out
+#SBATCH -e bwa_index.err
 
-# Load required modules
+# Load the BWA module
 module load bwa
-module load samtools
 
-# Define directories
-TRIMMED_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
-REF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
-OUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+# Define input and output directories
+INPUT_DIR="/lisc/scratch/course/pgbiow/data/genomes"
+OUTPUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
 
-# Reference genome
-GENOME="$REF_DIR/Elaeis_guineensis_genomic.fna"
+# Define the reference genome file name
+GENOME="Elaeis_guineensis_genomic.fna"
 
 # Create output directory if it doesn’t exist
-mkdir -p "$OUT_DIR"
+mkdir -p "$OUTPUT_DIR"
 
-# Move to trimmed FASTQ directory
-cd "$TRIMMED_DIR" || exit 1
+# Copy the reference genome to the output directory
+echo "Copying reference genome to $OUTPUT_DIR"
+cp "$INPUT_DIR/$GENOME" "$OUTPUT_DIR/"
 
-# Loop through all FASTQ files
-for fq in *.fastq.gz; do
-    base=$(basename "$fq" .fastq.gz)
-    echo "Processing sample: $base"
+# Change to the output directory
+cd "$OUTPUT_DIR" || exit 1
 
-    # 1. Align reads with BWA-MEM → BAM
-    bwa mem -t $SLURM_CPUS_PER_TASK "$GENOME" "$fq" \
-        | samtools view -bS - > "$OUT_DIR/${base}.bam"
+# Run BWA index on the copied genome
+echo "Indexing the reference genome: $GENOME"
+bwa index "$GENOME"
 
-    # 2. Sort BAM
-    samtools sort "$OUT_DIR/${base}.bam" -o "$OUT_DIR/${base}.sorted.bam"
-
-    # 3. Mark and remove PCR duplicates
-    samtools markdup -r "$OUT_DIR/${base}.sorted.bam" "$OUT_DIR/${base}.sorted.dedup.bam"
-
-    # 4. Index deduplicated BAM
-    samtools index "$OUT_DIR/${base}.sorted.dedup.bam"
-
-    # 5. Clean up intermediates
-    rm "$OUT_DIR/${base}.bam" "$OUT_DIR/${base}.sorted.bam"
-
-    echo "Finished processing: $base"
-done
-
-echo "All samples processed successfully."
+echo "Indexing complete."
 ```
 
 **Submit the job:**
