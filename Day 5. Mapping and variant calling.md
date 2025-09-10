@@ -32,7 +32,7 @@ We will be working with a set of up to 13 single-end FASTQ files and a reference
 
 ### The Data
 
-*   **Reference Genome of *Elaeis guineensis*:** `GCF_000442705.2_EG11_genomic.fna` (Size: 1.8 GB)
+*   **Reference Genome of *Elaeis guineensis*:** Elaeis_guineensis_genomic.fna` (Size: 1.8 GB)
 *   **Input Reads:** 13 single-end FASTQ files trimmed in the previous day
 
 **Table 1. File Format Flow**
@@ -120,7 +120,13 @@ Throughout this training, we are creating and editing shell scripts. We will use
     *   `:wq` saves and quits.
     *   `:q!` quits without saving (use with caution!).
 
-Now, let's create the `index_genome.sh` file:
+Now, move to your home folder and enter:
+
+```bash
+cd 05_mapping_varriant_calling
+```
+
+let's create the `index_genome.sh` file:
 
 ```bash
 #!/bin/bash
@@ -134,12 +140,26 @@ Now, let's create the `index_genome.sh` file:
 # Load the BWA module
 module load bwa
 
-# Define the reference genome file
-GENOME="GCF_000442705.2_EG11_genomic.fna"
+# Define input and output directories
+INPUT_DIR="/lisc/scratch/course/pgbiow/data/genomes"
+OUTPUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
 
-# Run BWA index
+# Define the reference genome file name
+GENOME="Elaeis_guineensis_genomic.fna"
+
+# Create output directory if it doesn’t exist
+mkdir -p "$OUTPUT_DIR"
+
+# Copy the reference genome to the output directory
+echo "Copying reference genome to $OUTPUT_DIR"
+cp "$INPUT_DIR/$GENOME" "$OUTPUT_DIR/"
+
+# Change to the output directory
+cd "$OUTPUT_DIR" || exit 1
+
+# Run BWA index on the copied genome
 echo "Indexing the reference genome: $GENOME"
-bwa index $GENOME
+bwa index "$GENOME"
 
 echo "Indexing complete."
 ```
