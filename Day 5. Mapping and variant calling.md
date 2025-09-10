@@ -211,7 +211,7 @@ module load bwa
 module load samtools
 
 # Define directories
-TRIMMED_DIR="/path/to/your/home/directory/pgbiow/04_qc_trimming/trimmed"
+TRIMMED_DIR="/path/to/your/home/directory/04_qc_trimming/trimmed"
 REF_DIR="/path/to/your/home/directory/05_mapping_varriant_calling/reference"
 OUT_DIR="/path/to/your/home/directory/05_mapping_varriant_calling/bwa_mapping"
 
