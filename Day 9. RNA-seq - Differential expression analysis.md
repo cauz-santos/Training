@@ -446,7 +446,7 @@ $TRINITY_DE/analyze_diff_expr.pl \
 ```
 Submit:
 ```bash
-sbatch scripts/04_trinity_edger.sh
+sbatch 04_trinity_edger.sh
 ```
 
 **Outputs of interest**
