@@ -415,6 +415,49 @@ Submit the job:
 sbatch trim_job.sh
 ```
 
+**Step 3.4 – Checking Trimmomatic Results**  
+After running the trimming job, Trimmomatic reports how many reads were processed, how many survived, and how many were dropped. These statistics are written to the log file `trim.err`.
+
+
+**Inspect the trimming log:**  
+Check the log file to see the output for each sample:
+
+```bash
+less trim.err
+```
+
+Look for lines like:
+```bash
+Input Reads: 1871406 Surviving: 1682221 (89.89%) Dropped: 189185 (10.11%)
+```
+
+**Extract only the summary lines:**  
+To quickly show all trimming results:
+```bash
+grep "Input Reads" trim.err
+```
+
+**Create a clean table summary:**  
+We can reformat the results into a simple table using awk and save it to a file:
+```bash
+grep "Input Reads" trim.err | \
+awk '{print "Sample " NR ": Input="$3", Surviving="$5", Dropped="$7}' \
+> trimming_summary.txt
+```
+
+**View the summary file:**  
+Finally, display the table:
+```bash
+cat trimming_summary.txt
+```
+
+Example output:
+```bash
+Sample 1: Input=1871406, Surviving=1682221, Dropped=189185
+Sample 2: Input=1923400, Surviving=1749287, Dropped=174113
+```
+
+
 **Step 3.4 – Run FastQC again on trimmed data**  
 Create `fastqc_trimmed_job.sh`:
 
