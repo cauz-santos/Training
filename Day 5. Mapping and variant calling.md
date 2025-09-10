@@ -269,8 +269,8 @@ Our pipeline now produces both the human-readable SAM file and the processed BAM
 The SAM (Sequence Alignment/Map) format is a plain-text, tab-delimited file that describes how each read aligns to the reference genome.
 
 It has two main parts:
-- Header section (lines starting with @) with reference and alignment metadata.
-- Alignment section (one line per read) describing the mapping result.
+- **Header section** (lines starting with @) with reference and alignment metadata.
+- **Alignment section** (one line per read) describing the mapping result.
 
 To inspect one of the SAM files, we can simply use head:
 
