@@ -300,12 +300,18 @@ Now copy and paste the following script into the file:
 
 module load fastqc
 
-mkdir -p fastqc_reports
+# Define input and output directories
+INPUT_DIR="/lisc/scratch/course/pgbiow/data/RADseq"
+OUTPUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/fastq"
 
-for fq in *.fastq.gz
+# Create output directory if it doesn’t exist
+mkdir -p "$OUTPUT_DIR"
+
+# Loop through all FASTQ files in the input directory
+for fq in "$INPUT_DIR"/*.fastq.gz
 do
     echo "Running FastQC on $fq"
-    fastqc "$fq" -o fastqc_reports
+    fastqc "$fq" -o "$OUTPUT_DIR"
 done
 ```
 
@@ -317,7 +323,7 @@ Submit the job typing:
 sbatch fastqc_job.sh
 ```
 
-This will run FastQC on all `.fastq.gz` files in the current directory and save the output reports (.html and .zip) in the folder `fastqc_reports/.`
+This will run FastQC on all `.fastq.gz` files in the current directory and save the output reports (.html and .zip) in the folder `fastqc`
 
 
 
