@@ -482,7 +482,7 @@ This is how to quickly sanity-check what Trinity/edgeR produced and grab the num
 **1) Find your contrast name(s)**  
 Trinity names outputs by contrast (e.g., `Pminus_vs_Pplus`). List them:
 ```bash
-ls edger_trinity/edgeR.DE_results/*DE_results | sed 's#.*/##' | sed 's/\.DE_results.*$//' | sort -u
+ls trinity/*DE_results | sed 's#.*/##' | sed 's/\.DE_results.*$//' | sort -u
 ```
 > The **first** group in `A_vs_B` is the one considered **“up”** in `A_vs_B.DE_up.genes`.
 
@@ -492,8 +492,8 @@ Each contrast has a `...DE_results` table with columns like `logFC`, `logCPM`, `
 
 ***Preview a table (replace CONTR):***    
 ```bash
-CONTR=Pminus_vs_Pplus
-DETAB=edger_trinity/edgeR.DE_results/${CONTR}.DE_results
+CONTR="counts_matrix_clean.tsv.Pminus_vs_Pplus"
+DETAB="trinity/${CONTR}.edgeR.DE_results"
 head -n 20 "$DETAB" | column -t
 ```
 
@@ -526,9 +526,14 @@ awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) if($i=="FDR") f=i; next} NR>1 && $f!~"NA" &
 **3) Quick look at “up”/“down” gene lists**  
 Trinity also writes simple lists of gene IDs:
 ```bash
-ls edger_trinity/edgeR.DE_results/${CONTR}.DE_{up,down}.genes
-head edger_trinity/edgeR.DE_results/${CONTR}.DE_up.genes
-head edger_trinity/edgeR.DE_results/${CONTR}.DE_down.genes
+# All DEGs with FDR ≤ 0.05 and |log2FC| ≥ 1
+less trinity/${CONTR}.edgeR.DE_results.P0.05_C1.DE.subset
+
+# Upregulated in Pminus
+less trinity/${CONTR}.edgeR.DE_results.P0.05_C1.Pminus-UP.subset
+
+# Upregulated in Pplus
+less trinity/${CONTR}.edgeR.DE_results.P0.05_C1.Pplus-UP.subset
 ```
 > **Interpretation:** `A_vs_B.DE_up.genes` are higher in **A** than **B**; `DE_down.genes` are lower in **A** than **B**.
 
