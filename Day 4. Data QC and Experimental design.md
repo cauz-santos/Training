@@ -641,7 +641,7 @@ conda run --no-capture-output -n "$ENV_NAME" multiqc --version
 # Run on the raw FastQC outputs in RAW_DIR
 conda run --no-capture-output -n "$ENV_NAME" multiqc "$RAW_DIR" \
   -o "$OUT_DIR" \
-  -n "multiqc_fastqc_raw_$(date +%F).html" \
+  -n "multiqc_fastqc_trimmed_$(date +%F).html" \
   --force
 ```
 
