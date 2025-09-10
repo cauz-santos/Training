@@ -323,6 +323,11 @@ Submit the job typing:
 sbatch fastqc_job.sh
 ```
 
+You can check how the analysis is progressing in the `fastqc.err` file:
+```bash
+sbatch fastqc.err
+```
+
 This will run FastQC on all `.fastq.gz` files in the current directory and save the output reports (.html and .zip) in the folder `fastqc`
 
 
