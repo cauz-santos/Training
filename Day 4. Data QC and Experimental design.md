@@ -205,13 +205,13 @@ ____
 ### Section 2: Run FastQC Locally  
 
 Even though we are on the cluster, this step is very fast and does not need to be submitted with Slurm.  
-We just need to **load the module** and run FastQC directly.  
+We just need to **load the module**, change the output directory to your home directory  and run FastQC directly.  
 
 ```bash
 module load fastqc
 
-mkdir -p fastqc_reports
-fastqc EO_Ind1.fastq.gz -o fastqc_reports
+
+fastqc EO_Ind1.fastq.gz -o /path/to/your/home/directory/04_qc_trimming/fastq/
 ```
 
 This will create two output files inside fastqc_reports/:  
@@ -232,8 +232,8 @@ cd ~/bioinformatics_training/day4
 **Copy the results from the cluster** to your local folder using `scp:
 
 ```bash
-scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fastqc.html .
-scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/DRR070477_fastqc.zip .
+scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/EO_Ind1_fastqc.html .
+scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/EO_Ind1_fastqc.zip .
 ```
 
 Replace:  
@@ -267,9 +267,15 @@ Open the .html file by double-clicking it or dragging it into your browser.
 *   Could this be related to adapters or PCR duplicates?
 
 ___
-### Section 3: Moving to the Cluster (Slurm Jobs with For Loops)
+### Section 3: Moving to Slurm Jobs with For Loops
 
 Now we will repeat the steps on the cluster using Slurm. Instead of running files one by one, we will use `for` loops to process them all.
+
+Please move back to the folder `04_qc_trimming` in your home directory:
+
+```bash
+cd path/to/your/home/directory/04_qc_trimming/
+```
 
 **Step 3.1 – Run FastQC on all files**  
 Open a new file called `fastqc_job.sh` with the text editor `vi`:
