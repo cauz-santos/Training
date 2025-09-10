@@ -110,8 +110,8 @@ Paste the script below :
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 4
-#SBATCH --mem=40G
+#SBATCH -c 2
+#SBATCH --mem=4G
 #SBATCH -t 01:00:00
 #SBATCH -J day9_star_index
 #SBATCH -o logs/%x_%j.out
@@ -199,8 +199,8 @@ vi 02_star_map_one.sh
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 16
-#SBATCH --mem=64G
+#SBATCH -c 2
+#SBATCH --mem=4G
 #SBATCH -t 00:35:00
 #SBATCH -J day9_star_map1
 #SBATCH -o logs/%x_%j.out
@@ -283,8 +283,8 @@ vi 03_featurecounts.sh
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 16
-#SBATCH --mem=32G
+#SBATCH -c 2
+#SBATCH --mem=2G
 #SBATCH -t 00:25:00
 #SBATCH -J day9_featureCounts
 #SBATCH -o logs/%x_%j.out
@@ -417,8 +417,8 @@ Press **`i`**, paste, then **`Esc` → `:wq`**:
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 8
-#SBATCH --mem=32G
+#SBATCH -c 2
+#SBATCH --mem=2G
 #SBATCH -t 00:45:00
 #SBATCH -J day9_edgeR
 #SBATCH -o logs/%x_%j.out
