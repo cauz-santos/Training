@@ -630,7 +630,7 @@ set -euo pipefail
 source /lisc/app/conda/miniforge3/etc/profile.d/conda.sh
 
 ENV_NAME="multiqc-1.30"
-RAW_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
+RAW_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/fastqc_trimmed_reports"
 OUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/multiqc_trimmed"
 
 mkdir -p "$OUT_DIR"
