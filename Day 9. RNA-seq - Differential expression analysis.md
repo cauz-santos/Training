@@ -212,23 +212,29 @@ module load Trinity/2.15.2-foss-2023a
 module load STAR/2.7.10a
 module load SAMtools/1.20
 
-IDX=ref/STAR_index
+# Paths
+IDX="/lisc/scratch/course/pgbiow/09_rnaseq_expression/reference/STAR_index"
+FASTQ_DIR="/lisc/scratch/course/pgbiow/data/RNAseq"
+OUT_BASE="/lisc/scratch/course/pgbiow/09_rnaseq_expression/star"
+
+# Sample (change if needed)
 SAMPLE=${SAMPLE:-Pminus_28d_rep1}
-R1=fastq/${SAMPLE}_R1.fastq.gz
-R2=fastq/${SAMPLE}_R2.fastq.gz
-OUT=star/${SAMPLE}
+R1=${FASTQ_DIR}/${SAMPLE}_R1.paired.fastq
+R2=${FASTQ_DIR}/${SAMPLE}_R2.paired.fastq
+OUT=${OUT_BASE}/${SAMPLE}
 mkdir -p "$OUT"
 
+# Run STAR
 STAR --runThreadN 16 \
   --genomeDir "$IDX" \
   --readFilesIn "$R1" "$R2" \
-  --readFilesCommand zcat \
   --outFileNamePrefix "$OUT/" \
   --outSAMtype BAM SortedByCoordinate \
   --outSAMunmapped Within \
   --outSAMattributes NH HI AS nM XS \
   --twopassMode Basic
 
+# Index BAM
 samtools index -@ 8 ${OUT}/Aligned.sortedByCoord.out.bam
 
 # Quick mapping summary
@@ -289,14 +295,17 @@ module purge
 module load Trinity/2.15.2-foss-2023a
 module load Subread/2.0.3
 
-GTF=ref/annotation.gtf
-OUT=counts
+# Reference annotation
+GTF="/lisc/scratch/course/pgbiow/09_rnaseq_expression/reference/annotation.gtf"
+
+# Output directory
+OUT="/lisc/scratch/course/pgbiow/09_rnaseq_expression/counts"
 mkdir -p "$OUT"
 
-# collect all BAMs (pre-mapped + demo)
-ls star/*/Aligned.sortedByCoord.out.bam > ${OUT}/bam_list.txt
+# Collect all BAMs
+ls /lisc/scratch/course/pgbiow/data/RNAseq/Mapped/*.bam > ${OUT}/bam_list.txt
 
-# set strandedness: 0=unstranded, 1=forward, 2=reverse
+# Set strandedness: 0=unstranded, 1=forward, 2=reverse
 STRAND=${STRAND:-0}
 
 featureCounts -T 16 -p -B -C -s ${STRAND} \
@@ -308,13 +317,13 @@ featureCounts -T 16 -p -B -C -s ${STRAND} \
 # Clean genes x samples matrix
 python - << 'PY'
 import pandas as pd
-fc = pd.read_csv('counts/featureCounts.txt', sep='\\t', comment='#')
+fc = pd.read_csv('/lisc/scratch/course/pgbiow/09_rnaseq_expression/counts/featureCounts.txt', sep='\t', comment='#')
 cts = fc.iloc[:, [0] + list(range(6, fc.shape[1]))].copy()
 cts.rename(columns={'Geneid':'gene_id'}, inplace=True)
-cts.to_csv('counts/counts_matrix.tsv', sep='\\t', index=False)
+cts.to_csv('/lisc/scratch/course/pgbiow/09_rnaseq_expression/counts/counts_matrix.tsv', sep='\t', index=False)
 # gene lengths for GOseq
 fc[['Geneid','Length']].rename(columns={'Geneid':'gene_id','Length':'length'}) \
-  .to_csv('counts/gene_lengths.txt', sep='\\t', index=False, header=False)
+  .to_csv('/lisc/scratch/course/pgbiow/09_rnaseq_expression/counts/gene_lengths.txt', sep='\t', index=False, header=False)
 PY
 ```
 
