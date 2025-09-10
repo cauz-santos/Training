@@ -119,15 +119,25 @@ Trimmomatic is a flexible and high-performance tool for trimming and cropping Il
 
 This repository contains practical exercises to explore and analyze sequencing data, focusing on FASTQ files and UNIX command-line tools.
 
+First create a folder for the file outputs of day 6 in your home directory:
+   ```bash
+   mkdir 04_qc_trimming
+   ```
+Now, enter the folder with the command `cd`
+
+Then create some subfolders, for each specific analysis we will perform:
+   ```bash
+   mkdir fastq multiqc trimming
+   ```
 
 ### Section 1: Exploring FASTQ Files with UNIX Commands  
 
 In this section, you will learn to use basic UNIX commands to inspect and understand the FASTQ format, as well as perform preliminary quality analyses.
 
-Navigate to your training data folder:
+Navigate to our training data folder:
 
 ```bash
-cd /media/uni/data2/Training/data/RADseq
+cd /lisc/scratch/course/pgbiow/data/RADseq
 ls -lh
 ```
 
@@ -137,7 +147,7 @@ Use the `less` command (or `zless` for compressed files) to inspect a FASTQ file
 
 
 ```bash
-zless DRR070477.fastq.gz
+zless EO_Ind1.fastq.gz
 ```
 
 **❓ Questions:**
@@ -158,15 +168,17 @@ FASTQ files are the standard format for storing raw sequencing data. Each read i
 Determine the number of reads in a FASTQ file using the `zgrep` command. The command below counts lines that start with the specified header characters (`@SR`).
 
 ```bash
-zgrep -c "^@SR" DRR070477.fastq.gz 
+zgrep -c "^@DR" EO_Ind1.fastq.gz
+ 
 ```
 
+Press `q` to exit
 
 **Exercise 1.3: Check read length distribution**  
 This `awk` command processes a compressed FASTQ file to analyze the distribution of read lengths. It first decompresses the file using `zcat`, then uses `awk` to extract the sequence lines (every 4th line, starting with the second). For each sequence line, it calculates the length of the sequence. The resulting lengths are then sorted and counted using `sort` and `uniq -c`, respectively, providing a summary of how many reads have each specific length.
 
 ```bash
-zcat DRR070477.fastq.gz | awk '(NR%4==2){print length($0)}' | sort | uniq -c
+zcat EO_Ind1.fastq.gz | awk '(NR%4==2){print length($0)}' | sort | uniq -c
 ```
 
 **Exercise 1.4: Getting familiar with quality values** 
@@ -199,12 +211,12 @@ We just need to **load the module** and run FastQC directly.
 module load fastqc
 
 mkdir -p fastqc_reports
-fastqc DRR070477.fastq.gz -o fastqc_reports
+fastqc EO_Ind1.fastq.gz -o fastqc_reports
 ```
 
 This will create two output files inside fastqc_reports/:  
-`DRR070477_fastqc.html` → open in a browser  
-`DRR070477_fastqc.zip` → contains all raw QC data  
+`EO_Ind1_fastqc.html` → open in a browser  
+`EO_Ind1_fastqc.zip` → contains all raw QC data  
 
 **Viewing the results on your Laptop**  
 The cluster does not have a graphical interface, so you cannot open the .html report directly there.
