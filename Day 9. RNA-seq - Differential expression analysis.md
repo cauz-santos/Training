@@ -342,10 +342,7 @@ The file `featureCounts.txt.summary` reports, **per sample**, how many fragments
 
 ```bash
 # Quick view
-less -S featureCounts.txt.summary
-
-# Nicely aligned columns (press q to quit)
-column -t featureCounts.txt.summary | less -S
+less -S counts/featureCounts.txt.summary
 ```
 **What to look for:**
 - `Assigned` should be the **largest** row across samples.
@@ -356,7 +353,7 @@ column -t featureCounts.txt.summary | less -S
 **Compute Assigned % per sample (quick check):**
 ```bash
 awk 'NR==1{for(i=2;i<=NF;i++) S[i]=$i; next} {for(i=2;i<=NF;i++) T[i]+=$i} $1=="Assigned"{for(i=2;i<=NF;i++) A[i]=$i}
-     END{for(i=2;i<=NF;i++){pct=(A[i]/T[i])*100; printf "%s\t%.2f%% Assigned\n", S[i], pct}}' featureCounts.txt.summary
+     END{for(i=2;i<=NF;i++){pct=(A[i]/T[i])*100; printf "%s\t%.2f%% Assigned\n", S[i], pct}}' counts/featureCounts.txt.summary
 ```
 
 #### 2) Spot-check the clean counts matrix
@@ -364,22 +361,22 @@ The file `counts/counts_matrix.tsv` is **genes × samples** and is what you’ll
 
 ```bash
 # Header line (gene_id and sample names, check order!)
-head -n 1 counts_matrix.tsv
+head -n 1 counts/counts_matrix.tsv
 
 # First 10 data rows
-head counts_matrix.tsv | column -t
+head counts/counts_matrix.tsv | column -t
 ```
 
 **Check total library sizes (sum of counts) per sample:**
 ```bash
 awk -F'\t' 'NR==1{for(i=2;i<=NF;i++) name[i]=$i; next}
             {for(i=2;i<=NF;i++) lib[i]+=$i}
-            END{for(i=2;i<=NF;i++) printf "%s\t%d\n", name[i], lib[i]}' counts_matrix.tsv | column -t
+            END{for(i=2;i<=NF;i++) printf "%s\t%d\n", name[i], lib[i]}' counts/counts_matrix.tsv | column -t
 ```
 
 **Sanity check for all-zero genes (should be few or none):**
 ```bash
-awk -F'\t' 'NR>1{sum=0; for(i=2;i<=NF;i++) sum+=$i; if(sum==0) print $1}' counts_matrix.tsv | head
+awk -F'\t' 'NR>1{sum=0; for(i=2;i<=NF;i++) sum+=$i; if(sum==0) print $1}' counts/counts_matrix.tsv | head
 ```
 
 **Ensure sample order matches Trinity’s `samples.txt`:**
