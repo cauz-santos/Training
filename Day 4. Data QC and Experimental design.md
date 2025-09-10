@@ -225,8 +225,8 @@ To inspect the results:
 On your laptop, create a folder for today’s results (e.g., inside your course folder):
 
 ```bash
-mkdir -p ~/bioinformatics_training/day4
-cd ~/bioinformatics_training/day4
+mkdir -p ~/bioinformatics_training/day4/fastqc
+cd ~/bioinformatics_training/day4/fastqc
 ```
 
 **Copy the results from the cluster** to your local folder using `scp:
@@ -336,7 +336,7 @@ This will run FastQC on all `.fastq.gz` files in the current directory and save 
 Just like in Section 2, copy the results to your computer:
 
 ```bash
-scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/*.html ~/bioinformatics_training/day4/
+scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_reports/*.html ~/bioinformatics_training/day4/fastqc
 ```
 
 Then open them in your browser to inspect the results.
