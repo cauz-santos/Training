@@ -54,10 +54,17 @@ Before we start, let's make sure our environment is set up correctly on the HPC 
 
 2.  **Create a directory for Day 5:**
 
-    ```bash
-    mkdir -p day5_mapping_variant_calling
-    cd day5_mapping_variant_calling
-    ```
+First create a folder for the file outputs of day 6 in your home directory:
+   ```bash
+   mkdir 05_mapping_varriant_calling
+   ```
+Now, enter the folder with the command `cd`
+
+Then create some subfolders, for each specific analysis we will perform:
+   ```bash
+   mkdir reference bwa_mapping bcftools_variants
+   ```
+
 
 3.  **Load necessary modules:**
 
