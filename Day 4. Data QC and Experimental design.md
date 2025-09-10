@@ -127,7 +127,7 @@ Now, enter the folder with the command `cd`
 
 Then create some subfolders, for each specific analysis we will perform:
    ```bash
-   mkdir fastq multiqc trimming
+   mkdir fastq multiqc trimmed
    ```
 
 ### Section 1: Exploring FASTQ Files with UNIX Commands  
@@ -382,12 +382,24 @@ Now copy and paste the following script into the file::
 
 module load trimmomatic
 
-for fq in *.fastq.gz
+# Define input and output directories
+INPUT_DIR="/lisc/scratch/course/pgbiow/data/RADseq"
+OUTPUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
+
+# Path to the Trimmomatic jar file from module
+TRIMMOMATIC_JAR="/lisc/app/trimmomatic/0.39/trimmomatic-0.39.jar"
+
+# Create output directory if it doesn’t exist
+mkdir -p "$OUTPUT_DIR"
+
+# Loop through all FASTQ files in the input directory
+for fq in "$INPUT_DIR"/*.fastq.gz
 do
     base=$(basename "$fq" .fastq.gz)
-    echo "Trimming $fq → ${base}_trimmed.fastq.gz"
-    java -jar $TRIMMOMATIC_JAR SE -phred33 \
-      "$fq" "${base}_trimmed.fastq.gz" \
+    echo "Trimming $fq → ${OUTPUT_DIR}/${base}_trimmed.fastq.gz"
+    
+    java -jar "$TRIMMOMATIC_JAR" SE -threads $SLURM_CPUS_PER_TASK -phred33 \
+      "$fq" "${OUTPUT_DIR}/${base}_trimmed.fastq.gz" \
       ILLUMINACLIP:adapters.fa:2:30:10 \
       LEADING:3 TRAILING:3 SLIDINGWINDOW:4:20 MINLEN:36
 done
