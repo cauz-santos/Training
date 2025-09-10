@@ -127,41 +127,47 @@ cd 05_mapping_varriant_calling
 ```
 
 let's create the `index_genome.sh` file:
-
 ```bash
 #!/bin/bash
-#SBATCH --job-name=bwa_index
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=2G
-#SBATCH --time=01:00:00
-#SBATCH -o bwa_index.out
-#SBATCH -e bwa_index.err
+#SBATCH --job-name=bwa_mapping
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=8G
+#SBATCH --time=04:00:00
+#SBATCH -o bwa_mapping.out
+#SBATCH -e bwa_mapping.err
 
-# Load the BWA module
+# Load required modules
 module load bwa
+module load samtools
 
-# Define input and output directories
-INPUT_DIR="/lisc/scratch/course/pgbiow/data/genomes"
-OUTPUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
+# Define directories
+TRIMMED_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
+REF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
+OUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
 
-# Define the reference genome file name
-GENOME="Elaeis_guineensis_genomic.fna"
+# Reference genome
+GENOME="$REF_DIR/Elaeis_guineensis_genomic.fna"
 
 # Create output directory if it doesn’t exist
-mkdir -p "$OUTPUT_DIR"
+mkdir -p "$OUT_DIR"
 
-# Copy the reference genome to the output directory
-echo "Copying reference genome to $OUTPUT_DIR"
-cp "$INPUT_DIR/$GENOME" "$OUTPUT_DIR/"
+# Loop through all trimmed FASTQ files
+for fq in "$TRIMMED_DIR"/*_trimmed.fastq.gz; do
+    sample=$(basename "$fq" _trimmed.fastq.gz)
+    echo "Processing sample: $sample"
 
-# Change to the output directory
-cd "$OUTPUT_DIR" || exit 1
+    # Align reads with BWA MEM and convert to BAM
+    bwa mem -t $SLURM_CPUS_PER_TASK "$GENOME" "$fq" \
+    | samtools view -bS - \
+    | samtools sort -@ $SLURM_CPUS_PER_TASK -o "$OUT_DIR/${sample}.sorted.bam"
 
-# Run BWA index on the copied genome
-echo "Indexing the reference genome: $GENOME"
-bwa index "$GENOME"
+    # Index BAM
+    samtools index "$OUT_DIR/${sample}.sorted.bam"
 
-echo "Indexing complete."
+    echo "Finished mapping for sample: $sample"
+done
+
+echo "All mappings complete."
 ```
 
 **Submit the job:**
