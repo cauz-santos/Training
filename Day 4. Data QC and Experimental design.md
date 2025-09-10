@@ -374,8 +374,8 @@ Now copy and paste the following script into the file::
 ```bash
 #!/bin/bash
 #SBATCH --job-name=trimmomatic
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=4G
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
 #SBATCH --time=01:30:00
 #SBATCH -o trim.out
 #SBATCH -e trim.err
