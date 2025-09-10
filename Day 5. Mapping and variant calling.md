@@ -20,7 +20,7 @@ By the end of this session, you will be able to:
 
 ### Session Overview
 
-We will be working with a set of up to 10 single-end FASTQ files and a reference genome. The workflow is as follows:
+We will be working with a set of up to 13 single-end FASTQ files and a reference genome. The workflow is as follows:
 
 1.  **Setup:** Prepare the environment and data.
 2.  **Reference Genome Indexing:** Create an index for the reference genome to enable fast alignment.
@@ -33,7 +33,7 @@ We will be working with a set of up to 10 single-end FASTQ files and a reference
 ### The Data
 
 *   **Reference Genome of *Elaeis guineensis*:** `GCF_000442705.2_EG11_genomic.fna` (Size: 1.8 GB)
-*   **Input Reads:** 12 single-end FASTQ files (e.g., `DRR070477.fastq.gz`, `DRR070483.fastq.gz`, `DRR070491.fastq.gz`, `DRR070494.fastq.gz`, `DRR070497.fastq.gz`, `SRR14510793.fastq.gz`, `SRR14510807.fastq.gz`, `DRR070482.fastq.gz`, `DRR070488.fastq.gz`, `DRR070492.fastq.gz`, `DRR070496.fastq.gz`, `DRR070498.fastq.gz`, `SRR14510795.fastq.gz`)
+*   **Input Reads:** 13 single-end FASTQ files trimmed in the previous day
 
 **Table 1. File Format Flow**
 | File Type | Extension | Description | Produced By |
