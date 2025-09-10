@@ -513,7 +513,7 @@ This allows you to directly compare quality improvements before and after trimmi
 Create a new file called `multiqc_job.sh`:
 
 ```bash
-vi multiqc_job.sh
+vi multiqc_job_raw.sh
 ```
 
 Press `i` to enter insert mode and paste the script:
@@ -527,9 +527,25 @@ Press `i` to enter insert mode and paste the script:
 #SBATCH -o multiqc.out
 #SBATCH -e multiqc.err
 
-module load multiqc
+set -euo pipefail
 
-multiqc fastqc_reports fastqc_trimmed_reports -o multiqc_summary
+# conda for non-interactive jobs
+source /lisc/app/conda/miniforge3/etc/profile.d/conda.sh
+
+ENV_NAME="multiqc-1.30"
+RAW_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/fastq"
+OUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/multiqc_raw"
+
+mkdir -p "$OUT_DIR"
+
+# Optional sanity check
+conda run --no-capture-output -n "$ENV_NAME" multiqc --version
+
+# Run on the raw FastQC outputs in RAW_DIR
+conda run --no-capture-output -n "$ENV_NAME" multiqc "$RAW_DIR" \
+  -o "$OUT_DIR" \
+  -n "multiqc_fastqc_raw_$(date +%F).html" \
+  --force
 ```
 
 Save and exit (`ESC`, then `:wq`).
@@ -537,7 +553,7 @@ Save and exit (`ESC`, then `:wq`).
 Submit the job:
 
 ```bash
-sbatch multiqc_job.sh
+sbatch multiqc_job_raw.sh
 ```
 
 **Step 3.6 – Copy the MultiQC report to your local computer**  
