@@ -373,35 +373,39 @@ Now copy and paste the following script into the file::
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=trimmomatic
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
+#SBATCH --job-name=trimmomatic_strict
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=4G
 #SBATCH --time=01:30:00
 #SBATCH -o trim.out
 #SBATCH -e trim.err
 
 module load trimmomatic
 
-# Define input and output directories
 INPUT_DIR="/lisc/scratch/course/pgbiow/data/RADseq"
 OUTPUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
 
-# Path to the Trimmomatic jar file from module
 TRIMMOMATIC_JAR="/lisc/app/trimmomatic/0.39/trimmomatic-0.39.jar"
+ADAPTERS="/lisc/app/trimmomatic/0.39/adapters/TruSeq3-SE.fa"
 
-# Create output directory if it doesn’t exist
 mkdir -p "$OUTPUT_DIR"
 
-# Loop through all FASTQ files in the input directory
 for fq in "$INPUT_DIR"/*.fastq.gz
 do
     base=$(basename "$fq" .fastq.gz)
-    echo "Trimming $fq → ${OUTPUT_DIR}/${base}_trimmed.fastq.gz"
-    
-    java -jar "$TRIMMOMATIC_JAR" SE -threads $SLURM_CPUS_PER_TASK -phred33 \
-      "$fq" "${OUTPUT_DIR}/${base}_trimmed.fastq.gz" \
-      ILLUMINACLIP:adapters.fa:2:30:10 \
-      LEADING:3 TRAILING:3 SLIDINGWINDOW:4:20 MINLEN:36
+    out="${OUTPUT_DIR}/${base}_trimmed.fastq.gz"
+    log="${OUTPUT_DIR}/${base}.trimlog.txt"
+
+    echo "Trimming $fq → $out"
+
+    java -jar "$TRIMMOMATIC_JAR" SE \
+      -threads "$SLURM_CPUS_PER_TASK" -phred33 -trimlog "$log" \
+      "$fq" "$out" \
+      ILLUMINACLIP:${ADAPTERS}:1:30:15:8 \
+      LEADING:20 TRAILING:20 \
+      SLIDINGWINDOW:4:25 \
+      AVGQUAL:25 \
+      MINLEN:50
 done
 ```
 
