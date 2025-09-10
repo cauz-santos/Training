@@ -374,8 +374,8 @@ Now copy and paste the following script into the file::
 ```bash
 #!/bin/bash
 #SBATCH --job-name=trimmomatic_strict
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=4G
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
 #SBATCH --time=01:30:00
 #SBATCH -o trim.out
 #SBATCH -e trim.err
@@ -383,7 +383,7 @@ Now copy and paste the following script into the file::
 module load trimmomatic
 
 INPUT_DIR="/lisc/scratch/course/pgbiow/data/RADseq"
-OUTPUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
+OUTPUT_DIR="/path/to/your/home/directory/04_qc_trimming/trimmed"
 
 TRIMMOMATIC_JAR="/lisc/app/trimmomatic/0.39/trimmomatic-0.39.jar"
 ADAPTERS="/lisc/app/trimmomatic/0.39/adapters/TruSeq3-SE.fa"
@@ -429,12 +429,18 @@ Create `fastqc_trimmed_job.sh`:
 
 module load fastqc
 
-mkdir -p fastqc_trimmed_reports
+# Input and output directories
+INPUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
+OUTPUT_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/fastqc_trimmed_reports"
 
-for fq in *_trimmed.fastq.gz
+# Create output directory if it doesn’t exist
+mkdir -p "$OUTPUT_DIR"
+
+# Loop through all trimmed FASTQ files
+for fq in "$INPUT_DIR"/*_trimmed.fastq.gz
 do
     echo "Running FastQC on $fq"
-    fastqc "$fq" -o fastqc_trimmed_reports
+    fastqc "$fq" -o "$OUTPUT_DIR"
 done
 ```
 
