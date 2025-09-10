@@ -129,12 +129,12 @@ cd 05_mapping_varriant_calling
 let's create the `index_genome.sh` file:
 ```bash
 #!/bin/bash
-#SBATCH --job-name=bwa_mapping
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
-#SBATCH --time=04:00:00
-#SBATCH -o bwa_mapping.out
-#SBATCH -e bwa_mapping.err
+#SBATCH --job-name=bwa_pipeline
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=16G
+#SBATCH --time=06:00:00
+#SBATCH -o bwa_pipeline.out
+#SBATCH -e bwa_pipeline.err
 
 # Load required modules
 module load bwa
@@ -151,23 +151,34 @@ GENOME="$REF_DIR/Elaeis_guineensis_genomic.fna"
 # Create output directory if it doesn’t exist
 mkdir -p "$OUT_DIR"
 
-# Loop through all trimmed FASTQ files
-for fq in "$TRIMMED_DIR"/*_trimmed.fastq.gz; do
-    sample=$(basename "$fq" _trimmed.fastq.gz)
-    echo "Processing sample: $sample"
+# Move to trimmed FASTQ directory
+cd "$TRIMMED_DIR" || exit 1
 
-    # Align reads with BWA MEM and convert to BAM
+# Loop through all FASTQ files
+for fq in *.fastq.gz; do
+    base=$(basename "$fq" .fastq.gz)
+    echo "Processing sample: $base"
+
+    # 1. Align reads with BWA-MEM → BAM
     bwa mem -t $SLURM_CPUS_PER_TASK "$GENOME" "$fq" \
-    | samtools view -bS - \
-    | samtools sort -@ $SLURM_CPUS_PER_TASK -o "$OUT_DIR/${sample}.sorted.bam"
+        | samtools view -bS - > "$OUT_DIR/${base}.bam"
 
-    # Index BAM
-    samtools index "$OUT_DIR/${sample}.sorted.bam"
+    # 2. Sort BAM
+    samtools sort "$OUT_DIR/${base}.bam" -o "$OUT_DIR/${base}.sorted.bam"
 
-    echo "Finished mapping for sample: $sample"
+    # 3. Mark and remove PCR duplicates
+    samtools markdup -r "$OUT_DIR/${base}.sorted.bam" "$OUT_DIR/${base}.sorted.dedup.bam"
+
+    # 4. Index deduplicated BAM
+    samtools index "$OUT_DIR/${base}.sorted.dedup.bam"
+
+    # 5. Clean up intermediates
+    rm "$OUT_DIR/${base}.bam" "$OUT_DIR/${base}.sorted.bam"
+
+    echo "Finished processing: $base"
 done
 
-echo "All mappings complete."
+echo "All samples processed successfully."
 ```
 
 **Submit the job:**
