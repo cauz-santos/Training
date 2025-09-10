@@ -130,9 +130,9 @@ let's create the `index_genome.sh` file:
 ```bash
 #!/bin/bash
 #SBATCH --job-name=bwa_index
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
-#SBATCH --time=01:00:00
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=4G
+#SBATCH --time=02:00:00
 #SBATCH -o bwa_index.out
 #SBATCH -e bwa_index.err
 
