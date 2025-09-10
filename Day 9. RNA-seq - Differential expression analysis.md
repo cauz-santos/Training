@@ -686,7 +686,7 @@ If species-specific GO is unavailable, we can demo with *Arabidopsis*:
 ```r
 # Run interactively or via Rscript
 library(gprofiler2)
-up <- readLines('edger_trinity/edgeR.DE_results/Pminus_vs_Pplus.DE_up.genes')
+up <- readLines('trinity/Pminus_vs_Pplus.DE_up.genes')
 res <- gost(query = up, organism = 'athaliana', correction_method = 'fdr')
 write.csv(res$result, 'gprofiler_up.csv', row.names = FALSE)
 ```
