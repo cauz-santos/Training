@@ -565,132 +565,185 @@ Then open the PDFs/PNGs locally.
 #### What are we doing and why?
 We’ll test whether DEGs are **over-represented** in **biological processes/pathways** (e.g., phosphate transport, root morphogenesis, ABA signaling). This connects statistics to **biology** and helps prioritize candidates that sit inside agronomically relevant pathways.
 
-#### Option A — GOseq via Trinity 
-Create with `vi`:
+#### topGO
+**Install topGO on the cluster (per user)**  
+
+Load R on the cluster:
 ```bash
-vi 05_trinity_goseq.sh
+module load R/4.5.1
+R
 ```
-Press **`i`**, paste, then **`Esc` → `:wq`**:
+
+Inside R, install topGO into your personal library:
+```bash
+if (!requireNamespace("BiocManager", quietly=TRUE))
+    install.packages("BiocManager")
+
+BiocManager::install("topGO", ask=FALSE, update=FALSE)
+```
+
+Check installation:
+library(topGO)
+
+
+**Script to prepare input gene lists**  
+
+Save as `prepare_gene_lists.sh`:
 
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 4
-#SBATCH --mem=16G
-#SBATCH -t 01:00:00
-#SBATCH -J day9_GOseq
+#SBATCH -c 2
+#SBATCH --mem=4G
+#SBATCH -t 00:05:00
+#SBATCH -J prep_gene_lists
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
+
 set -euo pipefail
 
-module purge
-module load Trinity/2.15.2-foss-2023a
-export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
-TRINITY_DE="$TRINITY_HOME/Analysis/DifferentialExpression"
-
-# === Paths ===
-CONTR="Pminus_vs_Pplus"
-
+# --------------------------
+# INPUTS
+# --------------------------
 TRINITY_DIR="/lisc/scratch/course/pgbiow/09_rnaseq_expression/trinity"
-GENOME_DIR="/lisc/scratch/course/pgbiow/data/genomes"
+CONTRAST="Pminus_vs_Pplus"
 
-UP="${TRINITY_DIR}/counts_matrix_clean.tsv.${CONTR}.edgeR.DE_results/${CONTR}.DE_up.genes"
-DOWN="${TRINITY_DIR}/counts_matrix_clean.tsv.${CONTR}.edgeR.DE_results/${CONTR}.DE_down.genes"
+# DE results from edgeR (already filtered by p-value and logFC in Trinity pipeline)
+UP_FILE="$TRINITY_DIR/counts_matrix_clean.tsv.${CONTRAST}.edgeR.DE_results.P0.05_C1.Pminus-UP.subset"
+DOWN_FILE="$TRINITY_DIR/counts_matrix_clean.tsv.${CONTRAST}.edgeR.DE_results.P0.05_C1.Pplus-UP.subset"
 
-G2GO="${GENOME_DIR}/gene2go.tsv"         # gene_id \t GO:xxxx,GO:yyyy
-GLEN="${GENOME_DIR}/gene_lengths.txt"    # gene_id \t length
+# --------------------------
+# OUTPUTS
+# --------------------------
+UP_GENES="$TRINITY_DIR/${CONTRAST}.DE_up.genes"
+DOWN_GENES="$TRINITY_DIR/${CONTRAST}.DE_down.genes"
+BG_GENES="$TRINITY_DIR/all_genes.background"
 
-# === Run GOseq for UP genes ===
-$TRINITY_DE/run_GOseq.pl \
-  --genes_single_factor "$UP" \
-  --GO_assignments "$G2GO" \
-  --lengths "$GLEN" \
-  --out_prefix "${TRINITY_DIR}/results_GOseq_up"
+mkdir -p "$TRINITY_DIR"
 
-# === Run GOseq for DOWN genes ===
-$TRINITY_DE/run_GOseq.pl \
-  --genes_single_factor "$DOWN" \
-  --GO_assignments "$G2GO" \
-  --lengths "$GLEN" \
-  --out_prefix "${TRINITY_DIR}/results_GOseq_down"
+# --------------------------
+# Extract gene IDs
+# --------------------------
+echo "Extracting UP-regulated genes..."
+tail -n +2 "$UP_FILE" | cut -f1 > "$UP_GENES"
+echo "Wrote $(wc -l < "$UP_GENES") genes to $UP_GENES"
+
+echo "➡Extracting DOWN-regulated genes..."
+tail -n +2 "$DOWN_FILE" | cut -f1 > "$DOWN_GENES"
+echo "Wrote $(wc -l < "$DOWN_GENES") genes to $DOWN_GENES"
+
+echo "➡Extracting background gene set..."
+# Background = all genes that were tested by edgeR
+cut -f1 "$TRINITY_DIR/counts_matrix_clean.tsv.${CONTRAST}.edgeR.DE_results" | tail -n +2 > "$BG_GENES"
+echo "Wrote $(wc -l < "$BG_GENES") genes to $BG_GENES"
+
+echo "Gene list preparation complete!"
+```
+Run the analysis with:
+```bash
+sbatch prepare_gene_lists.sh
+```
+
+**Running topGO**  
+Create with `vi`:
+```bash
+vi run_topGO.R
+```
+Press **`i`**, paste, then **`Esc` → `:wq`**:
+
+```r
+#!/usr/bin/env Rscript
+
+suppressMessages({
+  library(topGO)
+})
+
+# --------------------------
+# Input files (full paths)
+# --------------------------
+g2go_file <- "/lisc/scratch/course/pgbiow/data/genomes/gene2go.tsv"
+up_file   <- "/lisc/scratch/course/pgbiow/09_rnaseq_expression/trinity/Pminus_vs_Pplus.DE_up.genes"
+down_file <- "/lisc/scratch/course/pgbiow/09_rnaseq_expression/trinity/Pminus_vs_Pplus.DE_down.genes"
+bg_file   <- "/lisc/scratch/course/pgbiow/09_rnaseq_expression/all_genes.background"
+
+# --------------------------
+# Read input
+# --------------------------
+cat("Reading data...\n")
+g2go <- read.table(g2go_file, sep="\t", header=FALSE, stringsAsFactors=FALSE)
+colnames(g2go) <- c("gene", "GO")
+
+up_genes   <- scan(up_file, what=character())
+down_genes <- scan(down_file, what=character())
+bg_genes   <- scan(bg_file, what=character())
+
+# Convert GO annotations into a list format
+geneID2GO <- strsplit(g2go$GO, ",")
+names(geneID2GO) <- g2go$gene
+
+# Restrict to background
+geneID2GO <- geneID2GO[names(geneID2GO) %in% bg_genes]
+
+# --------------------------
+# Function to run enrichment
+# --------------------------
+run_topgo <- function(sig_genes, bg_genes, geneID2GO, outprefix) {
+  geneList <- factor(as.integer(bg_genes %in% sig_genes))
+  names(geneList) <- bg_genes
+
+  GOdata <- new("topGOdata",
+                ontology = "BP",
+                allGenes = geneList,
+                annot = annFUN.gene2GO,
+                gene2GO = geneID2GO,
+                nodeSize = 10)
+
+  resultFisher <- runTest(GOdata, algorithm="weight01", statistic="fisher")
+
+  allRes <- GenTable(GOdata, Fisher=resultFisher,
+                     orderBy="Fisher", ranksOf="Fisher", topNodes=30)
+
+  outfile <- paste0(outprefix, "_GO.tsv")
+  write.table(allRes, outfile, sep="\t", quote=FALSE, row.names=FALSE)
+  cat("Results written to:", outfile, "\n")
+}
+
+# --------------------------
+# Run for UP and DOWN genes
+# --------------------------
+cat("Running enrichment for UP genes\n")
+run_topgo(up_genes, bg_genes, geneID2GO,
+          "/lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_up")
+
+cat("Running enrichment for DOWN genes\n")
+run_topgo(down_genes, bg_genes, geneID2GO,
+          "/lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_down")
+
 ```
 Submit:
 ```bash
-sbatch 05_trinity_goseq.sh
+module load R/4.5.1
+
+Rscript run_topGO.R
 ```
 
-### GOseq — Quick Evaluation (View Terms + Plot)
-Minimal steps: **see enriched GO terms** (FDR ≤ 0.05) and **plot top terms**. Works for UP or DOWN outputs.
+**topGO — Quick Evaluation (View Enriched GO Terms)**  
+After running run_topGO.R, two result files are created:
 
-**1) View enriched GO terms (FDR ≤ 0.05)**  
+**UP-regulated DEGs:**  
+`/lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_up_GO.tsv`
 
-**Pick the file** you want to inspect (replace with your actual filename):
+**DOWN-regulated DEGs:**  
+`/lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_down_GO.tsv`
+
+To quickly inspect the top terms, just do:
 ```bash
-# Examples (adjust to your real filenames produced by run_GOseq.pl)
-UPTAB=results_GOseq_up.enriched.tsv
-DOWNTAB=results_GOseq_down.enriched.tsv
+# View the first 20 GO terms enriched in UP genes
+cat /lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_up_GO.tsv | head -n 20
+
+# View the first 20 GO terms enriched in DOWN genes
+cat /lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_down_GO.tsv | head -n 20
 ```
-
-**Print the top 20 enriched terms by FDR (header-aware):**  
-```bash
-TAB="$UPTAB"   # or: TAB="$DOWNTAB"
-
-# Find the FDR column automatically and show the 20 best terms
-awk -F'\t' 'NR==1{for(i=1;i<=NF;i++) if(tolower($i) ~ /fdr|adj/) f=i; print; next}
-            NR>1 && f>0 && $f!~"NA" {print}' "$TAB" \
-| sort -t$'\t' -k${f},${f}g \
-| head -n 20 \
-| column -t
-```
-
-> If sorting fails because your shell doesn’t expand `${f}`, just open the file and skim:
-```bash
-column -t "$UPTAB" | less -S
-```
-
-**2) Plot top GO terms (simple barplot in R)**  
-
-Create a tiny script **on the fly** and run it:
-```bash
-TAB="$UPTAB"   # or: TAB="$DOWNTAB"
-Rscript - <<'RS'
-tabfile <- Sys.getenv("TAB", "results_GOseq_up.enriched.tsv")
-x <- read.table(tabfile, header=TRUE, sep="\t", quote="", comment.char="")
-# Try to detect FDR and term/description columns
-fdrcol <- grep("fdr|adj", tolower(colnames(x)), value=FALSE)[1]
-termcol <- grep("term|description|name", tolower(colnames(x)), value=FALSE)[1]
-if(is.na(fdrcol) || is.na(termcol)) stop("Could not find FDR or term column; open the file to check headers.")
-x <- x[!is.na(x[,fdrcol]), ]
-x$score <- -log10(pmax(x[,fdrcol], 1e-300))
-o <- order(x$score, decreasing=TRUE)
-x <- x[o, ]
-topn <- head(x, 15)
-pngfile <- sub("\\.\\w+$","",tabfile)
-png(paste0(pngfile, "_top15.png"), width=900, height=600)
-par(mar=c(5,20,2,2))
-barplot(rev(topn$score), horiz=TRUE, names.arg=rev(topn[,termcol]), las=1,
-        xlab="-log10(FDR)")
-mtext("GOseq enrichment (top 15)", side=3, line=0.5)
-dev.off()
-cat("Wrote: ", paste0(pngfile, "_top15.png"), "\n")
-RS
-```
-
-The script writes a PNG next to your table, e.g. `results_GOseq_up.enriched_top15.png`. Copy it to your laptop if needed:
-```bash
-scp USER@login.cluster:/work/USER/day09_rnaseq/results_GOseq_up.enriched_top15.png .
-```
-
-#### Option B — g:Profiler (Optional)
-If species-specific GO is unavailable, we can demo with *Arabidopsis*:
-```r
-# Run interactively or via Rscript
-library(gprofiler2)
-up <- readLines('trinity/Pminus_vs_Pplus.DE_up.genes')
-res <- gost(query = up, organism = 'athaliana', correction_method = 'fdr')
-write.csv(res$result, 'gprofiler_up.csv', row.names = FALSE)
-```
-> If you have an *Elaeis guineensis* gene2go, prefer **Option A** to stay species‑specific.
 
 > *Breeding note:* Enrichment pinpoints processes (e.g., **phosphate transport**, **root development**, **ABA signaling**) to prioritize for selection and validation.
 
