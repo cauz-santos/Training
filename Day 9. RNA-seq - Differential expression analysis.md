@@ -565,7 +565,7 @@ Then open the PDFs/PNGs locally.
 #### What are we doing and why?
 We’ll test whether DEGs are **over-represented** in **biological processes/pathways** (e.g., phosphate transport, root morphogenesis, ABA signaling). This connects statistics to **biology** and helps prioritize candidates that sit inside agronomically relevant pathways.
 
-#### topGO
+### Step 1 - topGO
 **Install topGO on the cluster (per user)**  
 
 Load R on the cluster:
@@ -727,7 +727,7 @@ module load R/4.5.1
 Rscript run_topGO.R
 ```
 
-**topGO — Quick Evaluation (View Enriched GO Terms)**  
+### Step 2 - topGO — Quick Evaluation (View Enriched GO Terms)  
 After running run_topGO.R, two result files are created:
 
 **UP-regulated DEGs:**  
