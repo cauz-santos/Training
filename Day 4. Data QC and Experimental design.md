@@ -413,7 +413,7 @@ Replace `/path/to/multiqc_summary/` with the actual path on the cluster for the 
 Finally, open the report in your web browser by double-clicking it.
 
 
-**Step 3.3 – Trim Reads with Trimmomatic**  
+**Step 3.5 – Trim Reads with Trimmomatic**  
 Trimmomatic is a fast, multithreaded tool that removes adapters, trims poor-quality bases, and filters short reads. It works with both single-end and paired-end reads, and can handle compressed files (.gz).
 
 **Table 3. Common Trimmomatic Parameters**
@@ -485,7 +485,7 @@ Submit the job:
 sbatch trim_job.sh
 ```
 
-**Step 3.4 – Checking Trimmomatic Results**  
+**Step 3.6 – Checking Trimmomatic Results**  
 After running the trimming job, Trimmomatic reports how many reads were processed, how many survived, and how many were dropped. These statistics are written to the log file `trim.err`.
 
 
@@ -528,7 +528,7 @@ Sample 2: Input=1923400, Surviving=1749287, Dropped=174113
 ```
 
 
-**Step 3.4 – Run FastQC again on trimmed data**  
+**Step 3.7 – Run FastQC again on trimmed data**  
 Create `fastqc_trimmed_job.sh`:
 
 ```bash
@@ -573,7 +573,7 @@ scp your_username@login02.lisc.univie.ac.at:/path/to/fastqc_trimmed_reports/*.ht
 
 Open the `.html` files in your browser.
 
-**Step 3.5 – Summarize with MultiQC**  
+**Step 3.8 – Summarize with MultiQC**  
 Create a new file called `multiqc_job_trimmed.sh`:
 
 ```bash
@@ -620,7 +620,7 @@ Submit the job:
 sbatch multiqc_job_trimmed.sh
 ```
 
-**Step 3.6 – Copy the MultiQC report to your local computer**  
+**Step 3.9 – Copy the MultiQC report to your local computer**  
 On your laptop, copy the HTML file from the cluster:
 
 ```bash
