@@ -333,6 +333,11 @@ Submit:
 STRAND=2 sbatch 03_featurecounts.sh
 ```
 
+To clean the sample names, removing unnecessary information, we can use:
+```bash
+awk 'BEGIN{OFS=FS="\t"} NR==1{for(i=2;i<=NF;i++) {sub(".*/", "", $i); sub(/_Aligned\.sortedByCoord\.out\.bam$/, "", $i)}; print} NR>1{print}' counts_matrix.tsv > counts_matrix_clean.tsv
+```
+
 > *Breeding note:* Gene‑level counts quantify **stress and nutrient pathways** driving resilience and yield stability under low‑P.
 
 ### After featureCounts: how to inspect your outputs
@@ -361,28 +366,28 @@ The file `counts/counts_matrix.tsv` is **genes × samples** and is what you’ll
 
 ```bash
 # Header line (gene_id and sample names, check order!)
-head -n 1 counts/counts_matrix.tsv
+head -n 1 counts/counts_matrix_clean.tsv
 
 # First 10 data rows
-head counts/counts_matrix.tsv | column -t
+head counts/counts_matrix_clean.tsv | column -t
 ```
 
 **Check total library sizes (sum of counts) per sample:**
 ```bash
 awk -F'\t' 'NR==1{for(i=2;i<=NF;i++) name[i]=$i; next}
             {for(i=2;i<=NF;i++) lib[i]+=$i}
-            END{for(i=2;i<=NF;i++) printf "%s\t%d\n", name[i], lib[i]}' counts/counts_matrix.tsv | column -t
+            END{for(i=2;i<=NF;i++) printf "%s\t%d\n", name[i], lib[i]}' counts/counts_matrix_clean.tsv | column -t
 ```
 
 **Sanity check for all-zero genes (should be few or none):**
 ```bash
-awk -F'\t' 'NR>1{sum=0; for(i=2;i<=NF;i++) sum+=$i; if(sum==0) print $1}' counts/counts_matrix.tsv | head
+awk -F'\t' 'NR>1{sum=0; for(i=2;i<=NF;i++) sum+=$i; if(sum==0) print $1}' counts/counts_matrix_clean.tsv | head
 ```
 
 **Ensure sample order matches Trinity’s `samples.txt`:**
 ```bash
 echo "Counts header:"
-head -n1 counts_matrix.tsv
+head -n1 counts_matrix_clean.tsv
 
 echo -e "\nTrinity groups/samples:"
 cat metadata/samples.txt
