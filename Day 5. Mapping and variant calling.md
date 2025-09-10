@@ -141,7 +141,7 @@ module load bwa
 
 # Define input and output directories
 INPUT_DIR="/lisc/scratch/course/pgbiow/data/genomes"
-OUTPUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
+OUTPUT_DIR="/path/to/your/home/directory/05_mapping_varriant_calling/reference"
 
 # Define the reference genome file name
 GENOME="Elaeis_guineensis_genomic.fna"
@@ -211,9 +211,9 @@ module load bwa
 module load samtools
 
 # Define directories
-TRIMMED_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
-REF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
-OUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+TRIMMED_DIR="/path/to/your/home/directory/pgbiow/04_qc_trimming/trimmed"
+REF_DIR="/path/to/your/home/directory/05_mapping_varriant_calling/reference"
+OUT_DIR="/path/to/your/home/directory/05_mapping_varriant_calling/bwa_mapping"
 
 # Reference genome
 GENOME="$REF_DIR/Elaeis_guineensis_genomic.fna"
