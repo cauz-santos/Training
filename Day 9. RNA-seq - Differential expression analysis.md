@@ -541,12 +541,12 @@ less trinity/${CONTR}.edgeR.DE_results.P0.05_C1.Pplus-UP.subset
 **5) View plots (PCA, heatmaps, MA, Volcano)**  
 List the files:
 ```bash
-ls edger_trinity/diffexpr_plots/
+ls trinity/
 ```
 If you’re on a headless cluster, copy them to your laptop:
 ```bash
 # From your laptop/desktop terminal
-scp -r USER@login.cluster:/work/USER/day09_rnaseq/edger_trinity/diffexpr_plots .
+scp -r USER@login.cluster:/work/USER/day09_rnaseq/trinity/*.pdf .
 ```
 Then open the PDFs/PNGs locally.
 
