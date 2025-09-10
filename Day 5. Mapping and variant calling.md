@@ -334,15 +334,51 @@ We can use `samtools flagstat` to get a summary of mapping statistics.
 
 **Run `samtools flagstat` for each sample:**  
 
-You can do this in a `for` loop on the command line:
+You can do this in a `for` loop using the following script :
+create the script file:
+```bash
+vi check_mapping_rate.sh
+```
 
 ```bash
-for bam in *.sorted.bam
-do
-    echo "Statistics for $bam:"
-    samtools flagstat "$bam"
-    echo "--------------------"
+#!/bin/bash
+#SBATCH --job-name=mapping_stats
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:30:00
+#SBATCH -o mapping_stats.out
+#SBATCH -e mapping_stats.err
+
+module load samtools
+
+# Define directory with BAMs
+BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+OUT_FILE="$BAM_DIR/mapping_statistics.txt"
+
+# Go to BAM directory
+cd "$BAM_DIR" || exit 1
+
+# Remove old stats file if it exists
+rm -f "$OUT_FILE"
+
+# Loop over all deduplicated BAMs
+for bam in *.sorted.dedup.bam; do
+    echo "Statistics for $bam:" >> "$OUT_FILE"
+    samtools flagstat "$bam" >> "$OUT_FILE"
+    echo "--------------------" >> "$OUT_FILE"
 done
+
+echo "All statistics saved to $OUT_FILE"
+```
+
+Submit the job:
+```bash
+sbatch check_mapping_rate.sh
+```
+
+When it finishes, check the output file:
+```bash
+cat /lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping/mapping_statistics.txt
 ```
 
 **Look for the line that says `... + ... mapped (...%)`.** This is your overall mapping rate.
