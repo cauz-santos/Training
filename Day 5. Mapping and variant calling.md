@@ -217,44 +217,57 @@ But in other applications (e.g., RNA-seq or ChIP-seq), duplicates may carry biol
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=read_mapping
+#SBATCH --job-name=bwa_pipeline
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
-#SBATCH --time=02:00:00
-#SBATCH -o read_mapping.out
-#SBATCH -e read_mapping.err
+#SBATCH --time=06:00:00
+#SBATCH -o bwa_pipeline.out
+#SBATCH -e bwa_pipeline.err
 
-# Load necessary modules
+# Load required modules
 module load bwa
 module load samtools
 
-# Define the reference genome
-GENOME="GCF_000442705.2_EG11_genomic.fna"
+# Define directories
+TRIMMED_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
+REF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
+OUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
 
-# Loop through all FASTQ files in the current directory
-for fq in *.fastq.gz
-do
+# Reference genome
+GENOME="$REF_DIR/Elaeis_guineensis_genomic.fna"
+
+# Create output directory if it doesn’t exist
+mkdir -p "$OUT_DIR"
+
+# Move to trimmed FASTQ directory
+cd "$TRIMMED_DIR" || exit 1
+
+# Loop through all FASTQ files
+for fq in *.fastq.gz; do
     base=$(basename "$fq" .fastq.gz)
     echo "Processing sample: $base"
 
-    # 1. Align reads with BWA-MEM
-    bwa mem -t 8 $GENOME "$fq" | samtools view -bS - > "${base}.bam"
+    # 1. Align reads with BWA-MEM → BAM
+    bwa mem -t $SLURM_CPUS_PER_TASK "$GENOME" "$fq" \
+        | samtools view -bS - > "$OUT_DIR/${base}.bam"
 
-    # 2. Sort BAM file
-    samtools sort "${base}.bam" -o "${base}.sorted.bam"
+    # 2. Sort BAM
+    samtools sort "$OUT_DIR/${base}.bam" -o "$OUT_DIR/${base}.sorted.bam"
 
     # 3. Mark and remove PCR duplicates
-    samtools markdup -r "${base}.sorted.bam" "${base}.sorted.dedup.bam"
+    samtools markdup -r "$OUT_DIR/${base}.sorted.bam" "$OUT_DIR/${base}.sorted.dedup.bam"
 
-    # 4. Index the deduplicated BAM
-    samtools index "${base}.sorted.dedup.bam"
+    # 4. Index deduplicated BAM
+    samtools index "$OUT_DIR/${base}.sorted.dedup.bam"
 
-    # Clean up intermediate files
-    rm "${base}.bam" "${base}.sorted.bam"
+    # 5. Clean up intermediates
+    rm "$OUT_DIR/${base}.bam" "$OUT_DIR/${base}.sorted.bam"
 
+    echo "Finished processing: $base"
 done
 
-echo "All samples processed with duplicates removed."
+echo "All samples processed successfully."
+
 ```
 
 **Submit the job:**
