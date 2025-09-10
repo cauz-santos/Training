@@ -394,12 +394,52 @@ We can use `samtools depth` or `samtools coverage` to assess coverage.
 
 **Calculate average coverage across the genome:**
 
+create the script file:
 ```bash
-# This command calculates the depth at each position and then uses awk to average it.
-# This can be slow for a large genome.
-samtools depth sample1.sorted.bam | awk 
-'{sum+=$3} END { print "Average coverage = ",sum/NR}
-'
+vi check_coverage.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=coverage_stats
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=8G
+#SBATCH --time=01:00:00
+#SBATCH -o coverage_stats.out
+#SBATCH -e coverage_stats.err
+
+module load samtools
+
+# Directories
+BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+OUT_FILE="$BAM_DIR/coverage_statistics.txt"
+
+cd "$BAM_DIR" || exit 1
+rm -f "$OUT_FILE"
+
+# Loop through all deduplicated BAMs
+for bam in *.sorted.dedup.bam; do
+    echo "Calculating coverage for $bam ..."
+    
+    # Method 1: Average coverage using samtools depth + awk
+    avg_cov=$(samtools depth "$bam" | awk '{sum+=$3} END { if (NR>0) print sum/NR; else print 0 }')
+    
+    # Method 2 (faster alternative): samtools coverage
+    # avg_cov=$(samtools coverage "$bam" | awk 'NR==2 {print $7}')
+
+    echo -e "$bam\tAverage coverage = $avg_cov" >> "$OUT_FILE"
+done
+
+echo "All coverage results saved to $OUT_FILE"
+```
+Submit the job:
+```bash
+sbatch check_coverage.sh
+```
+
+When it finishes, check the output file:
+```bash
+cat /lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping/coverage_statistics.txt
 ```
 
 **A more comprehensive view with `samtools coverage`:**
@@ -408,7 +448,7 @@ This command provides a summary of coverage statistics, including the percentage
 
 ```bash
 # Run on a single BAM file
-samtools coverage sample1.sorted.bam
+samtools coverage EO_Ind10_trimmed.sorted.dedup.bam
 ```
 
 **❓ Question:** What is the difference between breadth of coverage and depth of coverage? Why are both important?
@@ -419,7 +459,13 @@ Sometimes, it's helpful to look at the alignments in a specific region, especial
 
 ```bash
 # You need the reference genome file here
-samtools tview sample1.sorted.bam GCF_000442705.2_EG11_genomic.fna
+module load samtools
+
+cd /lisc/scratch/course/pgbiow/05_mapping_varriant_calling/
+
+samtools tview \
+bwa_mapping/EO_Ind10_trimmed.sorted.dedup.bam \
+reference/Elaeis_guineensis_genomic.fna
 ```
 
 Navigate to a specific region by pressing `g` and entering the coordinates (e.g., `chromosome_name:10000`).
@@ -456,11 +502,14 @@ Press `i` to enter insert mode, then paste:
 
 module load qualimap
 
+# Path to BAM directory
+BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+
 # Example: run on one BAM file
-BAM="sample1.sorted.bam"
+BAM="$BAM_DIR/EO_Ind10_trimmed.sorted.dedup.bam"
 
 # Run Qualimap bamqc
-qualimap bamqc -bam $BAM -outdir qualimap_report_sample1 -nt 4
+qualimap bamqc -bam "$BAM" -outdir "$BAM_DIR/qualimap_report_EO_Ind10" -nt 4
 ```
 
 Save and exit (`ESC`, then `:wq`).
@@ -478,6 +527,7 @@ This will create a folder qualimap_report_sample1/ containing:
 On your laptop:
 
 ```bash
+
 scp your_username@login02.lisc.univie.ac.at:/path/to/qualimap_report_sample1/qualimapReport.html ~/bioinformatics_training/day5/
 ```
 
