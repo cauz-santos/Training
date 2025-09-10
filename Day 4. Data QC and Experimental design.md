@@ -544,7 +544,7 @@ grep "Input Reads" trim.err
 We can reformat the results into a simple table using awk and save it to a file:
 ```bash
 grep "Input Reads" trim.err | \
-awk '{print "Sample " NR ": Input="$3", Surviving="$5", Dropped="$7}' \
+awk '{print "Sample " NR ": Input="$3", Surviving="$5", Dropped="$8}' \
 > trimming_summary.txt
 ```
 
