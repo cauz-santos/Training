@@ -577,7 +577,7 @@ Press **`i`**, paste, then **`Esc` → `:wq`**:
 #SBATCH -p standard
 #SBATCH -c 4
 #SBATCH --mem=16G
-#SBATCH -t 00:25:00
+#SBATCH -t 01:00:00
 #SBATCH -J day9_GOseq
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
@@ -588,25 +588,31 @@ module load Trinity/2.15.2-foss-2023a
 export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
 TRINITY_DE="$TRINITY_HOME/Analysis/DifferentialExpression"
 
-# Choose your contrast name produced by Trinity (adjust as needed)
-CONTR=Pminus_vs_Pplus
+# === Paths ===
+CONTR="Pminus_vs_Pplus"
 
-UP="edger_trinity/edgeR.DE_results/${CONTR}.DE_up.genes"
-DOWN="edger_trinity/edgeR.DE_results/${CONTR}.DE_down.genes"
-G2GO="metadata/gene2go.tsv"          # gene_id \t GO:xxxx;GO:yyyy
-GLEN="counts/gene_lengths.txt"       # produced above from featureCounts
+TRINITY_DIR="/lisc/scratch/course/pgbiow/09_rnaseq_expression/trinity"
+GENOME_DIR="/lisc/scratch/course/pgbiow/data/genomes"
 
+UP="${TRINITY_DIR}/counts_matrix_clean.tsv.${CONTR}.edgeR.DE_results/${CONTR}.DE_up.genes"
+DOWN="${TRINITY_DIR}/counts_matrix_clean.tsv.${CONTR}.edgeR.DE_results/${CONTR}.DE_down.genes"
+
+G2GO="${GENOME_DIR}/gene2go.tsv"         # gene_id \t GO:xxxx,GO:yyyy
+GLEN="${GENOME_DIR}/gene_lengths.txt"    # gene_id \t length
+
+# === Run GOseq for UP genes ===
 $TRINITY_DE/run_GOseq.pl \
   --genes_single_factor "$UP" \
-  --gene2GO "$G2GO" \
+  --GO_assignments "$G2GO" \
   --lengths "$GLEN" \
-  --out_prefix results_GOseq_up
+  --out_prefix "${TRINITY_DIR}/results_GOseq_up"
 
+# === Run GOseq for DOWN genes ===
 $TRINITY_DE/run_GOseq.pl \
   --genes_single_factor "$DOWN" \
-  --gene2GO "$G2GO" \
+  --GO_assignments "$G2GO" \
   --lengths "$GLEN" \
-  --out_prefix results_GOseq_down
+  --out_prefix "${TRINITY_DIR}/results_GOseq_down"
 ```
 Submit:
 ```bash
