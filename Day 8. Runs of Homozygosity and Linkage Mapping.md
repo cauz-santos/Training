@@ -728,65 +728,123 @@ Why it works well:
 > 👉 Think of it as a “committee of experts”: each decision tree is one expert, and the forest is the combined decision. This makes the predictions more robust than relying on just one.
 
 
+## Step 0 - Installing the `randomForest` package in RStudio
+
+Before running the exercise, make sure the `randomForest` package is installed in your **personal R library**.  
+This is necessary because the global R installation on the cluster is read-only, and each user must install their own copy of additional packages.
+
+In RStudio, run the following once:
+
+```r
+# Create a personal library path (only needed once)
+dir.create("/lisc/home/user/<your_username>/R/x86_64-pc-linux-gnu-library/4.5",
+           recursive = TRUE, showWarnings = FALSE)
+
+# Tell R to use your personal library
+.libPaths("/lisc/home/user/<your_username>/R/x86_64-pc-linux-gnu-library/4.5")
+
+# Install randomForest into your library
+install.packages("randomForest", repos = "https://cloud.r-project.org",
+                 lib = "/lisc/home/user/<your_username>/R/x86_64-pc-linux-gnu-library/4.5")
+
+# Load the package to test installation
+library(randomForest)
+```
+
 **Step 1 — Prepare dataset**  
 
 We’ll merge PCA results (Day 6) with sucrose phenotypes (Day 7).
 
 In Rstudio:
 ```r
-pcs <- read.table("pca_results.eigenvec", header=FALSE)
-pheno <- read.csv("phenotypes.csv")
-colnames(pcs) <- c("FID","IID",paste0("PC",1:10))
-d <- merge(pcs, pheno, by="IID")
+library(randomForest)
 
-head(d)
+# Load data
+pcs <- read.table("/lisc/scratch/course/pgbiow/06_diversity_structure/pca/pca_results.eigenvec",
+                  header=FALSE)
+pheno <- read.csv("/lisc/scratch/course/pgbiow/metadata/gwas_phen_table_120.csv")
+
+# Name PCA columns (first two are IDs, then PCs)
+colnames(pcs) <- c("FID","IID",paste0("PC",1:10))
+
+# Merge on IID
+d <- merge(pcs, pheno, by="IID")
 ```
 
-**Step 2 — Train/test split and ML model:**  
-We classify lines into **High vs Low sucrose** using a median split.  
-Random Forest is used as the classifier.
+**Step 2 — Clean and define classes:**  
+We first remove samples that have missing phenotypes, then classify lines into High vs Low sucrose using a median split.
+
+```r
+# Remove missing phenotypes
+d_clean <- d[!is.na(d$SUC), ]
+cat("Samples after removing missing SUC:", nrow(d_clean), "\n")
+cat("Dropped samples:", nrow(d) - nrow(d_clean), "\n")
+
+# Define sucrose class
+d_clean$class <- ifelse(d_clean$SUC > median(d_clean$SUC, na.rm=TRUE), "High", "Low")
+```
+
+**Step 3 — Train/test split:**  
+We split the dataset into 70% training and 30% test samples.
+
+```r
+set.seed(42)
+train_idx <- sample(1:nrow(d_clean), 0.7*nrow(d_clean))
+train <- d_clean[train_idx, ]
+test  <- d_clean[-train_idx, ]
+
+cat("Training samples:", nrow(train), "\n")
+cat("Testing samples:", nrow(test), "\n")
+```
+
+**Step 4 —Train Random Forest:**  
+We train a Random Forest classifier using the 10 PCs as predictors.
 
 In Rstudio:
 ```r
 library(randomForest)
 
-# Define high vs low classes
-d$class <- ifelse(d$SUC > median(d$SUC, na.rm=TRUE),"High","Low")
+rf <- randomForest(as.factor(class) ~ PC1+PC2+PC3+PC4+PC5,
+                   data=train, ntree=500, importance=TRUE)
 
-# Train/test split (70/30)
-set.seed(42)
-train_idx <- sample(1:nrow(d), 0.7*nrow(d))
-train <- d[train_idx,]
-test <- d[-train_idx,]
-
-# Train Random Forest using first 5 PCs
-rf <- randomForest(as.factor(class) ~ PC1+PC2+PC3+PC4+PC5, data=train, ntree=500)
+# Predictions on test set
 pred <- predict(rf, test)
-
-table(pred, test$class)
 ```
 
-**Step 3 — Evaluate accuracy:**  
+**Step 3 — Evaluate performance:**  
 After training a machine learning model, we need to test how well it performs on data it has **never seen before** (the test set).  
 One simple way is to calculate the **accuracy**: the proportion of correct predictions compared to the true classes.
 
 In Rstudio:
 ```r
-acc <- mean(pred==test$class)
-cat("Test accuracy:", acc, "\n")
+# Accuracy
+acc <- mean(pred == test$class)
+cat("Test accuracy:", round(acc, 3), "\n")
+
+# Confusion matrix
+cat("Confusion matrix:\n")
+print(table(Predicted=pred, Actual=test$class))
 ```
 
 **What this does:**  
-- Compares predicted classes (pred) to the true labels (test$class).   
-- mean() computes the fraction of matches (correct predictions).
+- Compares the model’s predicted sucrose classes (`pred`) to the true classes (`test$class`).  
+- Calculates the proportion of correct predictions with `mean(pred == test$class)`.  
+- Displays a **confusion matrix**, which shows how many High and Low samples were classified correctly vs. incorrectly.  
 
 **Why this matters:**  
-- Accuracy tells us whether the model can generalize to new samples.  
-- High accuracy (>0.7–0.8) → the model is capturing useful genomic patterns.  
-- Low accuracy (<0.6) → the model may not distinguish high vs. low sucrose well, or more features are needed.
+- Accuracy tells us how well the model can generalize to unseen samples.  
+- A confusion matrix gives deeper insight: e.g. the model may predict "Low" sucrose better than "High".  
+- If accuracy is high (>0.7–0.8), the PCs are informative for distinguishing sucrose classes.  
+- If accuracy is low (<0.6), sucrose differences may not be strongly captured by population structure (PCs), or the model may need more features.  
 
 **How to interpret:**  
-Accuracy is a first check. In real genomic prediction, we’d also use metrics like AUC (for classification), RMSE (for regression), or cross-validation. But for training purposes, accuracy gives a quick, intuitive measure of performance.
+- Accuracy is a quick, intuitive measure of performance, but it’s not the whole story.  
+- A balanced dataset (equal High/Low classes) makes accuracy meaningful; otherwise, accuracy alone can be misleading.  
+- In real genomic prediction, we’d also use **cross-validation** for stability and additional metrics:  
+  - **AUC** (Area Under Curve) → for classification tasks.  
+  - **RMSE** (Root Mean Square Error) → for regression on continuous traits.  
+- For training purposes, accuracy + confusion matrix provide a straightforward way to evaluate the model.  
+
 
 **Step 4 (Optional) — Variable importance and plots**  
 In many machine learning models, especially **Random Forests**, we can check **which features (variables)** are most useful for making predictions. This is called **variable importance**.
@@ -798,7 +856,8 @@ importance(rf)
 varImpPlot(rf)
 ```
 
-**--- Save evaluation artifacts (Optional) ---**
+**--- Save evaluation artifacts (Optional) ---**  
+It is good practice to save your model evaluation results, so they can be reused or inspected later.
 ```r
 # Confusion matrix + accuracy
 cm <- table(Pred = pred, True = test$class)
@@ -828,7 +887,6 @@ The plot ranks PCs by their contribution to prediction accuracy.
 - If PC1 is most important → the strongest population structure is predictive of sucrose levels.
 - If PC3/PC4 are more important → subtle genomic patterns explain sucrose variation.
 
-
 ### Interpretation questions
 - How accurate is the classification?  
 - Which PCs (genomic patterns) are most predictive?  
@@ -839,6 +897,10 @@ In practice, breeders can:
 - Use **Random Forest or other ML models** with **full SNP data**.  
 - Apply ML for **genomic prediction**, ranking candidates before phenotyping.  
 - Integrate **multi-trait and environmental data** for more robust selection.  
+
+
+
+
 
 ---
 ## Conclusion
