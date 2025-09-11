@@ -142,7 +142,7 @@ dev.off()
 - **R²**: proportion of variance in sucrose explained by SNPs.  
 - **MAE / RMSE**: prediction error (average absolute vs squared error).  
 
-🔎 For selection: the **ranking of predicted values** is what matters.  
+For selection: the **ranking of predicted values** is what matters.  
 Individuals with the **highest predicted sucrose** are the best candidates.  
 
 Example:
