@@ -199,21 +199,40 @@ But in other applications (e.g., RNA-seq or ChIP-seq), duplicates may carry biol
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=bwa_pipeline
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
+#SBATCH --job-name=bwa_picard_pipeline
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=60G
+#SBATCH --partition=basic
 #SBATCH --time=06:00:00
-#SBATCH -o bwa_pipeline.out
-#SBATCH -e bwa_pipeline.err
+#SBATCH -o bwa_picard_pipeline.out
+#SBATCH -e bwa_picard_pipeline.err
+
+set -euo pipefail
 
 # Load required modules
+module purge
 module load bwa
 module load samtools
+module load picard/3.4.0 || true         # may only provide the JAR
+module load java/17 || module load openjdk/17 || true  # Picard 3.x wants Java 17
+
+# Resolve Picard command (wrapper if present, else JAR)
+if command -v picard &>/dev/null; then
+  PICARD_CMD="picard"
+else
+  PICARD_JAR="/lisc/app/picard/3.4.0/picard.jar"
+  if [ ! -f "$PICARD_JAR" ]; then
+    echo "ERROR: Picard jar not found at $PICARD_JAR and no 'picard' wrapper in PATH." >&2
+    exit 1
+  fi
+  # Heap ~50G; adjust if needed
+  PICARD_CMD="java -Xmx50g -jar $PICARD_JAR"
+fi
 
 # Define directories
-TRIMMED_DIR="/path/to/your/home/directory/04_qc_trimming/trimmed"
-REF_DIR="/path/to/your/home/directory/05_mapping_varriant_calling/reference"
-OUT_DIR="/path/to/your/home/directory/05_mapping_varriant_calling/bwa_mapping"
+TRIMMED_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
+REF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
+OUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
 
 # Reference genome
 GENOME="$REF_DIR/Elaeis_guineensis_genomic.fna"
@@ -221,36 +240,48 @@ GENOME="$REF_DIR/Elaeis_guineensis_genomic.fna"
 # Create output directory if it doesn’t exist
 mkdir -p "$OUT_DIR"
 
+# Ensure reference is indexed (safe to re-run)
+[ -f "${GENOME}.bwt" ] || bwa index "$GENOME"
+[ -f "${GENOME}.fai" ] || samtools faidx "$GENOME"
+
 # Move to trimmed FASTQ directory
 cd "$TRIMMED_DIR" || exit 1
 
 # Loop through all FASTQ files
 for fq in *.fastq.gz; do
-    base=$(basename "$fq" .fastq.gz)
-    echo "Processing sample: $base"
+  base=$(basename "$fq" .fastq.gz)
+  echo "Processing sample: $base"
 
-    # 1. Align reads with BWA-MEM → SAM
-    bwa mem -t $SLURM_CPUS_PER_TASK "$GENOME" "$fq" > "$OUT_DIR/${base}.sam"
+  # Step 1: Align reads using BWA-MEM (single-end)
+  bwa mem -t "$SLURM_CPUS_PER_TASK" "$GENOME" "$fq" > "$OUT_DIR/${base}.sam"
 
-    # 2. Convert SAM to BAM
-    samtools view -bS "$OUT_DIR/${base}.sam" > "$OUT_DIR/${base}.bam"
+  # Step 2: Convert SAM to BAM
+  samtools view -@ "$SLURM_CPUS_PER_TASK" -b "$OUT_DIR/${base}.sam" > "$OUT_DIR/${base}.bam"
 
-    # 3. Sort BAM
-    samtools sort "$OUT_DIR/${base}.bam" -o "$OUT_DIR/${base}.sorted.bam"
+  # Step 3: Sort BAM
+  samtools sort -@ "$SLURM_CPUS_PER_TASK" -o "$OUT_DIR/${base}.sorted.bam" "$OUT_DIR/${base}.bam"
 
-    # 4. Mark and remove PCR duplicates
-    samtools markdup -r "$OUT_DIR/${base}.sorted.bam" "$OUT_DIR/${base}.sorted.dedup.bam"
+  # Step 4: Mark (or remove) duplicates with Picard
+  # Tip: for many variant-calling workflows you MARK duplicates (REMOVE_DUPLICATES=false).
+  $PICARD_CMD MarkDuplicates \
+    I="$OUT_DIR/${base}.sorted.bam" \
+    O="$OUT_DIR/${base}.sorted.dedup.bam" \
+    M="$OUT_DIR/${base}.dup_metrics.txt" \
+    REMOVE_DUPLICATES=false \
+    ASSUME_SORT_ORDER=coordinate \
+    VALIDATION_STRINGENCY=SILENT \
+    TMP_DIR="${TMPDIR:-$OUT_DIR}"
 
-    # 5. Index deduplicated BAM
-    samtools index "$OUT_DIR/${base}.sorted.dedup.bam"
+  # Step 5: Index final BAM
+  samtools index "$OUT_DIR/${base}.sorted.dedup.bam"
 
-    # 6. Clean up intermediate BAMs (keep SAM for teaching)
-    rm "$OUT_DIR/${base}.bam" "$OUT_DIR/${base}.sorted.bam"
+    # Step 6: Clean up intermediate files (keep .sam for teaching if you want)
+  rm -f "$OUT_DIR/${base}.bam" "$OUT_DIR/${base}.sorted.bam"
 
-    echo "Finished processing: $base"
+  echo "Finished processing: $base"
 done
 
-echo "All samples processed successfully."
+echo "All samples processed."
 ```
 
 **Submit the job:**
