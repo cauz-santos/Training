@@ -728,7 +728,7 @@ Why it works well:
 > 👉 Think of it as a “committee of experts”: each decision tree is one expert, and the forest is the combined decision. This makes the predictions more robust than relying on just one.
 
 
-## Step 0 - Installing the `randomForest` package in RStudio
+**Step 0 - Installing the `randomForest` package in RStudio**  
 
 Before running the exercise, make sure the `randomForest` package is installed in your **personal R library**.  
 This is necessary because the global R installation on the cluster is read-only, and each user must install their own copy of additional packages.
