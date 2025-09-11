@@ -583,7 +583,9 @@ BiocManager::install("topGO", ask=FALSE, update=FALSE)
 ```
 
 Check installation:
+```bash
 library(topGO)
+```
 
 
 **Script to prepare input gene lists:**  
