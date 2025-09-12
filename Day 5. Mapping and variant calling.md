@@ -484,25 +484,6 @@ samtools coverage EO_Ind10_trimmed.sorted.dedup.bam
 
 **❓ Question:** What is the difference between breadth of coverage and depth of coverage? Why are both important?
 
-**4.3: Inspecting Alignments Visually**
-
-Sometimes, it's helpful to look at the alignments in a specific region, especially if you have a gene of interest. `samtools tview` provides a text-based alignment viewer directly in your terminal.
-
-```bash
-# You need the reference genome file here
-module load samtools
-
-cd /lisc/scratch/course/pgbiow/05_mapping_varriant_calling/
-
-samtools tview \
-bwa_mapping/EO_Ind10_trimmed.sorted.dedup.bam \
-reference/Elaeis_guineensis_genomic.fna
-```
-
-Navigate to a specific region by pressing `g` and entering the coordinates (e.g., `chromosome_name:10000`).
-
-**❓ Question:** What do the different characters and colors in the `tview` output represent?
-
 ___
 
 ### Optional Exercise: Inspecting Alignments with Qualimap  
