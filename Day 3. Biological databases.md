@@ -52,6 +52,10 @@ Biological databases are organized collections of biological data, often made pu
 *   **Secondary Databases:** Contain analyzed, annotated, and curated data derived from primary databases. Examples include RefSeq (curated non-redundant sequences), KEGG (Kyoto Encyclopedia of Genes and Genomes - pathways and diseases), Pfam (protein families).
 *   **Specialized Databases:** Focus on specific types of data or organisms (e.g., dbSNP for single nucleotide polymorphisms, Ensembl for vertebrate genomes, TAIR for *Arabidopsis thaliana*).
 
+**Omics data and databases for crop plants**  
+![Databases](https://www.degruyterbrill.com/document/doi/10.1515/jib-2023-0012/asset/graphic/j_jib-2023-0012_fig_002.jpg)
+Generation, storage, mining, and integration of crop omics data. (A) Generation and storage of omics data in public databases. (B) Applications of five omics technologies (genomic, epigenomic, transcriptomic, proteomic, and metabolomic data) in crop breeding. (C) Construction of a secondary database based on mining of multi-omics data.
+
 ---
 
 ## Common Genomic Data Formats
