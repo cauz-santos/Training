@@ -737,6 +737,7 @@ Press `i` to enter insert mode and paste:
 
 module load vcftools
 module load bcftools
+module load htslib
 
 # Directories
 VCF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bcftools_variants"
