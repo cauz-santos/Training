@@ -200,8 +200,8 @@ But in other applications (e.g., RNA-seq or ChIP-seq), duplicates may carry biol
 ```bash
 #!/bin/bash
 #SBATCH --job-name=bwa_picard_pipeline
-#SBATCH --cpus-per-task=12
-#SBATCH --mem=60G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=12G
 #SBATCH --partition=basic
 #SBATCH --time=06:00:00
 #SBATCH -o bwa_picard_pipeline.out
@@ -274,9 +274,6 @@ for fq in *.fastq.gz; do
 
   # Step 5: Index final BAM
   samtools index "$OUT_DIR/${base}.sorted.dedup.bam"
-
-    # Step 6: Clean up intermediate files (keep .sam for teaching if you want)
-  rm -f "$OUT_DIR/${base}.bam" "$OUT_DIR/${base}.sorted.bam"
 
   echo "Finished processing: $base"
 done
@@ -434,7 +431,7 @@ vi check_coverage.sh
 #!/bin/bash
 #SBATCH --job-name=coverage_stats
 #SBATCH --cpus-per-task=2
-#SBATCH --mem=8G
+#SBATCH --mem=4G
 #SBATCH --time=01:00:00
 #SBATCH -o coverage_stats.out
 #SBATCH -e coverage_stats.err
@@ -449,7 +446,7 @@ cd "$BAM_DIR" || exit 1
 rm -f "$OUT_FILE"
 
 # Loop through all deduplicated BAMs
-for bam in *.sorted.dedup.bam; do
+for bam in *.sorted.bam; do
     echo "Calculating coverage for $bam ..."
     
     # Method 1: Average coverage using samtools depth + awk
@@ -506,8 +503,8 @@ Press `i` to enter insert mode, then paste:
 ```bash
 #!/bin/bash
 #SBATCH --job-name=qualimap
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=8G
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=4G
 #SBATCH --time=01:00:00
 #SBATCH -o qualimap.out
 #SBATCH -e qualimap.err
@@ -518,7 +515,7 @@ module load qualimap
 BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
 
 # Example: run on one BAM file
-BAM="$BAM_DIR/EO_Ind10_trimmed.sorted.dedup.bam"
+BAM="$BAM_DIR/EO_Ind10_trimmed.sorted.bam"
 
 # Run Qualimap bamqc
 qualimap bamqc -bam "$BAM" -outdir "$BAM_DIR/qualimap_report_EO_Ind10" -nt 4
@@ -567,8 +564,8 @@ We will use `bcftools mpileup` and `bcftools call`.
 ```bash
 #!/bin/bash
 #SBATCH --job-name=variant_calling
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=16G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=12G
 #SBATCH --time=03:00:00
 #SBATCH -o variant_calling.out
 #SBATCH -e variant_calling.err
@@ -622,7 +619,7 @@ You can view the contents of a gzipped VCF file using `zless` or `bcftools view`
 
 ```bash
 # View the header and first few variant lines
-bcftools view bcftools_variants/joint_variants.vcf.gz | head -n 50
+bcftools view bcftools_variants/joint_variants.vcf.gz | head -n 70
 ```
 
 **The VCF file has two main parts:**
