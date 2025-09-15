@@ -300,6 +300,48 @@ head -n 3 genomic_sequences.txt | tail -n 1
 Expected: the third line ("ATGCATGCATGC")
 
 
+### Exercise 4: Working with Compressed Files and Downloading Data
+
+#### Step 1 — Navigate to your `data` folder:
+```bash
+cd ~/bioinformatics_training/data
+```
+
+#### Step 2 — Download a sample file:
+```bash
+wget https://ftp.ncbi.nlm.nih.gov/genomes/README.txt
+# OR using curl
+curl -O https://ftp.ncbi.nlm.nih.gov/genomes/README.txt
+```
+
+You can inspect the file with
+```bash
+cat README.txt
+```
+
+#### Step 3 — Download a compressed FASTA file:
+```bash
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.28_GRCh38.p13/GCA_000001405.28_GRCh38.p13_genomic.fna.gz
+```
+
+#### Step 4 — Inspect the `.gz` file:
+```bash
+ls -lh *.gz
+zcat GCA_000001405.28_GRCh38.p13_genomic.fna.gz | head
+# OR
+gunzip -c GCA_000001405.28_GRCh38.p13_genomic.fna.gz | head
+```
+
+#### Step 5 — Decompress the file:
+```bash
+gunzip -c GCA_000001405.28_GRCh38.p13_genomic.fna.gz > genome.fna
+```
+
+#### Step 6 — Verify the decompressed file:
+```bash
+ls -lh genome.fna
+head genome.fna
+```
 
 ---
 ## Introduction to HPC Usage 
