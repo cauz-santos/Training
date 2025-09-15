@@ -22,15 +22,16 @@ Bash (Bourne-Again SHell) is the default command-line interpreter on most Linux 
 **Step 1: Create a script file**   
 
 We first need to create a new file that will hold our script.    
-Use the `nano` text editor (you can also use `vim` or any other editor):
+Use the ` vi` text editor (you can also use `nano` or any other editor), in the terminal:
 
 ```bash
-nano hello.sh
+vi hello.sh
 ```
 
+Press `i` to enter *INSERT* mode.
 **Step 2: Write the script**  
 
-Inside the editor, type the following lines:
+Inside the editor, copy and paste the following lines:
 ```bash
 #!/bin/bash
 # This is my first Bash script
@@ -41,7 +42,7 @@ echo "Hello, Bioinformatics World!"
 
 When finished, save and exit:
 
-In `nano`: press `Ctrl + O` → `Enter` → `Ctrl + X`. 
+In `vi`: Press `Esc`, type `:wq` and press `Enter` to save and exit. 
 
 **Step 3: Make the script executable**  
 
@@ -63,6 +64,10 @@ Now we can run it by calling the file directly:
 Let's create a script that automates the process of creating a new project directory with subdirectories for data, scripts, and results.
 
 Please create a file typing `vi create_project.sh`in the terminal, and then copy the following content:
+
+```bash
+vi create_project.sh
+```
 
 ```bash
 #!/bin/bash
@@ -103,6 +108,10 @@ For example:
 
 **Step 2 – Rename Files from _raw.txt to _cleaned.txt**
 Let’s rename all raw input files to mark them as cleaned. Please create a file typing `vi rename_files.sh`in the terminal, and then copy and paste the following content:
+
+```bash
+vi rename_files.sh
+```
 
 ```bash
 #!/bin/bash
@@ -196,7 +205,7 @@ chmod +x genome_stats.sh
 
 **Step 4: Run the script**
 ```bash
-./genome_stats.sh data/Elaeis_guineensis.fasta
+./genome_stats.sh /lisc/scratch/course/pgbiow/data/genomes/Elaeis_guineensis_genomic.fna
 ```
 *Please check the basic statistics from the output  
 
