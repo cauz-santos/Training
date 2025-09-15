@@ -387,7 +387,7 @@ python3
 
 You should see something like:
 ```bash
-Python 3.10.12 (default, ...)
+Python 3.9.21 (main, Dec  5 2024, 00:00:00)
 >>>
 ```
 This >>> prompt means Python is ready for commands.
