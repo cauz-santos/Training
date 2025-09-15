@@ -242,6 +242,11 @@ To run this script, you would save it and make it executable (`chmod +x summariz
 - Learn how to **combine commands** into a reusable workflow.
 
 
+**Step 0: Move to the folder with results**  
+```bash
+cd ../results
+```
+
 **Step 1: Create the script file**  
 
 Open a new script file:
