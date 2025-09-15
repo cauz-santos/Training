@@ -427,7 +427,10 @@ seq = "ATGCGCGTAGCTAGC"
 print("GC content:", gc_content(seq), "%")
 ```
 
-Next, we explore some Python scripts for automating tasks...
+Next, we will explore some Python scripts for automating tasks...
+
+First we need to leave the python interpreter:
+Use quit() or Ctrl-D (i.e. EOF) to exit
 
 ### Example 1: Filtering a List of Gene Names  
 
