@@ -16,6 +16,14 @@ Bash (Bourne-Again SHell) is the default command-line interpreter on most Linux 
 4.  **Make the script executable:** Use the `chmod +x my_first_script.sh` command to give the script execute permissions.
 5.  **Run the script:** Execute the script by typing `./my_first_script.sh`.
 
+### 0) — Data Preparation 
+
+First create a folder for the file outputs of day 6 in your home directory:
+   ```bash
+   mkdir 01_scripting
+   ```
+Now, enter the folder with the command `cd`
+
 
 ### 1) Example of Basic Bash Script:
 
@@ -107,7 +115,29 @@ For example:
 ```
 
 **Step 2 – Rename Files from _raw.txt to _cleaned.txt**
-Let’s rename all raw input files to mark them as cleaned. Please create a file typing `vi rename_files.sh`in the terminal, and then copy and paste the following content:
+Let’s rename all raw input files to mark them as cleaned. 
+
+First, enter the folder with raw data and create some example files
+
+In the terminal, type:
+```bash
+cd ./Test/raw_data
+```
+```bash
+touch sample1_raw.txt sample2_raw.txt sample3_raw.txt
+```
+This will create three empty text files with the _raw.txt suffix.
+
+Then, Check that the files exist:
+
+Run:
+```bash
+ls *_raw.txt
+```
+
+You should see:
+
+Please create a file typing `vi rename_files.sh`in the terminal, and then copy and paste the following content:
 
 ```bash
 vi rename_files.sh
@@ -125,8 +155,55 @@ done
 
 To run this script, you would save it and make it executable (`chmod +x rename_files.sh`), and then run it typing in the terminal: `./rename_files.sh`.
 
+To check the outputs, type:
+```bash
+ls -l
+```
+
+
 **Step 3 – Count Files Containing “Status: OK” or “Status: FAIL”**
+Let's move to the directory with `processed_data`
+
+```bash
+cd ../processed_data
+```
+
+You can confirm that you are in the correct directory with:
+```bash
+pwd
+```
+
 Let’s analyze the content of the cleaned files and summarize how many contain "Status: OK" or "Status: FAIL"  
+
+First, create some example cleaned files with statuses
+You can type in the terminal:
+```bash
+cat <<EOF > sample1_cleaned.txt
+Sample ID: 001
+Status: OK
+EOF
+
+cat <<EOF > sample2_cleaned.txt
+Sample ID: 002
+Status: FAIL
+EOF
+
+cat <<EOF > sample3_cleaned.txt
+Sample ID: 003
+Status: OK
+EOF
+```
+
+You can check that the files were created with:
+```bash
+ls *_cleaned.txt
+```
+
+and inspect them with:
+```bash
+cat sample1_cleaned.txt
+```
+
 Create the file script using `vi summarize_status.sh`
 
 ```bash
