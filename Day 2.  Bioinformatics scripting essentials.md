@@ -391,6 +391,120 @@ for line in data_lines:
 ```
 After saving the file, run in the terminal with `python filter_samples.py`.
 
+### Open RStudio on the Cluster
+On the LiSC cluster, you do not run RStudio directly from the terminal.
+Instead, you:
+
+Open a browser and go to:
+https://rstudio.lisc.univie.ac.at
+
+Log in with your cluster username and password.
+This gives you an RStudio session running on the cluster.
+
+Once logged in, open a new R script and paste:
+```r
+# ================================================
+# INTRO TO R FOR BIOLOGY - DEMO SCRIPT 
+# ================================================
+
+# 0. Setup ------------------------------------------------------------
+rm(list = ls())
+
+# Install once (if not installed):
+# install.packages("ggplot2")
+
+library(ggplot2)
+
+# ------------------------------------------------
+# 1. VARIABLES AND DATA TYPES
+# ------------------------------------------------
+gene_count <- 1500                # numeric
+gc_content <- 0.42                # numeric (double)
+species <- "Arabidopsis thaliana" # character
+is_model <- TRUE                  # logical
+
+class(gene_count)
+class(species)
+
+# Vector
+chromosomes <- c("Chr1", "Chr2", "Chr3", "Chr4", "Chr5")
+chromosomes
+
+# ------------------------------------------------
+# 2. DATA STRUCTURES
+# ------------------------------------------------
+expr_values <- c(12.5, 15.3, 14.8, 10.1, 9.5)
+names(expr_values) <- chromosomes
+
+tissue <- factor(c("Leaf", "Root", "Leaf", "Stem", "Root"))
+
+genes <- data.frame(
+  GeneID = paste0("Gene", 1:5),
+  Tissue = tissue,
+  Expression = expr_values
+)
+genes
+
+# ------------------------------------------------
+# 3. FUNCTIONS
+# ------------------------------------------------
+gc_content_calc <- function(sequence) {
+  g <- sum(strsplit(sequence, "")[[1]] == "G")
+  c <- sum(strsplit(sequence, "")[[1]] == "C")
+  total <- nchar(sequence)
+  return((g + c) / total)
+}
+
+gc_content_calc("ATGCGCGTAT")
+
+# ------------------------------------------------
+# 4. CONTROL FLOW
+# ------------------------------------------------
+for (i in 1:nrow(genes)) {
+  cat("Gene", genes$GeneID[i], "in", as.character(genes$Tissue[i]),
+      "has expression", genes$Expression[i], "\n")
+}
+
+if (mean(genes$Expression) > 10) {
+  print("Average expression is high")
+} else {
+  print("Average expression is low")
+}
+
+# ------------------------------------------------
+# 5. FILE INPUT/OUTPUT
+# ------------------------------------------------
+write.csv(genes, "genes_demo.csv", row.names = FALSE)
+genes_in <- read.csv("genes_demo.csv")
+head(genes_in)
+
+# ------------------------------------------------
+# 6. PLOTTING WITH ggplot2
+# ------------------------------------------------
+
+# Histogram
+ggplot(genes, aes(x = Expression)) +
+  geom_histogram(fill = "steelblue", color = "white", bins = 5) +
+  labs(title = "Histogram of Gene Expression", x = "Expression", y = "Count") +
+  theme_minimal()
+
+# Boxplot by tissue
+ggplot(genes, aes(x = Tissue, y = Expression, fill = Tissue)) +
+  geom_boxplot() +
+  labs(title = "Expression by Tissue") +
+  theme_minimal()
+
+# Scatterplot
+ggplot(genes, aes(x = GeneID, y = Expression, color = Tissue)) +
+  geom_point(size = 4) +
+  labs(title = "Expression per Gene", x = "Gene", y = "Expression") +
+  theme_minimal()
+
+# ------------------------------------------------
+# END OF SCRIPT
+# ------------------------------------------------
+```
+
 
 ## You have completed **Day 2**!
 
