@@ -98,7 +98,7 @@ To run this script, you would save it as `create_project.sh`, make it executable
 
 For example:
 ```bash
-./create_project.sh my_new_project Test
+./create_project.sh Test
 ```
 
 **Step 2 – Rename Files from _raw.txt to _cleaned.txt**
