@@ -321,20 +321,20 @@ cat README.txt
 
 #### Step 3 — Download a compressed FASTA file:
 ```bash
-wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.28_GRCh38.p13/GCA_000001405.28_GRCh38.p13_genomic.fna.gz
+wget https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/735/GCF_000001735.4_TAIR10.1/GCF_000001735.4_TAIR10.1_genomic.fna.gz
 ```
 
 #### Step 4 — Inspect the `.gz` file:
 ```bash
 ls -lh *.gz
-zcat GCA_000001405.28_GRCh38.p13_genomic.fna.gz | head
+zcat GCF_000001735.4_TAIR10.1_genomic.fna.gz | head
 # OR
-gunzip -c GCA_000001405.28_GRCh38.p13_genomic.fna.gz | head
+gunzip -c GCF_000001735.4_TAIR10.1_genomic.fna.gz | head
 ```
 
 #### Step 5 — Decompress the file:
 ```bash
-gunzip -c GCA_000001405.28_GRCh38.p13_genomic.fna.gz > genome.fna
+gunzip -c GCF_000001735.4_TAIR10.1_genomic.fna.gz > genome.fna
 ```
 
 #### Step 6 — Verify the decompressed file:
