@@ -391,6 +391,8 @@ for line in data_lines:
 ```
 After saving the file, run in the terminal with `python filter_samples.py`.
 
+## R and Rstudio
+
 ### Open RStudio on the Cluster
 On the LiSC cluster, you do not run RStudio directly from the terminal.
 Instead, you:
