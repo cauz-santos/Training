@@ -343,6 +343,10 @@ ls -lh genome.fna
 head genome.fna
 ```
 
+## print sequence of a specific gene
+```bash
+awk '/>gene2/,/>/{if (!/>gene2/) print prev; prev=$0; next} {print prev; prev=$0}' genes.fasta
+```
 ---
 ## Introduction to HPC Usage 
 
