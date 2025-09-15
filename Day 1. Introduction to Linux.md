@@ -101,7 +101,6 @@ pwd
 
 **Step 2 — Create a new directory**  
 Create a folder called 'bioinformatics_training' inside your home directory (~).
-This will be the main folder where we will store all practice files.
 ```bash
 mkdir ~/bioinformatics_training
 ```
@@ -333,7 +332,7 @@ In this exercise, you will learn the **basic commands** to interact with LISC us
 **Step 1 — Connect to the HPC system**  
 Normally you log in via SSH from your terminal.
 ```bash
-ssh <username>@lisc.univie.ac.at
+ssh <username>@login02.lisc.univie.ac.at
 ```
 
 After login, check where you are:
