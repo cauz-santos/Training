@@ -18,9 +18,9 @@ Bash (Bourne-Again SHell) is the default command-line interpreter on most Linux 
 
 ### 0) — Data Preparation 
 
-First create a folder for the file outputs of day 6 in your home directory:
+First create a folder for the file outputs of day 2 in your home directory:
    ```bash
-   mkdir 01_scripting
+   mkdir 02_scripting
    ```
 Now, enter the folder with the command `cd`
 
