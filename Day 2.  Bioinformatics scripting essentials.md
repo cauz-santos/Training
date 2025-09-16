@@ -369,6 +369,10 @@ This section includes **two beginner-friendly exercises** to practice essential 
 
 ### Open the Python Interpreter
 
+```bash
+module load python
+```
+
 In your terminal, type:
 
 ```bash
