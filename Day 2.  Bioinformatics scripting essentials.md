@@ -462,20 +462,27 @@ Open a file with `vi filter_samples.py`, copy and paste:
 # filter_samples.py
 
 # Read the file
-with open("sample_metadata.tsv", "r") as infile:
+with open("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_phen_table_120.csv", "r") as infile:
     lines = infile.readlines()
 
-header = lines[0].strip().split("\t")  # Extract column names
-data_lines = lines[1:]  # Skip header
+header = lines[0].strip().split(",")  # CSV uses comma
+data_lines = lines[1:]
 
-print("Samples with treatment = Treated and yield > 15.0:\n")
+print("Samples with SUC (yield) > 15.0:\n")
 
 for line in data_lines:
-    parts = line.strip().split("\t")
-    sample_id, treatment, yield_val = parts[0], parts[1], float(parts[2])
+    if line.strip() == "":
+        continue  # skip empty lines
 
-    if treatment == "Treated" and yield_val > 15.0:
+    parts = line.strip().split(",")
+    if len(parts) < 2:
+        continue  # skip malformed lines
+
+    sample_id, yield_val = parts[0], float(parts[1])
+
+    if yield_val > 15.0:
         print(f"{sample_id}: Yield = {yield_val}")
+
 ```
 After saving the file, run in the terminal with `python filter_samples.py`.
 
