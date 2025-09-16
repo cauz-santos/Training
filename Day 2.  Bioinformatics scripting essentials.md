@@ -462,7 +462,7 @@ Open a file with `vi filter_samples.py`, copy and paste:
 # filter_samples.py
 
 # Read the file
-with open("gwas_phen_table_120.csv", "r") as infile:
+with open("/lisc/scratch/course/pgbiow/data/metadata/gwas_phen_table_120.csv", "r") as infile:
     lines = infile.readlines()
 
 header = lines[0].strip().split(",")  # CSV uses comma
