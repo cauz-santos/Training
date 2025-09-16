@@ -313,10 +313,10 @@ ls *.txt | wc -l
 
 ```bash
 # Show the first 5 lines of a table
-head -5 sample_metadata.tsv
+head -5 /lisc/scratch/course/pgbiow/data/metadata/gwas_phen_table_120.csv
 
 # Show the last 5 lines of the same file
-tail -5 sample_metadata.tsv
+tail -5 /lisc/scratch/course/pgbiow/data/metadata/gwas_phen_table_120.csv
 ```
 
 **3. grep**  
@@ -331,16 +331,6 @@ grep -c "Status: FAIL" *_cleaned.txt
 ```
 - grep "pattern" file prints lines containing that pattern.
 - -c counts matches instead of printing them.
-
-**4. cut**  
-`cut` extracts columns from tabular data.  
-By default, it assumes the file is tab-delimited (\t).
-
-```bash
-# Extract the second column (Treatment) from a metadata table
-cut -f2 sample_metadata.tsv | head
-```
-
 
 ___
 
