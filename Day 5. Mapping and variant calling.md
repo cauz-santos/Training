@@ -201,7 +201,7 @@ But in other applications (e.g., RNA-seq or ChIP-seq), duplicates may carry biol
 #!/bin/bash
 #SBATCH --job-name=bwa_picard_pipeline
 #SBATCH --cpus-per-task=4
-#SBATCH --mem=12G
+#SBATCH --mem=60G
 #SBATCH --partition=basic
 #SBATCH --time=06:00:00
 #SBATCH -o bwa_picard_pipeline.out
