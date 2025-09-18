@@ -230,12 +230,12 @@ else
 fi
 
 # Define directories
-TRIMMED_DIR="/lisc/scratch/course/pgbiow/04_qc_trimming/trimmed"
-REF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference"
-OUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+TRIMMED_DIR="/lisc/scratch/course/pgbiow/DATA_ver/trimmed/TEST"
+REF_DIR="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference"
+OUT_DIR="/path to your user/05_mapping_varriant_calling/bwa_mapping"
 
 # Reference genome
-GENOME="$REF_DIR/Elaeis_guineensis_genomic.fna"
+GENOME="$REF_DIR/EG5_reference_genomic.fna"
 
 # Create output directory if it doesn’t exist
 mkdir -p "$OUT_DIR"
@@ -304,7 +304,7 @@ To inspect one of the SAM files, we can simply use head:
 
 ```bash
 #### Look at the first 30 lines of a SAM file
-head -n 30 EO_Ind10_trimmed.sam
+head -n 30 4202592_trimmed.sam
 ```
 
 You should see a few header lines, followed by the first alignments.
@@ -476,7 +476,7 @@ This command provides a summary of coverage statistics, including the percentage
 
 ```bash
 # Run on a single BAM file
-samtools coverage EO_Ind10_trimmed.sorted.dedup.bam
+samtools coverage 4202592_trimmed.sorted.dedup.bam
 ```
 
 **❓ Question:** What is the difference between breadth of coverage and depth of coverage? Why are both important?
@@ -515,7 +515,7 @@ module load qualimap
 BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
 
 # Example: run on one BAM file
-BAM="$BAM_DIR/EO_Ind10_trimmed.sorted.bam"
+BAM="$BAM_DIR/4202592_trimmed.sorted.dedup.bam"
 
 # Run Qualimap bamqc
 qualimap bamqc -bam "$BAM" -outdir "$BAM_DIR/qualimap_report_EO_Ind10" -nt 4
