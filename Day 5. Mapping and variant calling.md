@@ -140,11 +140,11 @@ let's create the `index_genome.sh` file:
 module load bwa
 
 # Define input and output directories
-INPUT_DIR="/lisc/scratch/course/pgbiow/data/genomes"
+INPUT_DIR="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference/"
 OUTPUT_DIR="/path/to/your/home/directory/05_mapping_varriant_calling/reference"
 
 # Define the reference genome file name
-GENOME="Elaeis_guineensis_genomic.fna"
+GENOME="EG5_reference_genomic.fna"
 
 # Create output directory if it doesn’t exist
 mkdir -p "$OUTPUT_DIR"
