@@ -740,7 +740,6 @@ vcftools --gzvcf "$IN_VCF" \
   --maf 0.01 \
   --max-missing 0.9 \
   --min-meanDP 10 \
-  --max-meanDP 40 \
   --recode --recode-INFO-all \
   --out joint_variants.filtered
 
