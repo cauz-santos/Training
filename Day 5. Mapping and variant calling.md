@@ -738,7 +738,6 @@ vcftools --gzvcf "$IN_VCF" \
   --remove-indels \
   --min-alleles 2 --max-alleles 2 \
   --maf 0.2 \
-  --min-meanDP 10 \
   --recode --recode-INFO-all \
   --out joint_variants.filtered
 
