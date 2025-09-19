@@ -727,7 +727,7 @@ module load bcftools
 module load htslib
 
 # Directories
-VCF_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bcftools_variants"
+VCF_DIR="/path/to/your/home/05_mapping_varriant_calling/bcftools_variants"
 cd "$VCF_DIR" || exit 1
 
 # Input joint VCF file
