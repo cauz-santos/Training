@@ -526,7 +526,7 @@ On your laptop, create a folder for today’s results (e.g., inside your course 
 
 ```bash
 mkdir -p ~/bioinformatics_training/day5/qualimap
-cd ~/bioinformatics_training/day4/qualimap
+cd ~/bioinformatics_training/day5/qualimap
 ```
 
 ```bash
