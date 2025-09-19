@@ -530,7 +530,7 @@ cd ~/bioinformatics_training/day5/qualimap
 ```
 
 ```bash
-scp your_username@login02.lisc.univie.ac.at:/path/ to /your /user/05_mapping_varriant_calling/bwa_mapping/qualimapReport.html ~/bioinformatics_training/day5/
+scp your_username@login02.lisc.univie.ac.at:/path/ to /your /user/05_mapping_varriant_calling/bwa_mapping/qualimap_report_4202592/qualimapReport.html ~/bioinformatics_training/day5/
 ```
 
 Then open the HTML report in your browser.
