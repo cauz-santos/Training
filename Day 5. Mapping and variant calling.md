@@ -304,7 +304,7 @@ To inspect one of the SAM files, we can simply use head:
 
 ```bash
 #### Look at the first 30 lines of a SAM file
-head -n 30 4202592_trimmed.sam
+head -n 30 /path to your user/05_mapping_varriant_calling/bwa_mapping/4202592_trimmed.sam
 ```
 
 You should see a few header lines, followed by the first alignments.
@@ -470,21 +470,6 @@ When it finishes, check the output file:
 cat /path to your user/05_mapping_varriant_calling/bwa_mapping/coverage_statistics.txt
 ```
 
-**A more comprehensive view with `samtools coverage`:**
-
-This command provides a summary of coverage statistics, including the percentage of the genome covered at different depths.
-
-```bash
-# Run on a single BAM file
-module load samtools
-
-samtools coverage /path to your user/05_mapping_varriant_calling/bwa_mapping4202592_trimmed.sorted.dedup.bam
-```
-
-**❓ Question:** What is the difference between breadth of coverage and depth of coverage? Why are both important?
-
-___
-
 ### Optional Exercise: Inspecting Alignments with Qualimap  
 
 While `samtools flagstat` and `samtools coverage` give good summary statistics, sometimes it’s useful to generate more detailed reports with graphs and summaries. For this, we can use **Qualimap**.  
@@ -520,7 +505,7 @@ BAM_DIR="/path to your user/05_mapping_varriant_calling/bwa_mapping"
 BAM="$BAM_DIR/4202592_trimmed.sorted.dedup.bam"
 
 # Run Qualimap bamqc
-qualimap bamqc -bam "$BAM" -outdir "$BAM_DIR/qualimap_report_EO_Ind10" -nt 4
+qualimap bamqc -bam "$BAM" -outdir "$BAM_DIR/qualimap_report_4202592" -nt 4
 ```
 
 Save and exit (`ESC`, then `:wq`).
@@ -545,7 +530,7 @@ cd ~/bioinformatics_training/day4/qualimap
 ```
 
 ```bash
-scp your_username@login02.lisc.univie.ac.at:/path/to/qualimap_report_sample1/qualimapReport.html ~/bioinformatics_training/day5/
+scp your_username@login02.lisc.univie.ac.at:/path/ to /your /user/05_mapping_varriant_calling/bwa_mapping/qualimapReport.html ~/bioinformatics_training/day5/
 ```
 
 Then open the HTML report in your browser.
