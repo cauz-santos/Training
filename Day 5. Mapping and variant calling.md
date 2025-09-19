@@ -560,11 +560,11 @@ We will use `bcftools mpileup` and `bcftools call`.
 module load bcftools
 
 # Reference genome
-GENOME="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/reference/Elaeis_guineensis_genomic.fna"
+GENOME="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference/EG5_reference_genomic.fna"
 
 # Directories
-BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
-OUT_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bcftools_variants"
+BAM_DIR="/path to your user/05_mapping_varriant_calling/bwa_mapping"
+OUT_DIR="/path to your user/05_mapping_varriant_calling/bcftools_variants"
 
 # Create output directory if it doesn’t exist
 mkdir -p "$OUT_DIR"
