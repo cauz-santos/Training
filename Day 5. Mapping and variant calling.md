@@ -380,7 +380,7 @@ vi check_mapping_rate.sh
 module load samtools
 
 # Define directory with BAMs
-BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+BAM_DIR="/path to your user/05_mapping_varriant_calling/bwa_mapping"
 OUT_FILE="$BAM_DIR/mapping_statistics.txt"
 
 # Go to BAM directory
@@ -406,7 +406,7 @@ sbatch check_mapping_rate.sh
 
 When it finishes, check the output file:
 ```bash
-cat /lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping/mapping_statistics.txt
+cat /path to your user/05_mapping_varriant_calling/bwa_mapping/mapping_statistics.txt
 ```
 
 **Look for the line that says `... + ... mapped (...%)`.** This is your overall mapping rate.
@@ -439,7 +439,7 @@ vi check_coverage.sh
 module load samtools
 
 # Directories
-BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+BAM_DIR="/path to your user/05_mapping_varriant_calling/bwa_mapping"
 OUT_FILE="$BAM_DIR/coverage_statistics.txt"
 
 cd "$BAM_DIR" || exit 1
@@ -467,7 +467,7 @@ sbatch check_coverage.sh
 
 When it finishes, check the output file:
 ```bash
-cat /lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping/coverage_statistics.txt
+cat /path to your user/05_mapping_varriant_calling/bwa_mapping/coverage_statistics.txt
 ```
 
 **A more comprehensive view with `samtools coverage`:**
@@ -476,7 +476,9 @@ This command provides a summary of coverage statistics, including the percentage
 
 ```bash
 # Run on a single BAM file
-samtools coverage 4202592_trimmed.sorted.dedup.bam
+module load samtools
+
+samtools coverage /path to your user/05_mapping_varriant_calling/bwa_mapping4202592_trimmed.sorted.dedup.bam
 ```
 
 **❓ Question:** What is the difference between breadth of coverage and depth of coverage? Why are both important?
@@ -512,7 +514,7 @@ Press `i` to enter insert mode, then paste:
 module load qualimap
 
 # Path to BAM directory
-BAM_DIR="/lisc/scratch/course/pgbiow/05_mapping_varriant_calling/bwa_mapping"
+BAM_DIR="/path to your user/05_mapping_varriant_calling/bwa_mapping"
 
 # Example: run on one BAM file
 BAM="$BAM_DIR/4202592_trimmed.sorted.dedup.bam"
