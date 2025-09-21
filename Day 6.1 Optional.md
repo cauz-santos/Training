@@ -284,6 +284,8 @@ dev.off()
 ```
 
 **Count how many SNPs are actually polymorphic in your data and how informative they are:**  
+Create a file called ```panel_qc_stats.slurm```and then copy and paste:
+
 ```bash
 #!/bin/bash
 #SBATCH --job-name=panel_qc_stats
@@ -374,15 +376,15 @@ While PLINK is strong for data preparation and sample-level summaries, VCFtools 
 
    module load vcftools
 
-   IN_VCF=/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"  # same input used in Step 0.1
+   IN_VCF=/lisc/scratch/course/pgbiow/GWAS/Report_DOp25-10208_4.1.vcf"  # same input used in Step 0.1
 
    echo "Per-individual heterozygosity and inbreeding coefficient..."
-   vcftools --gzvcf "${IN_VCF}" \
+   vcftools --vcf "${IN_VCF}" \
             --het \
             --out ./diversity/vcftools_het
 
    echo "Per-individual missingness..."
-   vcftools --gzvcf "${IN_VCF}" \
+   vcftools --vcf "${IN_VCF}" \
             --missing-indv \
             --out ./diversity/vcftools_missing
 
@@ -410,70 +412,6 @@ While PLINK is strong for data preparation and sample-level summaries, VCFtools 
 > - Detects individuals with **low diversity** that may reduce genetic gain.  
 > - Identifies **outliers or contaminated samples** early.  
 > - Guides decisions on which individuals to advance or discard in breeding pipelines.
-
-### Step 3 — FST Between Two Populations (VCFtools)
-
-We can calculate **Weir & Cockerham’s FST** between two populations using VCFtools.
-
-
-**1. Create population files**  
-
-From the metadata CSV, extract the sample IDs for each population. Each file must contain **one sample ID per line**.
-
-```bash
-# Metadata file
-META=/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv
-
-# Create pop1.txt (example: Al-Ain - Abu Dhabi)
-awk -F',' 'NR>1 {gsub(/"/,""); if($2=="Al-Ain - Abu Dhabi") print $1}' $META > ./diversity/pop1.txt
-
-# Create pop2.txt (replace with the second population name)
-awk -F',' 'NR>1 {gsub(/"/,""); if($2=="Ras al-Khaimah") print $1}' $META > ./diversity/pop2.txt
-
-# Check that both lists have samples
-wc -l ./diversity/pop1.txt ./diversity/pop2.txt
-```
-
-**2. Create a script 12_vcftools_fst.sh:**
-
-1. Open:
-   ```bash
-   vi 12_vcftools_fst.sh
-   ```
-2. Press `i`.  
-3. **Copy & paste**:
-   
-```bash
-#!/bin/bash
-#SBATCH --job-name=vcftools_fst
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
-#SBATCH --time=00:10:00
-#SBATCH -o diversity/vcftools_fst.out
-#SBATCH -e diversity/vcftools_fst.err
-
-module load vcftools
-
-vcftools --gzvcf /lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz \
-         --weir-fst-pop ./diversity/pop1.txt \
-         --weir-fst-pop ./diversity/pop2.txt \
-         --out ./diversity/fst_result
-```
-4. To save: `Esc`, `:wq`, `Enter`.  
-
-5. Submit:
-```bash
-sbatch 12_vcftools_fst.sh
-```
-6. Inspect results:
-```bash
-head ./diversity/fst_result.weir.fst
-```
-
-To compute the mean FST:
-```bash
-awk 'NR>1 && $3!="nan"{s+=$3; n++} END{if(n>0) print "Mean FST = " s/n; else print "No valid sites"}' ./diversity/fst_result.weir.fst
-```
 
 ---
 
