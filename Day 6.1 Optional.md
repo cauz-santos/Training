@@ -669,7 +669,7 @@ Otherwise, you will get the error:
 cd ./plink
 
 # Backup the original .bim file
-cp my_data_pruned.bim my_data_pruned.bim.backup
+cp my_data.bim my_data.bim.backup
 
 # Rewrite the first column: remove "chrLG" prefix and keep only the number
 awk '{
@@ -677,7 +677,7 @@ awk '{
     gsub("chrLG","",$1)
   }
   print
-}' OFS='\t' my_data_pruned.bim.backup > my_data_pruned.bim
+}' OFS='\t' my_data.bim.backup > my_data.bim
 ```
 
 ### Step 1 - Run ADMIXTURE for different K values
@@ -698,7 +698,7 @@ ADMIXTURE takes PLINK BED files as input. We will run it for `K=2` to `K=5` as a
 module load admixture
 
 # Input dataset: LD-pruned files created in Step 2 (my_data_pruned.bed/.bim/.fam)
-INPUT_BASE_PRUNED="./plink/my_data_pruned"
+INPUT_BASE_PRUNED="./plink/my_data"
 
 # Make sure output folder exists
 mkdir -p admixture
@@ -764,7 +764,7 @@ library(reshape2)
 library(dplyr)
 
 # ---- 1) Load Q (set the K you want) ----
-Qfile <- "./admixture/my_data_pruned.2.Q"   # change to .3.Q, .4.Q, etc.
+Qfile <- "./admixture/my_data.2.Q"   # change to .3.Q, .4.Q, etc.
 q_df  <- read.table(Qfile, header = FALSE)
 K     <- ncol(q_df)                         # infer K
 colnames(q_df) <- paste0("Cluster", seq_len(K))
@@ -921,43 +921,62 @@ Copy this into your R session (on the cluster with graphics enabled or in RStudi
 
 ```r
 # ================================
-# SNP Density Genome-Wide Heatmap
+# SNP Density Heatmap
 # ================================
 
 library(ggplot2)
 library(dplyr)
-library(scales)   # for Mb axis labels
+library(scales)
 
-# Step 1: Load SNP density data
+# 1) Load
 snp_df <- read.table("./snv_density/snp_density.txt", header = FALSE)
 colnames(snp_df) <- c("Count", "Chromosome", "Window_Start", "Window_End")
 
-# Step 2: Calculate window midpoint
+# 2) Canonicalize contig names (collapse aliases like "..._chromosome_6_EG5")
 snp_df <- snp_df %>%
-  mutate(Window_Mid = (Window_Start + Window_End) / 2)
+  mutate(
+    Canonical = sub("_chromosome_.*$", "", Chromosome),           # e.g., "NC_025998.1"
+    Window_Mid = (Window_Start + Window_End) / 2,
+    Window_Width = pmax(1, Window_End - Window_Start)             # avoid zero width
+  )
 
-# Step 3: Order chromosomes
-snp_df$Chromosome <- factor(snp_df$Chromosome,
-                            levels = sort(unique(snp_df$Chromosome)))
+# 3) Identify top 16 contigs by span (max Window_End per Canonical)
+top16_tbl <- snp_df %>%
+  group_by(Canonical) %>%
+  summarise(span = max(Window_End, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(span)) %>%
+  slice_head(n = 16)
 
-# Step 4: Heatmap plot (interactive in RStudio)
-p <- ggplot(snp_df, aes(x = Window_Mid/1e6, y = Chromosome, fill = Count)) +
-  geom_tile(height = 0.9) +
+top16_ids <- top16_tbl$Canonical
+
+snp_top <- snp_df %>%
+  filter(Canonical %in% top16_ids)
+
+# 4) Order y-axis by decreasing span (largest at top)
+snp_top$Canonical <- factor(
+  snp_top$Canonical,
+  levels = top16_tbl$Canonical         # already sorted desc
+)
+
+# 5) Plot with proper tile width (in Mb)
+p <- ggplot(snp_top,
+            aes(x = Window_Mid/1e6, y = Canonical, fill = Count)) +
+  geom_tile(aes(width = Window_Width/1e6), height = 0.9) +
   scale_fill_gradientn(colours = c("darkgreen","green","yellow","orange","red"),
                        name = "SNPs") +
   scale_x_continuous(labels = label_number(suffix = "Mb")) +
   theme_minimal(base_size = 14) +
-  labs(title = "SNP Density per 100 kb window",
+  labs(title = "SNP Density per 100 kb window (Top 16 Contigs)",
        x = "Genomic Position",
-       y = "Chromosome") +
+       y = "Contig") +
   theme(panel.grid = element_blank(),
         axis.text.y = element_text(face = "bold"),
         plot.title = element_text(hjust = 0.5, face = "bold"))
 
-print(p)   # shows plot in RStudio
+print(p)
 
-# Step 5: Save as PDF in snv_density folder
-pdf("snv_density/snp_density_heatmap.pdf", width = 10, height = 6)
+# Save
+pdf("snv_density/snp_density_heatmap_top16.pdf", width = 10, height = 6)
 print(p)
 dev.off()
 ```
