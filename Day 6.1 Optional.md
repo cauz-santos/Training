@@ -684,6 +684,8 @@ awk '{
 
 ADMIXTURE takes PLINK BED files as input. We will run it for `K=2` to `K=5` as an example. It is recommended to run ADMIXTURE multiple times for each K value with different random seeds to check for convergence.
 
+First, move back to your folder `06_diversity_structure` using `cd`
+
 **Create a file named `run_admixture.sh` using `vi`:**
 
 ```bash
