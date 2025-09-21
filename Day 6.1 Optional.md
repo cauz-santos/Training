@@ -168,6 +168,7 @@ echo "  PLINK files:   ${OUT_DIR}/${OUT_BASENAME}.bed/.bim/.fam"
    sbatch 00_convert_vcf_to_plink.sh
 ```
 ---
+
 ## Part 1 — Genetic Diversity Estimation (PLINK + VCFtools)
 
 We will compute **heterozygosity**, **inbreeding (F)**, **missingness**, and **allele frequencies** to assess data quality and diversity.  
