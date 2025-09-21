@@ -89,27 +89,77 @@ What this produces:
 2. Press `i` to enter *INSERT* mode.  
 3. **Copy & paste** the content below:
    ```bash
-   #!/bin/bash
-   #SBATCH --job-name=vcf2plink
-   #SBATCH --cpus-per-task=1
-   #SBATCH --mem=1G
-   #SBATCH --time=00:30:00
-   #SBATCH -o vcf2plink.out
-   #SBATCH -e vcf2plink.err
+#!/bin/bash
+#SBATCH --job-name=vcf2plink_fix
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=4G
+#SBATCH --time=01:00:00
+#SBATCH -o vcf2plink_fix.out
+#SBATCH -e vcf2plink_fix.err
 
-   module load PLINK
+set -euo pipefail
 
-   # Input VCF (from Day 5)
-   IN_VCF="/lisc/scratch/course/pgbiow/GWAS/Report_DOp25-10208_4.1.vcf"
+module purge
+module load samtools
+module load bcftools
+module load PLINK
 
-   echo "Converting ${IN_VCF} to PLINK binary format..."
-   plink --vcf "${IN_VCF}" \
-         --make-bed \
-         --allow-extra-chr \
-         --double-id \
-         --out ./plink/my_data
+# ----- INPUTS -----
+IN_VCF="/lisc/scratch/course/pgbiow/GWAS/Report_DOp25-10208_4.1.vcf"
+REF_FASTA="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference/EG5_reference_genomic.fna"
+OUT_DIR="/path to your user/06_diversity_structure/plink"
+OUT_BASENAME="my_data"
+# ------------------
 
-   echo "Done. Created: my_data.bed / .bim / .fam"
+mkdir -p "$OUT_DIR"
+
+# Ensure reference index (for contig lengths)
+[ -f "${REF_FASTA}.fai" ] || samtools faidx "$REF_FASTA"
+
+# Split header/body around the #CHROM line (operate on plain text VCF)
+chrom_line=$(grep -n '^#CHROM' "$IN_VCF" | cut -d: -f1)
+if [[ -z "$chrom_line" ]]; then
+  echo "ERROR: #CHROM line not found in $IN_VCF" >&2
+  exit 1
+fi
+
+HEADER="$OUT_DIR/header.orig.txt"
+BODY="$OUT_DIR/body.vcf"
+head -n $((chrom_line-1)) "$IN_VCF" > "$HEADER"
+tail -n +"$chrom_line" "$IN_VCF" > "$BODY"
+
+# 1) Fix GT header line: Type=Integer -> Type=String (required for '0/1' etc.)
+HEADER_FIXED="$OUT_DIR/header.fixed.txt"
+sed -E 's/^(##FORMAT=<ID=GT,Number=1,Type=)Integer(,Description="Genotype">)/\1String\2/' \
+  "$HEADER" > "$HEADER_FIXED"
+
+# 2) Append ##contig lines from reference .fai (must be before #CHROM)
+CONTIGS_HDR="$OUT_DIR/contigs.hdr"
+awk 'BEGIN{OFS=""} {print "##contig=<ID=" $1 ",length=" $2 ">"}' "${REF_FASTA}.fai" > "$CONTIGS_HDR"
+cat "$CONTIGS_HDR" >> "$HEADER_FIXED"
+
+# 3) Recombine fixed header + body into a new VCF (uncompressed)
+FIXED_VCF="$OUT_DIR/${OUT_BASENAME}.fixed.vcf"
+cat "$HEADER_FIXED" "$BODY" > "$FIXED_VCF"
+
+# 4) PRE-CLEAN with bcftools so PLINK won’t choke:
+#    keep only SNPs, biallelic, and REF/ALT strictly A/C/G/T
+CLEAN_VCF_GZ="$OUT_DIR/${OUT_BASENAME}.clean.vcf.gz"
+bcftools view -i 'TYPE="snp" && N_ALT=1 && REF~"^[ACGT]$" && ALT~"^[ACGT]$"' \
+  -Oz -o "$CLEAN_VCF_GZ" "$FIXED_VCF"
+bcftools index -t "$CLEAN_VCF_GZ"
+
+# 5) Convert to PLINK bed (filters already applied upstream)
+plink --vcf "$CLEAN_VCF_GZ" \
+      --make-bed \
+      --double-id \
+      --allow-extra-chr \
+      --out "${OUT_DIR}/${OUT_BASENAME}"
+
+echo "Done."
+echo "  Fixed VCF:     $FIXED_VCF"
+echo "  Clean VCF:     $CLEAN_VCF_GZ"
+echo "  PLINK files:   ${OUT_DIR}/${OUT_BASENAME}.bed/.bim/.fam"
    ```
 4. Press `Esc`, type `:wq` and press `Enter` to save and exit.  
 5. Submit the job:
