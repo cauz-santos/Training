@@ -212,7 +212,8 @@ Calculating heterozygosity and missingness is important because it allows us to 
          --out ./diversity/plink_missing
 
    echo "Done. Outputs: plink_het.het, plink_missing.imiss"
-```
+   ```
+
 4. `Esc`, `:wq`, `Enter`.  
 5. Submit:
    ```bash
