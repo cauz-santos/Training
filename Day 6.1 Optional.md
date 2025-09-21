@@ -691,33 +691,69 @@ First, move back to your folder `06_diversity_structure` using `cd`
 ```bash
 #!/bin/bash
 #SBATCH --job-name=run_admixture
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=4G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=6G
 #SBATCH --time=02:00:00
 #SBATCH -o admixture/admixture.out
 #SBATCH -e admixture/admixture.err
 
+set -euo pipefail
+
+module purge
+module load PLINK
 module load admixture
 
-# Input dataset: LD-pruned files created in Step 2 (my_data_pruned.bed/.bim/.fam)
-INPUT_BASE_PRUNED="./plink/my_data"
+# ---------------- user paths ----------------
+# QC’d dataset (one replicate per individual), BEFORE LD-pruning:
+BASE="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink/my_data"
 
-# Make sure output folder exists
-mkdir -p admixture
+# Directory for outputs
+OUTDIR="/lisc/data/scratch/course/pgbiow/06_diversity_structure/admixture"
+mkdir -p "$OUTDIR"
+# --------------------------------------------
 
-# Loop through different K values
-for K in {2..6}
-do
-    echo "Running ADMIXTURE for K=$K"
-    admixture --cv -j4 ${INPUT_BASE_PRUNED}.bed $K | tee admixture/admixture_K${K}.log
+THREADS="${SLURM_CPUS_PER_TASK:-1}"
 
-    # Move result files into admixture/ folder
-    mv ${INPUT_BASE_PRUNED}.${K}.Q admixture/ 2>/dev/null
-    mv ${INPUT_BASE_PRUNED}.${K}.P admixture/ 2>/dev/null
+echo "[$(date)] Step 1: LD prune (skip if you already have a pruned set)"
+plink --bfile "$BASE" --allow-extra-chr \
+      --indep-pairwise 50 5 0.2 \
+      --out "$OUTDIR/prune"
+
+plink --bfile "$BASE" --allow-extra-chr \
+      --extract "$OUTDIR/prune.prune_in" \
+      --make-bed --out "$OUTDIR/my_data.pruned"
+
+# If you already had a pruned set, set BASE_PRUNED to it instead:
+BASE_PRUNED="$OUTDIR/my_data.pruned"
+
+echo "[$(date)] Step 2: Make an integer-chromosome copy for ADMIXTURE"
+# Map each distinct chromosome name in .bim to an integer 1..N
+awk '{
+  chr=$1;
+  if (!(chr in seen)) { seen[chr]=++c }
+  $1=seen[chr];
+  print
+}' "$BASE_PRUNED.bim" > "$OUTDIR/my_data.pruned.intchr.bim"
+
+# Copy .bed/.fam alongside the new .bim
+cp "$BASE_PRUNED.bed" "$OUTDIR/my_data.pruned.intchr.bed"
+cp "$BASE_PRUNED.fam" "$OUTDIR/my_data.pruned.intchr.fam"
+
+INTCHR_BASE="$OUTDIR/my_data.pruned.intchr"
+
+echo "[$(date)] Step 3: Run ADMIXTURE with CV"
+for K in 2 3 4 5 6; do
+  echo "Running ADMIXTURE K=$K"
+  admixture --cv=5 -j"$THREADS" "${INTCHR_BASE}.bed" $K | tee "$OUTDIR/admixture_K${K}.log"
+  # Move/rename outputs
+  mv "${INTCHR_BASE}.${K}.Q" "$OUTDIR/admixture_K${K}.Q"
+  mv "${INTCHR_BASE}.${K}.P" "$OUTDIR/admixture_K${K}.P"
+  # Extract CV error line for quick summary
+  grep -E "CV error" "$OUTDIR/admixture_K${K}.log" || true
 done
 
-echo "ADMIXTURE runs complete. Results saved in ./admixture/"
-
+echo "[$(date)] All done. Files in: $OUTDIR"
+echo "Tip: pick K with the lowest CV error (see lines above)."
 ```
 
 **Submit the job:**
