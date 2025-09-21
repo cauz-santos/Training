@@ -452,7 +452,7 @@ We will run PCA on the **LD-pruned** dataset produced in **Step 2** (`my_data_pr
    module load PLINK
 
    # LD-pruned dataset from Part 0
-   INPUT_BASE_PRUNED="./plink/my_data_pruned"
+   INPUT_BASE_PRUNED="./plink/my_data"
 
    echo "Running PCA on ${INPUT_BASE_PRUNED}..."
    plink --bfile "${INPUT_BASE_PRUNED}" \
