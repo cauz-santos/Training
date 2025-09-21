@@ -88,7 +88,8 @@ What this produces:
    ```
 2. Press `i` to enter *INSERT* mode.  
 3. **Copy & paste** the content below:
-   ```bash
+
+```bash
 #!/bin/bash
 #SBATCH --job-name=vcf2plink_fix
 #SBATCH --cpus-per-task=2
@@ -165,7 +166,7 @@ echo "  PLINK files:   ${OUT_DIR}/${OUT_BASENAME}.bed/.bim/.fam"
 5. Submit the job:
    ```bash
    sbatch 00_convert_vcf_to_plink.sh
-   ```
+```
 ---
 ## Part 1 — Genetic Diversity Estimation (PLINK + VCFtools)
 
