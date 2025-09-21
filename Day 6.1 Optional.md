@@ -353,6 +353,53 @@ Submit:
 sbatch panel_qc_stats.sh
 ```
 
+### Post-Run QC (Oil Palm Panel)
+
+
+**1) Quick sanity: counts**  
+
+```bash
+OUTD="/lisc/data/scratch/course/pgbiow/06_diversity_structure/diversity"
+
+# Samples and SNPs after MAF≥0.05 filter
+echo "Samples:" $(wc -l < "$OUTD/my_data.maf05.fam")
+echo "SNPs:"    $(wc -l < "$OUTD/my_data.maf05.bim")
+```
+
+**Interpretation:**
+- Make sure the sample count matches expectations.
+- SNP count is how many variants survived the **MAF ≥ 0.05** filter.
+
+**2) Frequency spectrum summary (already computed)**  
+
+```bash
+# Peek at the first few freq rows
+head "$OUTD/panel_freq.frq"
+
+# Monomorphic / rare / informative summary you generated
+cat "$OUTD/panel_freq.summary.txt"
+```
+
+**Tip:** If “**Informative (MAF≥0.05)**” is low, inflated F in raw data was expected (lots of near-fixed loci).
+
+
+**3) Inbreeding (F) on informative SNPs**  
+
+```bash
+# Preview
+head "$OUTD/plink_het_maf05.het"
+
+# Summary stats
+awk 'NR>1{n++; F=$6; if(n==1||F<min)min=F; if(n==1||F>max)max=F; sum+=F}
+     END{printf "n=%d  meanF=%.4f  minF=%.4f  maxF=%.4f\n", n, sum/n, min, max}'     "$OUTD/plink_het_maf05.het"
+
+# Top 10 highest/lowest F
+awk 'NR>1{print $1,$2,$6}' "$OUTD/plink_het_maf05.het" | sort -k3,3nr | head
+awk 'NR>1{print $1,$2,$6}' "$OUTD/plink_het_maf05.het" | sort -k3,3n  | head
+```
+
+**Guideline (oil palm):** After QC, most **F** should be around **0 to 0.05**. Much higher suggests population structure (Wahlund effect), close relatives, or lingering QC issues—compute F **within groups** and/or remove duplicates/relatives before final interpretation.
+
 
 ### Step 2 — VCFtools: Heterozygosity, Missingness (Optional)
 
