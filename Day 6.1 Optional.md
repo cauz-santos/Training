@@ -284,7 +284,7 @@ dev.off()
 ```
 
 **Count how many SNPs are actually polymorphic in your data and how informative they are:**  
-Create a file called ```panel_qc_stats.slurm```and then copy and paste:
+Create a file called ```panel_qc_stats.sh```and then copy and paste:
 
 ```bash
 #!/bin/bash
@@ -308,6 +308,7 @@ mkdir -p "$OUTD"
 
 echo "[$(date)] Step 1: Frequency spectrum"
 plink --bfile "$BASE" \
+      --allow-extra-chr \
       --freq \
       --threads "$THREADS" \
       --out "$OUTD/panel_freq"
@@ -327,12 +328,14 @@ END{
 
 echo "[$(date)] Step 3: Recompute F on informative SNPs only (MAF>=0.05)"
 plink --bfile "$BASE" \
+      --allow-extra-chr \
       --maf 0.05 \
       --make-bed \
       --threads "$THREADS" \
       --out "$OUTD/my_data.maf05"
 
 plink --bfile "$OUTD/my_data.maf05" \
+      --allow-extra-chr \
       --het \
       --threads "$THREADS" \
       --out "$OUTD/plink_het_maf05"
@@ -347,7 +350,7 @@ echo "  - $OUTD/plink_het_maf05.het"
 
 Submit:
 ```bash
-sbatch panel_qc_stats.slurm
+sbatch panel_qc_stats.sh
 ```
 
 
