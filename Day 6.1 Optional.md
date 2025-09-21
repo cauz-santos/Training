@@ -283,6 +283,72 @@ plot(miss$F_MISS, het$F,
 dev.off()
 ```
 
+**Count how many SNPs are actually polymorphic in your data and how informative they are:**  
+```bash
+#!/bin/bash
+#SBATCH --job-name=panel_qc_stats
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=2G
+#SBATCH --time=00:20:00
+#SBATCH -o panel_qc_stats.out
+#SBATCH -e panel_qc_stats.err
+
+set -euo pipefail
+
+module purge
+module load PLINK
+
+# ---- paths ----
+BASE="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink/my_data"   # prefix of .bed/.bim/.fam
+OUTD="/lisc/data/scratch/course/pgbiow/06_diversity_structure/diversity"
+THREADS="${SLURM_CPUS_PER_TASK:-1}"
+mkdir -p "$OUTD"
+
+echo "[$(date)] Step 1: Frequency spectrum"
+plink --bfile "$BASE" \
+      --freq \
+      --threads "$THREADS" \
+      --out "$OUTD/panel_freq"
+
+echo "[$(date)] Step 2: Summarize mono/rare/informative"
+awk 'NR>1{
+  maf=$5;
+  mono+=(maf==0);
+  rare+=(maf>0 && maf<0.01);
+  inf+=(maf>=0.05);
+  tot++
+}
+END{
+  printf "Total=%d\nMonomorphic=%d (%.1f%%)\nRare(MAF<0.01)=%d (%.1f%%)\nInformative(MAF>=0.05)=%d (%.1f%%)\n",
+         tot, mono, 100*mono/tot, rare, 100*rare/tot, inf, 100*inf/tot
+}' "$OUTD/panel_freq.frq" | tee "$OUTD/panel_freq.summary.txt"
+
+echo "[$(date)] Step 3: Recompute F on informative SNPs only (MAF>=0.05)"
+plink --bfile "$BASE" \
+      --maf 0.05 \
+      --make-bed \
+      --threads "$THREADS" \
+      --out "$OUTD/my_data.maf05"
+
+plink --bfile "$OUTD/my_data.maf05" \
+      --het \
+      --threads "$THREADS" \
+      --out "$OUTD/plink_het_maf05"
+
+echo "[$(date)] Done."
+echo "Outputs:"
+echo "  - $OUTD/panel_freq.frq"
+echo "  - $OUTD/panel_freq.summary.txt"
+echo "  - $OUTD/my_data.maf05.{bed,bim,fam}"
+echo "  - $OUTD/plink_het_maf05.het"
+```
+
+Submit:
+```bash
+sbatch panel_qc_stats.slurm
+```
+
+
 ### Step 2 — VCFtools: Heterozygosity, Missingness (Optional)
 
 We will use another tool, **VCFtools**, that complements PLINK.  
