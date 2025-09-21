@@ -478,102 +478,115 @@ Copy the following script into RStudio (or an interactive R session on the clust
 
 ```r
 # ================================
-# PCA Visualization Script
+# PCA QC for technical replicates (A_/B_)
 # ================================
 
-# Load library
-library(ggplot2)
+suppressPackageStartupMessages(library(ggplot2))
+suppressPackageStartupMessages(library(dplyr))
 
-# --- Load PCA results from PLINK ---
-eigenvec <- read.table("/path/to/your/pca/pca_results.eigenvec", header = FALSE)
-colnames(eigenvec) <- c("FID", "IID", paste0("PC", 1:(ncol(eigenvec)-2)))
+# ---- Paths ----
+eigvec_path <- "/lisc/scratch/course/pgbiow/06_diversity_structure/pca/pca_results.eigenvec"
+eigval_path <- "/lisc/scratch/course/pgbiow/06_diversity_structure/pca/pca_results.eigenval"
+out_dir     <- "/lisc/scratch/course/pgbiow/06_diversity_structure/pca"
 
-# Load eigenvalues
-eigenval <- scan("/path/to/your/pca/pca_results.eigenval")
+# ---- Load PCA ----
+ev <- read.table(eigvec_path, header = FALSE, stringsAsFactors = FALSE)
+colnames(ev) <- c("FID","IID", paste0("PC", seq_len(ncol(ev)-2)))
+eigs <- scan(eigval_path, quiet = TRUE)
+var_exp <- round(100 * eigs / sum(eigs), 2)
 
-# Calculate percentage variance explained
-variance_explained <- round(100 * eigenval / sum(eigenval), 2)
-
-# Print the variance explained for the first 5 PCs
 cat("Variance explained (%):\n")
-print(variance_explained[1:5])
+print(var_exp[1:min(10, length(var_exp))])
 
-# --- Load population labels ---
-# File must contain at least two columns: IID and Population
-# Example:
-# IID    Population
-# sample1   PopA
-# sample2   PopB
-popinfo <- read.csv("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv",
-                    header = TRUE,
-                    stringsAsFactors = FALSE)
+# ---- Parse replicate info ----
+# Replicate label is "A" or "B" if ID starts with "A_" or "B_", else NA
+ev <- ev %>%
+  mutate(Rep = ifelse(grepl("^[AB]_", IID), substr(IID, 1, 1), NA),
+         CoreID = sub("^[AB]_", "", IID))  # remove leading "A_" or "B_"
 
-head(popinfo)
+cat("\nReplicate counts (A/B/NA):\n")
+print(table(ev$Rep, useNA = "ifany"))
 
-# --- Merge data ---
-pca_df <- merge(eigenvec, popinfo, by = "IID")
+# ---- Pair up A/B replicates by CoreID for QC ----
+A <- ev %>% filter(Rep == "A") %>% select(CoreID, starts_with("PC"))
+B <- ev %>% filter(Rep == "B") %>% select(CoreID, starts_with("PC"))
 
-# --- Plot PCA ---
-ggplot(pca_df, aes(x = PC1, y = PC2, color = Population)) +
-  geom_point(size = 3, alpha = 0.8) +
+paired <- inner_join(A, B, by = "CoreID", suffix = c("_A","_B"))
+cat("\nPaired A/B samples found:", nrow(paired), "\n")
+
+# Compute distances between A and B (PC1..PC10 if available, else up to available PCs)
+max_pc <- min(10, sum(grepl("^PC", names(paired))))
+pcA <- as.matrix(paired %>% select(all_of(paste0("PC", 1:max_pc, "_A"))))
+pcB <- as.matrix(paired %>% select(all_of(paste0("PC", 1:max_pc, "_B"))))
+d_pc <- sqrt(rowSums((pcA - pcB)^2))
+paired$dist_PC1_2 <- sqrt((paired$PC1_A - paired$PC1_B)^2 + (paired$PC2_A - paired$PC2_B)^2)
+paired$dist_PCk   <- d_pc
+
+cat("\nReplicate distance summary (Euclidean):\n")
+print(summary(paired$dist_PC1_2))
+cat("95th percentile (PC1-2):", quantile(paired$dist_PC1_2, 0.95, na.rm = TRUE), "\n")
+cat("95th percentile (PC1-", max_pc, "): ", quantile(paired$dist_PCk, 0.95, na.rm = TRUE), "\n", sep = "")
+
+# Flag outlier pairs (top 5 by PC1-2 distance)
+paired_outliers <- paired %>%
+  arrange(desc(dist_PC1_2)) %>%
+  head(5) %>%
+  select(CoreID, dist_PC1_2, dist_PCk)
+cat("\nTop 5 A/B pairs by PC1-2 distance:\n")
+print(paired_outliers)
+
+# ---- Build a plotting dataframe with points for A and B, and segments connecting pairs ----
+plot_df <- ev %>%
+  filter(Rep %in% c("A","B")) %>%
+  select(IID, CoreID, Rep, PC1, PC2)
+
+segments_df <- paired %>%
+  transmute(CoreID,
+            xA = PC1_A, yA = PC2_A,
+            xB = PC1_B, yB = PC2_B)
+
+# ---- Plot: PC1 vs PC2 with A/B points and connecting segments ----
+p <- ggplot() +
+  # segments first (so points sit on top)
+  geom_segment(data = segments_df,
+               aes(x = xA, y = yA, xend = xB, yend = yB),
+               linewidth = 0.5, alpha = 0.5) +
+  geom_point(data = plot_df,
+             aes(x = PC1, y = PC2, color = Rep, shape = Rep),
+             size = 2.8, alpha = 0.9) +
   theme_minimal(base_size = 14) +
-  labs(title = "PCA of Genomic Data (colored by population)",
-       x = paste0("PC1 (", variance_explained[1], "% variance)"),
-       y = paste0("PC2 (", variance_explained[2], "% variance)")) +
-  scale_color_brewer(palette = "Set1")
+  labs(
+    title = "PCA with technical replicates (A/B) connected",
+    x = paste0("PC1 (", var_exp[1], "%)"),
+    y = paste0("PC2 (", var_exp[2], "%)")
+  ) +
+  guides(color = guide_legend(override.aes = list(alpha = 1, size = 3)))
 
-# Save the PCA plot as PDF
-pdf("pca/pca_plot.pdf")
+print(p)
 
-plot(pca_df$PC1, pca_df$PC2,
-     col=as.factor(pca_df$Population),
-     pch=19,
-     xlab="PC1",
-     ylab="PC2",
-     main="PCA of 120 Samples")
+ggsave(file.path(out_dir, "pca_replicates_connected_PC1_PC2.pdf"),
+       p, width = 8, height = 6)
+cat("\nSaved:", file.path(out_dir, "pca_replicates_connected_PC1_PC2.pdf"), "\n")
 
-legend("topright", legend=unique(pca_df$Population),
-       col=1:length(unique(pca_df$Population)), pch=19)
+# ---- Optional: collapse replicates to a single point per CoreID (mean PCs) ----
+collapsed <- ev %>%
+  group_by(CoreID) %>%
+  summarize(across(starts_with("PC"), mean, na.rm = TRUE), .groups = "drop")
 
-dev.off()
-```
+p_mean <- ggplot(collapsed, aes(x = PC1, y = PC2)) +
+  geom_point(size = 2.6, alpha = 0.9) +
+  theme_minimal(base_size = 14) +
+  labs(
+    title = "PCA collapsed to per-sample centroids (mean of A/B)",
+    x = paste0("PC1 (", var_exp[1], "%)"),
+    y = paste0("PC2 (", var_exp[2], "%)")
+  )
 
-> This script will open a PCA scatterplot window with individuals colored by population.
+print(p_mean)
 
-**PCA with Sample Labels**
-
-Sometimes we want to check whether any individuals look like outliers.  
-We can plot **PC1 vs PC2** and label each point with its **sample ID (IID)**.
-
-```r
-# Basic PCA plot with sample labels
-plot(pca_df$PC1, pca_df$PC2,
-     col=as.factor(pca_df$Population),
-     pch=19,
-     xlab="PC1",
-     ylab="PC2",
-     main="PCA with Sample Names")
-
-# Add text labels (sample IDs)
-text(pca_df$PC1, pca_df$PC2,
-     labels=pca_df$IID,
-     pos=3, cex=0.7)
-
-#To save as pdf
-pdf("pca/pca_plot_labeled.pdf")
-
-plot(pca_df$PC1, pca_df$PC2,
-     col=as.factor(pca_df$Population),
-     pch=19,
-     xlab="PC1",
-     ylab="PC2",
-     main="PCA with Sample Names")
-
-text(pca_df$PC1, pca_df$PC2,
-     labels=pca_df$IID,
-     pos=3, cex=0.7)
-
-dev.off()
+ggsave(file.path(out_dir, "pca_collapsed_centroids_PC1_PC2.pdf"),
+       p_mean, width = 8, height = 6)
+cat("Saved:", file.path(out_dir, "pca_collapsed_centroids_PC1_PC2.pdf"), "\n")
 ```
 
 **Interpreting PCA**
@@ -813,7 +826,7 @@ We need to extract chromosome and position information from our VCF file and the
 module load bcftools
 
 # Input VCF
-INPUT_VCF="/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"
+INPUT_VCF="/lisc/scratch/course/pgbiow/GWAS/Report_DOp25-10208_4.1.vcf"
 
 # Window size (100 kb)
 WINDOW_SIZE=100000
