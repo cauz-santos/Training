@@ -576,8 +576,10 @@ cd "$BAM_DIR" || exit 1
 ls *.sorted.dedup.bam > bamlist.txt
 
 # Joint variant calling
-bcftools mpileup -Ou -f "$GENOME" -b bamlist.txt | \
-bcftools call -mv -Oz -o "$OUT_DIR/joint_variants.vcf.gz"
+bcftools mpileup -Ou -f "$GENOME" -b bamlist.txt \
+  -a FORMAT/DP,FORMAT/AD,INFO/DP \
+  --excl-flags UNMAP,SECONDARY,QCFAIL \  # <-- notice DUP is NOT excluded
+| bcftools call -mv -Oz -o "$OUT_DIR/joint_variants.withDP.vcf.gz"
 
 # Index the VCF
 bcftools index "$OUT_DIR/joint_variants.vcf.gz"
