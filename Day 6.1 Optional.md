@@ -690,10 +690,10 @@ First, move back to your folder `06_diversity_structure` using `cd`
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=run_admixture
+#SBATCH --job-name=admixture_clean_prune_run
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=6G
-#SBATCH --time=02:00:00
+#SBATCH --time=03:00:00
 #SBATCH -o admixture/admixture.out
 #SBATCH -e admixture/admixture.err
 
@@ -703,57 +703,62 @@ module purge
 module load PLINK
 module load admixture
 
-# ---------------- user paths ----------------
-# QC’d dataset (one replicate per individual), BEFORE LD-pruning:
-BASE="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink/my_data"
-
-# Directory for outputs
-OUTDIR="/lisc/data/scratch/course/pgbiow/06_diversity_structure/admixture"
-mkdir -p "$OUTDIR"
-# --------------------------------------------
-
+# ----- INPUT: -----
+BASE="/path to your user/06_diversity_structure/plink/my_data"
+OUTDIR="/path to your user/06_diversity_structure/admixture"
 THREADS="${SLURM_CPUS_PER_TASK:-1}"
+mkdir -p "$OUTDIR"
 
-echo "[$(date)] Step 1: LD prune (skip if you already have a pruned set)"
+echo "[$(date)] Step 0: Remove all-missing and monomorphic loci"
 plink --bfile "$BASE" --allow-extra-chr \
+      --geno 0.999 --mac 1 \
+      --make-bed --out "$OUTDIR/my_data.clean"
+
+echo "[$(date)] Step 1: LD prune on the cleaned set"
+plink --bfile "$OUTDIR/my_data.clean" --allow-extra-chr \
       --indep-pairwise 50 5 0.2 \
       --out "$OUTDIR/prune"
 
-plink --bfile "$BASE" --allow-extra-chr \
-      --extract "$OUTDIR/prune.prune_in" \
+echo "[$(date)] Step 2: Build pruned dataset"
+plink --bfile "$OUTDIR/my_data.clean" --allow-extra-chr \
+      --extract "$OUTDIR/prune.prune.in" \
       --make-bed --out "$OUTDIR/my_data.pruned"
 
-# If you already had a pruned set, set BASE_PRUNED to it instead:
-BASE_PRUNED="$OUTDIR/my_data.pruned"
-
-echo "[$(date)] Step 2: Make an integer-chromosome copy for ADMIXTURE"
-# Map each distinct chromosome name in .bim to an integer 1..N
+echo "[$(date)] Step 3: Convert contig names to integer chromosome codes (ADMIXTURE requires integers)"
 awk '{
-  chr=$1;
-  if (!(chr in seen)) { seen[chr]=++c }
-  $1=seen[chr];
-  print
-}' "$BASE_PRUNED.bim" > "$OUTDIR/my_data.pruned.intchr.bim"
+  chr=$1; if (!(chr in seen)) { seen[chr]=++c } $1=seen[chr]; print
+}' "$OUTDIR/my_data.pruned.bim" > "$OUTDIR/my_data.pruned.intchr.bim"
+cp "$OUTDIR/my_data.pruned.bed" "$OUTDIR/my_data.pruned.intchr.bed"
+cp "$OUTDIR/my_data.pruned.fam" "$OUTDIR/my_data.pruned.intchr.fam"
 
-# Copy .bed/.fam alongside the new .bim
-cp "$BASE_PRUNED.bed" "$OUTDIR/my_data.pruned.intchr.bed"
-cp "$BASE_PRUNED.fam" "$OUTDIR/my_data.pruned.intchr.fam"
+# IMPORTANT: ADMIXTURE writes outputs to the *current working directory*
+cd "$OUTDIR"
 
-INTCHR_BASE="$OUTDIR/my_data.pruned.intchr"
+INTBASE="my_data.pruned.intchr"   # basename only; no path
 
-echo "[$(date)] Step 3: Run ADMIXTURE with CV"
+echo "[$(date)] Step 4: Run ADMIXTURE with 5-fold CV (K=2..6)"
 for K in 2 3 4 5 6; do
   echo "Running ADMIXTURE K=$K"
-  admixture --cv=5 -j"$THREADS" "${INTCHR_BASE}.bed" $K | tee "$OUTDIR/admixture_K${K}.log"
-  # Move/rename outputs
-  mv "${INTCHR_BASE}.${K}.Q" "$OUTDIR/admixture_K${K}.Q"
-  mv "${INTCHR_BASE}.${K}.P" "$OUTDIR/admixture_K${K}.P"
-  # Extract CV error line for quick summary
-  grep -E "CV error" "$OUTDIR/admixture_K${K}.log" || true
+  admixture --cv=5 -j"$THREADS" "${INTBASE}.bed" $K | tee "admixture_K${K}.log"
+
+  # Rename outputs to consistent filenames (they are created in $OUTDIR thanks to cd)
+  if [[ -f "${INTBASE}.${K}.Q" ]]; then mv "${INTBASE}.${K}.Q" "admixture_K${K}.Q"; fi
+  if [[ -f "${INTBASE}.${K}.P" ]]; then mv "${INTBASE}.${K}.P" "admixture_K${K}.P"; fi
+
+  # Show CV error line
+  grep -E "CV error" "admixture_K${K}.log" || true
 done
 
-echo "[$(date)] All done. Files in: $OUTDIR"
-echo "Tip: pick K with the lowest CV error (see lines above)."
+echo "[$(date)] Step 5: Summarize CV errors"
+grep -H "CV error" admixture_K*.log | tee "CV_errors_summary.txt" || true
+
+echo "[$(date)] Done."
+echo "Outputs in $OUTDIR:"
+echo "  - my_data.clean.{bed,bim,fam}"
+echo "  - my_data.pruned.{bed,bim,fam}"
+echo "  - my_data.pruned.intchr.{bed,bim,fam}"
+echo "  - admixture_K*.{Q,P,log}"
+echo "  - CV_errors_summary.txt"
 ```
 
 **Submit the job:**
