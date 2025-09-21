@@ -25,23 +25,13 @@ By the end of this session, you will be able to:
 
 
 ### Input Data
-
-The dataset we will use comes from the study by Hazzouri *et al.* (2019), published in *Nature Communications*:  
-*Genome-wide association mapping of date palm fruit traits.*  
-**Link:** (https://www.nature.com/articles/s41467-019-12604-9)
-
-In this work, the authors:  
-- Produced a **high-quality genome assembly** for the date palm (*Phoenix dactylifera*).  
-- Conducted **GWAS** on fruit traits, identifying candidate genes such as the **R2R3-MYB transcription factor VIRESCENS** (fruit color) and **invertases** (sugar composition).  
-- Generated a large SNP dataset across hundreds of individuals.  
-
 For training purposes, we will use a SNP dataset from Verdant:  
 
 - **File**: `Report_DOp25-10208_4.1.vcf`  
 - **Individuals**: **282 individuals**.
 - **Variants**: **6878 SNPs**.  
 
-This reduced VCF is representative and enables us to run the full pipeline — including **PCA, ADMIXTURE, LD pruning/decay, and diversity statistics** — in a practical timeframe.
+This VCF enables us to run the full pipeline — including **PCA, ADMIXTURE, LD pruning/decay, and diversity statistics** — in a practical timeframe.
 
 
 ### Why Does This Matter?
