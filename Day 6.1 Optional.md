@@ -35,11 +35,11 @@ In this work, the authors:
 - Conducted **GWAS** on fruit traits, identifying candidate genes such as the **R2R3-MYB transcription factor VIRESCENS** (fruit color) and **invertases** (sugar composition).  
 - Generated a large SNP dataset across hundreds of individuals.  
 
-For training purposes, I prepared a **reduced version** of their SNP dataset:  
+For training purposes, we will use a SNP dataset from Verdant:  
 
-- **File**: `dataset120_chr18.vcf.gz`  
-- **Individuals**: Subset of **120 individuals** from the original population.  
-- **Variants**: Includes SNPs from **contigs 1–18 only**, with a **reduced number of SNPs**.  
+- **File**: `Report_DOp25-10208_4.1.vcf`  
+- **Individuals**: **282 individuals**.
+- **Variants**: **6878 SNPs**.  
 
 This reduced VCF is representative and enables us to run the full pipeline — including **PCA, ADMIXTURE, LD pruning/decay, and diversity statistics** — in a practical timeframe.
 
@@ -110,7 +110,7 @@ What this produces:
    module load PLINK
 
    # Input VCF (from Day 5)
-   IN_VCF="/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"
+   IN_VCF="/lisc/scratch/course/pgbiow/GWAS/Report_DOp25-10208_4.1.vcf"
 
    echo "Converting ${IN_VCF} to PLINK binary format..."
    plink --vcf "${IN_VCF}" \
@@ -125,85 +125,6 @@ What this produces:
 5. Submit the job:
    ```bash
    sbatch 00_convert_vcf_to_plink.sh
-   ```
-
-
-### Step 2 — LD Pruning (remove linked SNPs)
-
-**What is LD Pruning?**  
-
-**Linkage Disequilibrium (LD)** refers to the non-random association of alleles at different loci.  
-In simple terms, if two SNPs are very close to each other on the chromosome, they are often inherited together — meaning their genotypes are **correlated**.  
-
-- Example: If SNP A and SNP B are always observed together in your dataset, they are in **high LD**.  
-- For analyses like **PCA** or **Admixture**, including both SNPs does not add new information — it only adds redundancy.  
-
-**Why do we prune SNPs in LD?**  
-
-- **PCA & Admixture assume independence**: correlated SNPs inflate the signal and may bias the results.  
-- **Computational efficiency**: fewer SNPs make analyses faster without losing meaningful information.  
-- **Interpretability**: a pruned dataset captures the true population structure instead of local chromosomal effects.  
-
-**How does pruning work in PLINK?**  
-
-PLINK uses a **sliding window** approach:
-- It scans windows of a defined number of SNPs (e.g., 50 SNPs).  
-- Within each window, it calculates the **pairwise correlation (r²)** between SNPs.  
-- If two SNPs are too correlated (above a threshold, e.g., r² ≥ 0.2), one of them is removed.  
-- The window slides forward (e.g., by 5 SNPs), and the process repeats until the genome is scanned.  
-
-
-**Create the Slurm script with `vi`:**
-
-1. Open the editor:
-   ```bash
-   vi 01_ld_pruning.sh
-   ```
-2. Press `i` to enter *INSERT* mode.  
-3. **Copy & paste**:
-   ```bash
-   #!/bin/bash
-   #SBATCH --job-name=ld_prune
-   #SBATCH --cpus-per-task=1
-   #SBATCH --mem=1G
-   #SBATCH --time=00:30:00
-   #SBATCH -o ld_prune.out
-   #SBATCH -e ld_prune.err
-
-   module load PLINK
-
-   IN_BASE="./plink/my_data"  # from Step 0.1
-
-   echo "Selecting approximately independent SNPs (LD pruning)..."
-   plink --bfile "${IN_BASE}" \
-         --allow-extra-chr \
-         --indep-pairwise 50 5 0.2 \
-         --out ./plink/my_data_prune
-
-   echo "Creating pruned dataset..."
-   plink --bfile "${IN_BASE}" \
-         --allow-extra-chr \
-         --extract ./plink/my_data_prune.prune.in \
-         --make-bed \
-         --out ./plink/my_data_pruned
-
-   echo "Done. Use 'my_data_pruned' for PCA and structure analyses."
-   ```
-4. Press `Esc`, then `:wq`, `Enter`.  
-5. Submit the job:
-   ```bash
-   sbatch 01_ld_pruning.sh
-   ```
-
-**Outputs created**
-
-- `my_data_prune.prune.in` — SNPs to keep  
-- `my_data_prune.prune.out` — SNPs removed  
-- `my_data_pruned.*` — **LD-pruned** PLINK dataset (use this for **PCA**)
-
-Open the `.log` file to check how many SNPs were removed after filtering:
-   ```bash
-   cat ld_prune.out
    ```
 ---
 ## Part 1 — Genetic Diversity Estimation (PLINK + VCFtools)
@@ -234,7 +155,7 @@ Calculating heterozygosity and missingness is important because it allows us to 
 
    module load PLINK
 
-   IN_BASE="./plink/my_data"  # unpruned dataset from Step 0.1
+   IN_BASE="./plink/my_data"  
 
    echo "Calculating heterozygosity and inbreeding coefficient (per sample)..."
    plink --bfile "${IN_BASE}" \
