@@ -797,82 +797,111 @@ Copy this into your R session (on the cluster with graphics enabled or in RStudi
 
 ```r
 # ======================================
-# ADMIXTURE barplot grouped + labeled
-# - shows sample (IID) labels
-# - shows population blocks + names
+# ADMIXTURE barplot (K=6), no metadata
+# - orders individuals by major cluster
+# - draws cluster blocks + labels
 # ======================================
 
-library(ggplot2)
-library(reshape2)
-library(dplyr)
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(dplyr)
+  library(tidyr)
+  library(readr)
+})
 
-# ---- 1) Load Q (set the K you want) ----
-Qfile <- "./admixture/my_data.2.Q"   # change to .3.Q, .4.Q, etc.
-q_df  <- read.table(Qfile, header = FALSE)
-K     <- ncol(q_df)                         # infer K
-colnames(q_df) <- paste0("Cluster", seq_len(K))
+# ---- Paths (edit if needed) ----
+OUTDIR <- "/lisc/data/scratch/course/pgbiow/06_diversity_structure/admixture"
+Qfile  <- file.path(OUTDIR, "admixture_K6.Q")                # from your ADMIXTURE run
+FAM    <- file.path(OUTDIR, "my_data.pruned.fam")            # same sample order used for ADMIXTURE
+OUTPDF <- file.path(OUTDIR, "admixture_K6_sorted_by_cluster.pdf")
 
-# ---- 2) Add IIDs from PLINK .fam ----
-fam <- read.table("./plink/my_data_pruned.fam", header = FALSE)
-q_df$IID <- fam$V2
+# ---- 1) Read Q and FAM ----
+Q <- read_table(Qfile, col_names = FALSE, show_col_types = FALSE)
+K <- ncol(Q)
+colnames(Q) <- paste0("Cluster", seq_len(K))
 
-# ---- 3) Add populations ----
-popinfo <- read.csv("/lisc/data/scratch/course/pgbiow/data/metadata/gwas_pop_table_120.csv",
-                    header = TRUE, stringsAsFactors = FALSE)
-colnames(popinfo) <- c("IID","Population")
+fam <- read_table(FAM, col_names = FALSE, show_col_types = FALSE)
+# FAM columns: FID IID PAT MAT SEX PHENO
+colnames(fam) <- c("FID","IID","PAT","MAT","SEX","PHENO")
 
-q_df <- merge(q_df, popinfo, by = "IID")
+stopifnot(nrow(Q) == nrow(fam))  # ensure matching sample count
 
-# ---- 4) Long format + ordering by population ----
-q_long <- melt(q_df, id.vars = c("IID","Population"),
-               variable.name = "Cluster", value.name = "Ancestry")
+# Attach IDs and compute "major cluster" (argmax)
+Q$IID <- fam$IID
+Q$FID <- fam$FID
+Q <- Q %>%
+  relocate(FID, IID)
 
-# Order individuals by Population then IID
-ordered_ids <- q_long %>%
-  distinct(IID, Population) %>%
-  arrange(Population, IID) %>%
-  mutate(Index = row_number())
+Q <- Q %>%
+  rowwise() %>%
+  mutate(
+    MajorCluster = paste0("Cluster", which.max(c_across(starts_with("Cluster")))),
+    MajorValue   = max(c_across(starts_with("Cluster")))
+  ) %>%
+  ungroup()
 
-# Add the numeric index back to long table
-q_plot <- q_long %>% left_join(ordered_ids, by = c("IID","Population"))
+# ---- 2) Order samples by MajorCluster, then by decreasing membership in that cluster ----
+ordered_ids <- Q %>%
+  arrange(MajorCluster, desc(MajorValue)) %>%
+  mutate(Index = row_number()) %>%
+  select(FID, IID, MajorCluster, MajorValue, Index)
 
-# Compute group boundaries and label positions
-pop_sizes  <- ordered_ids %>% count(Population, name = "n")
-bounds     <- head(cumsum(pop_sizes$n), -1) + 0.5         # vertical lines between pops
-centers    <- cumsum(pop_sizes$n) - pop_sizes$n/2          # label positions
+# Long format for stacked bar plot
+Q_long <- Q %>%
+  pivot_longer(cols = starts_with("Cluster"),
+               names_to = "Cluster", values_to = "Ancestry") %>%
+  left_join(ordered_ids, by = c("FID","IID"))
 
-# ---- 5) Plot (interactive in RStudio first) ----
-p <- ggplot(q_plot, aes(x = Index, y = Ancestry, fill = Cluster)) +
-  geom_bar(stat = "identity", width = 1) +
-  # sample IDs along x (rotated)
-  scale_x_continuous(breaks = ordered_ids$Index, labels = ordered_ids$IID) +
-  # cosmetics
+# Compute block boundaries and label centers per MajorCluster
+block_sizes <- ordered_ids %>%
+  count(MajorCluster, name = "n") %>%
+  arrange(MajorCluster)  # alphabetical: Cluster1..ClusterK
+
+# In plotting order (which follows arrange(MajorCluster, desc(MajorValue)))
+block_sizes <- ordered_ids %>%
+  group_by(MajorCluster) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  # keep the order as it appears in 'ordered_ids'
+  mutate(MajorCluster = factor(MajorCluster, levels = unique(ordered_ids$MajorCluster))) %>%
+  arrange(MajorCluster)
+
+bounds  <- head(cumsum(block_sizes$n), -1) + 0.5
+centers <- cumsum(block_sizes$n) - block_sizes$n/2
+
+# ---- 3) Plot ----
+p <- ggplot(Q_long, aes(x = Index, y = Ancestry, fill = Cluster)) +
+  geom_col(width = 1) +
   theme_minimal(base_size = 12) +
   theme(
-    axis.text.x  = element_text(angle = 90, vjust = 0.5, hjust = 1, size = 5),
-    panel.grid   = element_blank(),
-    legend.position = "bottom",
-    plot.margin  = margin(t = 10, r = 10, b = 40, l = 10)  # extra bottom space for pop labels
+    panel.grid       = element_blank(),
+    axis.text.x      = element_blank(),     # hide sample labels (too many)
+    axis.ticks.x     = element_blank(),
+    plot.margin      = margin(t = 10, r = 10, b = 35, l = 10),
+    legend.position  = "bottom"
   ) +
   labs(
-    title = paste0("ADMIXTURE Results (K=", K, ")"),
-    x = "Individuals (ordered by Population)",
-    y = "Ancestry Proportion"
+    title = paste0("ADMIXTURE (K=", K, ") — samples ordered by major cluster"),
+    x = "Individuals",
+    y = "Ancestry proportion"
   ) +
-  scale_fill_brewer(palette = "Set2") +
-  # vertical separators between populations
+  # vertical separators between major-cluster blocks
   geom_vline(xintercept = bounds, linetype = "dashed", color = "grey30") +
-  # population names under the bars
-  annotate("text", x = centers, y = -0.06, label = pop_sizes$Population,
+  # block labels under the bars
+  annotate("text", x = centers, y = -0.06,
+           label = as.character(block_sizes$MajorCluster),
            vjust = 1, size = 3.2, fontface = "bold") +
-  coord_cartesian(ylim = c(-0.1, 1), clip = "off")  # allow labels below 0
+  coord_cartesian(ylim = c(-0.1, 1), clip = "off") +
+  scale_fill_brewer(palette = "Set2")
 
-print(p)  # see it in RStudio first
+print(p)
 
-# ---- 6) Save to PDF (optional, after checking) ----
-dir.create("admixture", showWarnings = FALSE)
-ggsave(filename = "admixture/admixture_K2_byPop_labeled.pdf", plot = p,
-       width = 14, height = 6, units = "in")
+# ---- 4) Save PDF ----
+ggsave(OUTPDF, p, width = 12, height = 5)
+cat("Saved plot to:\n", OUTPDF, "\n")
+
+# ---- Optional: write a table with sample order and major cluster ----
+write_tsv(ordered_ids, file.path(OUTDIR, "admixture_K6_sample_order.tsv"))
+cat("Wrote sample order table:\n", file.path(OUTDIR, "admixture_K6_sample_order.tsv"), "\n")
 ```
 
 This will generate a **stacked bar plot** of ADMIXTURE proportions for all individuals.
