@@ -91,12 +91,12 @@ What this produces:
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=vcf2plink_fix
+#SBATCH --job-name=vcf2plink_qc
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4G
 #SBATCH --time=01:00:00
-#SBATCH -o vcf2plink_fix.out
-#SBATCH -e vcf2plink_fix.err
+#SBATCH -o vcf2plink_qc.out
+#SBATCH -e vcf2plink_qc.err
 
 set -euo pipefail
 
@@ -105,12 +105,19 @@ module load samtools
 module load bcftools
 module load PLINK
 
-# ----- INPUTS -----
+# ================= USER SETTINGS =================
 IN_VCF="/lisc/scratch/course/pgbiow/GWAS/Report_DOp25-10208_4.1.vcf"
 REF_FASTA="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference/EG5_reference_genomic.fna"
-OUT_DIR="/path to your user/06_diversity_structure/plink"
-OUT_BASENAME="my_data"
-# ------------------
+OUT_DIR="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink"   # <-- set to your path
+OUT_BASENAME="my_data"   # final PLINK prefix will be ${OUT_DIR}/my_data
+
+# Site-level thresholds
+MIN_MAF="0.05"          # keep sites with MAF >= 0.05
+MAX_SITE_MISS="0.20"    # keep sites with F_MISSING <= 0.10 (<=10% missing across samples)
+
+# Sample-level threshold
+MAX_SAMPLE_MISS="0.20"  # drop samples with missingness > 10%
+# =================================================
 
 mkdir -p "$OUT_DIR"
 
@@ -143,24 +150,46 @@ cat "$CONTIGS_HDR" >> "$HEADER_FIXED"
 FIXED_VCF="$OUT_DIR/${OUT_BASENAME}.fixed.vcf"
 cat "$HEADER_FIXED" "$BODY" > "$FIXED_VCF"
 
-# 4) PRE-CLEAN with bcftools so PLINK won’t choke:
-#    keep only SNPs, biallelic, and REF/ALT strictly A/C/G/T
+# 4) Pre-clean: keep only biallelic A/C/G/T SNPs
 CLEAN_VCF_GZ="$OUT_DIR/${OUT_BASENAME}.clean.vcf.gz"
 bcftools view -i 'TYPE="snp" && N_ALT=1 && REF~"^[ACGT]$" && ALT~"^[ACGT]$"' \
   -Oz -o "$CLEAN_VCF_GZ" "$FIXED_VCF"
 bcftools index -t "$CLEAN_VCF_GZ"
 
-# 5) Convert to PLINK bed (filters already applied upstream)
-plink --vcf "$CLEAN_VCF_GZ" \
+# 5) Fill INFO tags for MAF and F_MISSING
+TAGGED_VCF_GZ="$OUT_DIR/${OUT_BASENAME}.tags.vcf.gz"
+bcftools +fill-tags "$CLEAN_VCF_GZ" -Oz -o "$TAGGED_VCF_GZ" -- -t MAF,AC,AN,NS,F_MISSING
+bcftools index -t "$TAGGED_VCF_GZ"
+
+# 6) Filter sites by MAF and site missingness
+SITE_FILT_VCF_GZ="$OUT_DIR/${OUT_BASENAME}.sitefilt.vcf.gz"
+bcftools view -i "MAF >= ${MIN_MAF} && F_MISSING <= ${MAX_SITE_MISS}" \
+  -Oz -o "$SITE_FILT_VCF_GZ" "$TAGGED_VCF_GZ"
+bcftools index -t "$SITE_FILT_VCF_GZ"
+
+# 7) Convert to PLINK bed (pre-sample filter)
+#    Use a temporary prefix to avoid overwriting the final name.
+PLINK_TMP="${OUT_DIR}/${OUT_BASENAME}.tmp"
+plink --vcf "$SITE_FILT_VCF_GZ" \
       --make-bed \
       --double-id \
       --allow-extra-chr \
+      --out "$PLINK_TMP"
+
+# 8) Filter samples by missingness (per-sample), write FINAL files as ${OUT_BASENAME}.*
+plink --bfile "$PLINK_TMP" \
+      --allow-extra-chr \
+      --mind "$MAX_SAMPLE_MISS" \
+      --make-bed \
       --out "${OUT_DIR}/${OUT_BASENAME}"
 
 echo "Done."
-echo "  Fixed VCF:     $FIXED_VCF"
-echo "  Clean VCF:     $CLEAN_VCF_GZ"
-echo "  PLINK files:   ${OUT_DIR}/${OUT_BASENAME}.bed/.bim/.fam"
+echo "Outputs:"
+echo "  - Fixed VCF:            $FIXED_VCF"
+echo "  - Clean SNP VCF:        $CLEAN_VCF_GZ"
+echo "  - Tagged VCF (+MAF):    $TAGGED_VCF_GZ"
+echo "  - Site-filtered VCF:    $SITE_FILT_VCF_GZ   (MAF >= $MIN_MAF, F_MISSING <= $MAX_SITE_MISS)"
+echo "  - PLINK (final):        ${OUT_DIR}/${OUT_BASENAME}.{bed,bim,fam}   (sample miss <= $MAX_SAMPLE_MISS)"
 ```
 4. Press `Esc`, type `:wq` and press `Enter` to save and exit.  
 5. Submit the job:
