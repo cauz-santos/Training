@@ -161,11 +161,11 @@ echo "Done."
 echo "  Fixed VCF:     $FIXED_VCF"
 echo "  Clean VCF:     $CLEAN_VCF_GZ"
 echo "  PLINK files:   ${OUT_DIR}/${OUT_BASENAME}.bed/.bim/.fam"
-   ```
+```
 4. Press `Esc`, type `:wq` and press `Enter` to save and exit.  
 5. Submit the job:
-   ```bash
-   sbatch 00_convert_vcf_to_plink.sh
+```bash
+sbatch 00_convert_vcf_to_plink.sh
 ```
 ---
 
@@ -212,7 +212,7 @@ Calculating heterozygosity and missingness is important because it allows us to 
          --out ./diversity/plink_missing
 
    echo "Done. Outputs: plink_het.het, plink_missing.imiss"
-   ```
+```
 4. `Esc`, `:wq`, `Enter`.  
 5. Submit:
    ```bash
