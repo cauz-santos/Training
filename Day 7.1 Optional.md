@@ -544,9 +544,7 @@ Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **p
 > - Its **annotation** in **GFF3** (gene coordinates + attributes, e.g., `ID`, `Name`, `product`)  
 > - **BEDTools** module (for genomic intersections)
 
----
-
-### Files for Oil Palm Genome - EG5
+#### Files for Oil Palm Genome - EG5
 
 These files are available on the cluster:  
 `/lisc/scratch/course/pgbiow/data/genomes/EG5_reference`  
