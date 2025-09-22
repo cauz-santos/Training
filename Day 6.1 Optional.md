@@ -72,7 +72,103 @@ Then create some subfolders, for each specific analysis we will perform:
 
 We will convert a **filtered VCF** into PLINK format and perform **LD pruning**. The pruned dataset will be used for **PCA** (and later for ADMIXTURE/GWAS).
 
-### Step 1 — Convert VCF to PLINK format
+### Step 1 — Clean the VCF (dedup + filters)  
+
+Create a file called `00a_clean_vcf.sh`:
+
+```bash
+vi 00a_clean_vcf.sh
+```
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=clean_vcf
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=4G
+#SBATCH --time=01:00:00
+#SBATCH -o clean_vcf.out
+#SBATCH -e clean_vcf.err
+
+set -euo pipefail
+
+module purge
+module load bcftools
+module load vcftools
+module load samtools
+
+# ---- inputs/outputs ----
+IN_VCF="/lisc/scratch/course/pgbiow/GWAS/Report_DOp25-10208_4.1.vcf"
+REF="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference/EG5_reference_genomic.fna"
+OUTDIR="/lisc/data/scratch/course/pgbiow/06_diversity_structure"
+mkdir -p "$OUTDIR/plink"
+
+CLEAN_PREFIX="$OUTDIR/plink/my_data"   # final cleaned VCF will be ${CLEAN_PREFIX}.vcf.gz
+
+# ---------- Step 0: (optional) choose one replicate per sample ----------
+# Keep the lower-missing replicate when IDs are like A_xxx / B_xxx.
+# If you always want A_ samples, comment out this whole block and make keep_ids.txt with only A_ IIDs.
+
+vcftools --vcf "$IN_VCF" --missing-indv --out "$OUTDIR/tmp.miss"
+awk 'NR>1{
+  id=$1; miss=$5; core=id; sub("^[AB]_", "", core);
+  if(!(core in best) || miss < best[core]) { best[core]=miss; keep[id]=1 }
+}
+END{ for (k in keep) print k }' "$OUTDIR/tmp.miss.imiss" > "$OUTDIR/keep_ids.txt"
+
+# Subset to kept samples
+vcftools --vcf "$IN_VCF" --keep "$OUTDIR/keep_ids.txt" --recode --stdout | bgzip -c > "$OUTDIR/step0.samples.vcf.gz"
+tabix -p vcf "$OUTDIR/step0.samples.vcf.gz"
+
+# ---------- Step 1: split multiallelics, left-align vs reference, drop duplicate records ----------
+[ -f "${REF}.fai" ] || samtools faidx "$REF"
+
+bcftools norm -f "$REF" -m -any -d all \
+  -Oz -o "$OUTDIR/step1.norm.vcf.gz" "$OUTDIR/step0.samples.vcf.gz"
+tabix -p vcf "$OUTDIR/step1.norm.vcf.gz"
+
+# ---------- Step 2: keep only biallelic A/C/G/T SNPs ----------
+bcftools view -i 'TYPE="snp" && N_ALT=1 && REF~"^[ACGT]$" && ALT~"^[ACGT]$"' \
+  -Oz -o "$OUTDIR/step2.snp_bial.vcf.gz" "$OUTDIR/step1.norm.vcf.gz"
+tabix -p vcf "$OUTDIR/step2.snp_bial.vcf.gz"
+
+# ---------- Step 3: apply MAF, missingness, and depth filters with VCFtools ----------
+# If your VCF HAS per-genotype FORMAT/DP, use --minDP (per-sample depth):
+# If it does NOT, use --min-meanDP (site-average depth) instead.
+
+# Quick check for FORMAT/DP:
+HAS_FMT_DP=$(bcftools view -h "$OUTDIR/step2.snp_bial.vcf.gz" | grep -c '##FORMAT=<ID=DP')
+
+if [ "$HAS_FMT_DP" -gt 0 ]; then
+  echo "[info] Using per-genotype depth (--minDP)"
+  vcftools --gzvcf "$OUTDIR/step2.snp_bial.vcf.gz" \
+    --maf 0.05 \
+    --max-missing 0.90 \
+    --minDP 5 \
+    --recode --recode-INFO-all \
+    --out "$CLEAN_PREFIX"
+else
+  echo "[info] FORMAT/DP not found; using site mean depth (--min-meanDP)"
+  vcftools --gzvcf "$OUTDIR/step2.snp_bial.vcf.gz" \
+    --maf 0.05 \
+    --max-missing 0.90 \
+    --min-meanDP 5 \
+    --recode --recode-INFO-all \
+    --out "$CLEAN_PREFIX"
+fi
+
+# bgzip + index the final cleaned VCF for downstream convenience
+bgzip -c "$CLEAN_PREFIX.recode.vcf" > "$CLEAN_PREFIX.vcf.gz"
+tabix -p vcf "$CLEAN_PREFIX.vcf.gz"
+
+echo "Cleaned VCF: $CLEAN_PREFIX.vcf.gz"
+```
+
+Submit the job:
+```bash
+sbatch 00a_clean_vcf.sh
+```
+
+### Step 2 — Convert VCF to PLINK format
 
 What this produces:
 
