@@ -126,7 +126,7 @@ tail -n +2 pheno_audpc.txt | awk '$3==-9{m++} END{print (m?m:0)}'
 sbatch 01_make_pheno.sh
 ```
 
-### Step 2 — Prepare **PCA covariates** (PC1–PC5) 
+### Step 2 — Prepare **PCA covariates** (PC1–PC10) 
 Add PC1–PC5 as covariates so GWAS controls for broad genetic background (ancestry/relatedness) differences among samples. Without them, some SNPs look “significant” just because certain groups both share those alleles and tend to have different sucrose values. PCs capture that group effect; adjusting for them removes this bias and leaves signals that are more likely to be truly linked to sucrose.
 
 Please from the directory of day 7 enter the directory `plink`:
@@ -135,7 +135,7 @@ Please from the directory of day 7 enter the directory `plink`:
 cd plink
 ```
 
-Create **`covar_pcs.txt`** with header `FID IID PC1 PC2 PC3 PC4 PC5`:
+Create **`covar_pcs.txt`** with header `FID IID PC1 PC2 PC3 PC4 PC5 ... PC10`:
 
 ```bash
 vi 02_make_covariates.sh
@@ -212,24 +212,28 @@ vi 20_run_gwas_infected.sh
 ```bash
 #!/bin/bash
 #SBATCH --job-name=gwas_infected
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
-#SBATCH --time=01:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=6G
+#SBATCH --time=02:00:00
 #SBATCH -o gwas_infected.out
 #SBATCH -e gwas_infected.err
 
 module load PLINK
 
-plink --bfile ./plink/data_pruned \
-      --pheno ./pheno_infected.txt \
-      --covar ./plink/covar_pcs.txt \
-      --covar-name PC1,PC2,PC3,PC4,PC5 \
-      --allow-extra-chr \
-      --logistic hide-covar \
-      --allow-no-sex \
-      --out ./gwas/gwas_infected_logistic
+# Ensure output dir exists
+mkdir -p ./gwas
 
-echo "Done: gwas_infected_logistic.assoc.logistic"
+plink --bfile ./plink/data_pruned \
+      --pheno ./pheno_infected_12.txt \
+      --covar ./plink/covar_pcs10.txt \
+      --covar-name PC1-PC10 \
+      --covar-variance-standardize \
+      --logistic firth-fallback hide-covar --ci 0.95 \
+      --allow-no-sex \
+      --threads 8 \
+      --out ./gwas/gwas_infected_pc10_firth
+
+echo "Done: gwas_infected_pc10_firth.assoc.logistic"
 ```
 
 ```bash
@@ -245,24 +249,28 @@ vi 21_run_gwas_audpc.sh
 ```bash
 #!/bin/bash
 #SBATCH --job-name=gwas_audpc
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
-#SBATCH --time=01:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=6G
+#SBATCH --time=02:00:00
 #SBATCH -o gwas_audpc.out
 #SBATCH -e gwas_audpc.err
 
 module load PLINK
 
+# Ensure output dir exists
+mkdir -p ./gwas
+
 plink --bfile ./plink/data_pruned \
       --pheno ./pheno_audpc.txt \
-      --covar ./plink/covar_pcs.txt \
-      --covar-name PC1,PC2,PC3,PC4,PC5 \
-      --allow-extra-chr \
+      --covar ./plink/covar_pcs10.txt \
+      --covar-name PC1-PC10 \
+      --covar-variance-standardize \
       --linear hide-covar \
       --allow-no-sex \
-      --out ./gwas/gwas_audpc_linear
+      --threads 8 \
+      --out ./gwas/gwas_audpc_pc10
 
-echo "Done: gwas_audpc_linear.assoc.linear"
+echo "Done: gwas_audpc_pc10.assoc.linear"
 ```
 
 ```bash
