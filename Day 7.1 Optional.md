@@ -227,7 +227,6 @@ plink --bfile ./plink/data_pruned \
       --pheno ./pheno_infected_12.txt \
       --covar ./plink/covar_pcs10.txt \
       --covar-name PC1-PC10 \
-      --covar-variance-standardize \
       --logistic firth-fallback hide-covar --ci 0.95 \
       --allow-no-sex \
       --threads 8 \
@@ -264,7 +263,6 @@ plink --bfile ./plink/data_pruned \
       --pheno ./pheno_audpc.txt \
       --covar ./plink/covar_pcs10.txt \
       --covar-name PC1-PC10 \
-      --covar-variance-standardize \
       --linear hide-covar \
       --allow-no-sex \
       --threads 8 \
