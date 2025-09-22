@@ -83,7 +83,7 @@ vi 00a_clean_vcf.sh
 ```bash
 #!/bin/bash
 #SBATCH --job-name=clean_vcf
-#SBATCH --cpus-per-task=4
+#SBATCH --cpus-per-task=8
 #SBATCH --mem=20G
 #SBATCH --time=01:00:00
 #SBATCH -o clean_vcf.out
@@ -105,8 +105,8 @@ OUT_PREFIX="$OUTDIR/plink/my_data"   # final cleaned VCF -> ${OUT_PREFIX}.vcf.gz
 # Filters (tune if needed)
 MIN_MAF="0.05"        # keep sites with MAF >= 0.05
 MAX_MISS_FRAC="0.90"  # keep sites with call rate >= 90% (i.e., missing <=10%)
-MIN_DP_SAMPLE="5"     # per-sample min depth (if FORMAT/DP exists)
-MIN_MEAN_DP="5"       # fallback: site mean depth if no FORMAT/DP
+MIN_DP_SAMPLE="10"     # per-sample min depth (if FORMAT/DP exists)
+MIN_MEAN_DP="10"       # fallback: site mean depth if no FORMAT/DP
 # -----------------------------------
 
 mkdir -p "$OUTDIR/plink"
@@ -187,8 +187,8 @@ What this produces:
 ```bash
 #!/bin/bash
 #SBATCH --job-name=vcf2plink_qc
-#SBATCH --cpus-per-task=2
-#SBATCH --mem=4G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem=20G
 #SBATCH --time=01:00:00
 #SBATCH -o vcf2plink_qc.out
 #SBATCH -e vcf2plink_qc.err
@@ -198,18 +198,17 @@ set -euo pipefail
 module purge
 module load PLINK
 
-# ================= USER SETTINGS =================
-# Use the CLEANED VCF produced by 00a_clean_vcf.sh
+# --------- USER SETTINGS ----------
 IN_VCF="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink/my_data.vcf.gz"
 OUT_DIR="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink"
-OUT_BASENAME="my_data"        # final PLINK prefix: ${OUT_DIR}/my_data
-MAX_SAMPLE_MISS="0.20"        # drop samples with >20% missing genotypes
+OUT_BASENAME="my_data"
+MAX_SAMPLE_MISS="0.20"      # drop samples with >20% missing
 THREADS="${SLURM_CPUS_PER_TASK:-1}"
-# =================================================
+# -----------------------------------
 
 mkdir -p "$OUT_DIR"
 
-echo "[$(date)] Converting cleaned VCF -> PLINK, and filtering high-missing samples ..."
+echo "[$(date)] VCF -> PLINK (and drop high-missing samples)"
 plink --vcf "$IN_VCF" \
       --make-bed \
       --double-id \
@@ -219,12 +218,11 @@ plink --vcf "$IN_VCF" \
       --out "${OUT_DIR}/${OUT_BASENAME}"
 
 echo "[$(date)] Done."
-echo "Outputs:"
-echo "  - ${OUT_DIR}/${OUT_BASENAME}.bed"
-echo "  - ${OUT_DIR}/${OUT_BASENAME}.bim"
-echo "  - ${OUT_DIR}/${OUT_BASENAME}.fam"
+echo "  ${OUT_DIR}/${OUT_BASENAME}.bed"
+echo "  ${OUT_DIR}/${OUT_BASENAME}.bim"
+echo "  ${OUT_DIR}/${OUT_BASENAME}.fam"
 
-# Quick sanity prints (optional):
+# Quick sanity (optional)
 echo -n "Samples: " && wc -l < "${OUT_DIR}/${OUT_BASENAME}.fam"
 echo -n "SNPs:    " && wc -l < "${OUT_DIR}/${OUT_BASENAME}.bim"
 ```
