@@ -244,7 +244,7 @@ echo "Done: gwas_audpc_linear.assoc.linear"
 ```
 
 ```bash
-vi 21_run_gwas_audpc.sh
+sbatch 21_run_gwas_audpc.sh
 ```
 
 
