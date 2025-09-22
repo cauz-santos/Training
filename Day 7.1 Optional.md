@@ -212,27 +212,26 @@ vi 20_run_gwas_infected.sh
 ```bash
 #!/bin/bash
 #SBATCH --job-name=gwas_infected
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=6G
-#SBATCH --time=02:00:00
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=01:00:00
 #SBATCH -o gwas_infected.out
 #SBATCH -e gwas_infected.err
 
 module load PLINK
-
-# Ensure output dir exists
 mkdir -p ./gwas
 
 plink --bfile ./plink/data_pruned \
       --pheno ./pheno_infected_12.txt \
       --covar ./plink/covar_pcs10.txt \
       --covar-name PC1-PC10 \
-      --logistic firth-fallback hide-covar --ci 0.95 \
+      --logistic hide-covar --ci 0.95 \
       --allow-no-sex \
+      --allow-extra-chr \        # <--- add this
       --threads 8 \
-      --out ./gwas/gwas_infected_pc10_firth
+      --out ./gwas/gwas_infected_pc10
 
-echo "Done: gwas_infected_pc10_firth.assoc.logistic"
+echo "Done: gwas_infected_pc10.assoc.logistic"
 ```
 
 ```bash
@@ -248,15 +247,13 @@ vi 21_run_gwas_audpc.sh
 ```bash
 #!/bin/bash
 #SBATCH --job-name=gwas_audpc
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=6G
-#SBATCH --time=02:00:00
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=01:00:00
 #SBATCH -o gwas_audpc.out
 #SBATCH -e gwas_audpc.err
 
 module load PLINK
-
-# Ensure output dir exists
 mkdir -p ./gwas
 
 plink --bfile ./plink/data_pruned \
@@ -265,6 +262,7 @@ plink --bfile ./plink/data_pruned \
       --covar-name PC1-PC10 \
       --linear hide-covar \
       --allow-no-sex \
+      --allow-extra-chr \        # <--- add this
       --threads 8 \
       --out ./gwas/gwas_audpc_pc10
 
