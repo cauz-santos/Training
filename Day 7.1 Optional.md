@@ -104,8 +104,14 @@ echo "Done: pheno_infected.txt and pheno_audpc.txt created"
 sbatch 01_make_pheno.sh
 ```
 
-### Step 2 — Prepare **PCA covariates** (PC1–PC5) from Day 6
+### Step 2 — Prepare **PCA covariates** (PC1–PC5) 
 Add PC1–PC5 as covariates so GWAS controls for broad genetic background (ancestry/relatedness) differences among samples. Without them, some SNPs look “significant” just because certain groups both share those alleles and tend to have different sucrose values. PCs capture that group effect; adjusting for them removes this bias and leaves signals that are more likely to be truly linked to sucrose.
+
+Please from the directory of day 7 enter the directory `plink`:
+
+```bash
+cd plink
+```
 
 Create **`covar_pcs.txt`** with header `FID IID PC1 PC2 PC3 PC4 PC5`:
 
@@ -122,7 +128,7 @@ vi 02_make_covariates.sh
 #SBATCH -o make_covariates.out
 #SBATCH -e make_covariates.err
 
-EIGENVEC="../06_diversity_structure/pca/pca_results.eigenvec"
+EIGENVEC="/lisc/scratch/course/pgbiow/GWAS/plink/cov_pca.eigenvec"
 
 # pca_results.eigenvec: FID IID PC1 PC2 ...
 # Keep first 5 PCs (adjust if needed)
