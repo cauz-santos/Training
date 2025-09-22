@@ -92,6 +92,7 @@ vi 00a_clean_vcf.sh
 set -euo pipefail
 
 module purge
+module load htslib
 module load bcftools
 module load vcftools
 module load samtools
