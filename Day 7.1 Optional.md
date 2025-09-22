@@ -676,6 +676,8 @@ cat annotation_EG5/snps_nearest_genes_with_product.tsv
 
 Go to the Uniprot database and look for the potential function of these genes: 
 
+https://www.uniprot.org/
+
 Search for:
 ```bash
 LOC105042204 Elaeis guineensis
