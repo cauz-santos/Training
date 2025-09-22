@@ -407,7 +407,15 @@ make_gwas_plots_top16("./gwas/gwas_audpc_pc10.assoc.linear", "AUDPC")
 make_gwas_plots_top16("./gwas/gwas_infected_pc10.assoc.logistic", "Infected_Status")
 ```
 
-### Inspecting GWAS Bonferroni Hits (AUDPC & Infected_Status)
+#### QQ plot interpretation
+
+- **AUDPC (λ = 0.932):** Slight deflation (conservative p-values). The bulk of points follows the null line; the right-hand tail shows putative true associations. Safe calibration for teaching analyses.
+- **Infected_Status (λ = 1.052):** Well-calibrated; points track the null with a clear tail of significant SNPs. Residual stratification appears to be controlled after adding PC1–PC10.
+
+**Notes:** We restricted to the 16 largest chromosomes to avoid scaffold noise. Bonferroni thresholds were ~4.6–4.7×10⁻⁷ given ~106–108k SNPs tested.
+
+
+### Inspecting GWAS Bonferroni Hits (AUDPC trait)
 
 After running the analyses, TSV files with SNPs passing Bonferroni (α = 0.05) are saved in `./gwas`:
 
@@ -422,10 +430,6 @@ cd /path to your folder/07_gwas_selection/gwas
 # AUDPC (quantitative)
 head bonferroni_hits_AUDPC.tsv
 cut -f1,2,3,9 bonferroni_hits_AUDPC.tsv | head   # CHR BP SNP P
-
-# Infected_Status (binary)
-head bonferroni_hits_Infected_Status.tsv
-cut -f1,2,3,9 bonferroni_hits_Infected_Status.tsv | head   # CHR BP SNP P
 ```
 
 #### What’s in the file?
@@ -468,14 +472,13 @@ Only change them if you want to zoom into a **specific SNP or region** (manual v
 
 ```r
 # ================================
-# Regional Association Plot (±250 kb) around the Top Hit
-# Works for *.assoc.linear or *.assoc.logistic
+# Regional Association Plot (±250 kb) around the Top AUDPC Hit
 # ================================
 library(data.table)
 library(ggplot2)
 library(ggrepel)
 
-regional_plot_tophit <- function(infile, trait_label, outdir = "./gwas", flank_kb = 250) {
+regional_plot_tophit <- function(infile, trait_label = "AUDPC", outdir = "./gwas", flank_kb = 250) {
   dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
   dt <- fread(infile)
 
@@ -494,15 +497,12 @@ regional_plot_tophit <- function(infile, trait_label, outdir = "./gwas", flank_k
 
   flank <- as.integer(flank_kb) * 1000L
   win <- dt[CHR == chr & BP >= (pos - flank) & BP <= (pos + flank)]
-
-  # If the window is too sparse, expand to ±500 kb automatically
-  if (nrow(win) < 50) {
+  if (nrow(win) < 50) {  # auto-expand if too few points
     flank <- 500000L
     win <- dt[CHR == chr & BP >= (pos - flank) & BP <= (pos + flank)]
     message(sprintf("Few points in window; expanded to ±%d kb", flank/1000L))
   }
 
-  # Identify top SNP in the window (for label)
   top_win <- win[which.min(P)]
 
   p_regional <- ggplot(win, aes(x = BP, y = -log10(P))) +
@@ -511,33 +511,27 @@ regional_plot_tophit <- function(infile, trait_label, outdir = "./gwas", flank_k
     geom_text_repel(
       data = top_win,
       aes(label = ifelse(SNP == ".", paste0(chr, ":", BP), SNP)),
-      size = 3,
-      box.padding = 0.3,
-      segment.color = "grey50",
-      max.overlaps = Inf
+      size = 3, box.padding = 0.3, segment.color = "grey50", max.overlaps = Inf
     ) +
     labs(
-      title = sprintf("Regional Association: %s — %s ±%d kb", trait_label, chr, flank/1000L),
+      title = sprintf("Regional Association: %s - %s ±%d kb", trait_label, chr, flank/1000L),
       subtitle = sprintf("Lead at %s:%s   p=%.2e", chr, format(pos, big.mark=","), top_win$P),
-      x = "Genomic Position (bp)",
-      y = "-log10(p)"
+      x = "Genomic Position (bp)", y = "-log10(p)"
     ) +
     theme_minimal(base_size = 14)
 
   print(p_regional)
 
-  # Save PNG/PDF
-  base <- file.path(outdir, sprintf("GWAS_%s_Regional_%s_%s", trait_label, gsub("[^A-Za-z0-9_.-]","_", chr), pos))
+  base <- file.path(outdir, sprintf("GWAS_%s_Regional_%s_%s",
+                                    trait_label, gsub("[^A-Za-z0-9_.-]","_", chr), pos))
   ggsave(paste0(base, ".png"), plot = p_regional, width = 10, height = 4, dpi = 150)
   ggsave(paste0(base, ".pdf"), plot = p_regional, width = 10, height = 4)
-
   message(sprintf("Saved: %s.png and %s.pdf", base, base))
   invisible(p_regional)
 }
 
-# Run interactively for your two results:
-regional_plot_tophit("./gwas/gwas_audpc_linear.assoc.linear", "AUDPC")            # hits ~49.4 Mb on NC_025995.1
-regional_plot_tophit("./gwas/gwas_infected_logistic.assoc.logistic", "Infected")  # hits ~52.38 Mb on NC_025995.1
+# Run ONLY for AUDPC (use your pc10 result file)
+regional_plot_tophit("./gwas/gwas_audpc_pc10.assoc.linear", "AUDPC")
 ```
 ---
 
@@ -552,16 +546,12 @@ Goal: For our **top SNP(s)**, find the **overlapping/nearest gene(s)** and a **p
 
 ---
 
-### 📂 Files for Date Palm Genome
-
-We are using the **Date Palm genome** from NCBI  
-👉 [GCA_009389715.1](https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_009389715.1/)
+### Files for Oil Palm Genome - EG5
 
 These files are available on the cluster:  
-`/lisc/scratch/course/pgbiow/data/genomes/`  
-date_palm_genome.fna # reference genome (FASTA)  
-date_palm_genomic.gff # annotation in GFF3 format  
-date_palm_genomic.gtf # annotation in GTF format (alternative)  
+`/lisc/scratch/course/pgbiow/data/genomes/EG5_reference`  
+EG5_reference_genomic.fna # reference genome (FASTA)  
+EG5_genomic.gff  # annotation in GFF3 format  
  
 **Make a BED of top SNPs:**  
 
@@ -576,80 +566,83 @@ vi 30_prepare_bed_for_annotation.sh
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=annot_min
+#SBATCH --job-name=annot_EG5
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=2G
 #SBATCH --time=00:05:00
-#SBATCH -o annot_min.out
-#SBATCH -e annot_min.err
+#SBATCH -o annot_EG5.out
+#SBATCH -e annot_EG5.err
 
 set -euo pipefail
+export LC_ALL=C
 
-# --- Paths (adjust IN_GWAS if you prefer top20) ---
-GENOME_GFF="/lisc/scratch/course/pgbiow/data/genomes/date_palm_genomic.gff"
-GENOME_GTF="/lisc/scratch/course/pgbiow/data/genomes/date_palm_genomic.gtf"
-IN_GWAS="gwas/bonferroni_hits_SUC.tsv"
-OUTDIR="annotation"
+# --- Paths (AUDPC only) ---
+GENOME_GFF="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference/EG5_genomic.gff"
+OUTDIR="annotation_EG5"
 mkdir -p "$OUTDIR"
 
-# 1) SNPs → BED (chrLG, 0-based)
-awk 'BEGIN{FS=OFS="\t"} NR>1{
-  c = ($1 ~ /^chrLG[0-9]+$/) ? $1 : "chrLG"$1
-  print c, $3-1, $3, $2   # chr, start, end, SNP
-}' "$IN_GWAS" > "$OUTDIR/snps.chrLG.bed"
+# Prefer Bonferroni hits; if empty/missing, use top20
+BONF="./gwas/bonferroni_hits_AUDPC.tsv"
+TOP20="./gwas/top20_hits_AUDPC.tsv"
 
-# 2) Genes (GFF) → BED in chrLG (region lines carry chromosome=N)
-awk -v FS="\t" -v OFS="\t" '
-  FNR==NR && $3=="region" && $9 ~ /chromosome=/ {
-    n=split($9,a,";"); chr=""
-    for(i=1;i<=n;i++){split(a[i],kv,"="); if(kv[1]=="chromosome") chr=kv[2]}
-    if(chr!="") map[$1]="chrLG" chr
-    next
-  }
-  FNR!=NR && $3=="gene" && map[$1] {
-    n=split($9,a,";"); id="NA"; name="NA"; prod="NA"
+if [[ -s "$BONF" ]]; then
+  IN_GWAS="$BONF"
+  echo "Using Bonferroni-significant AUDPC hits: $IN_GWAS"
+elif [[ -s "$TOP20" ]]; then
+  IN_GWAS="$TOP20"
+  echo "Bonferroni file empty/missing; using top-20 AUDPC hits: $IN_GWAS"
+else
+  echo "Error: Neither $BONF nor $TOP20 exists or is non-empty." >&2
+  exit 1
+fi
+
+# --- 1) SNPs → BED (keep NC_* accessions exactly; 0-based start) ---
+# Expect columns include CHR and BP (from your TSVs written by the plotting helper)
+# Header line starts with 'CHR'
+awk 'BEGIN{FS=OFS="\t"} NR>1 {
+  chr=$1; bp=$3; snp=$2;
+  if (bp ~ /^[0-9]+$/) print chr, bp-1, bp, snp;
+}' "$IN_GWAS" > "$OUTDIR/top_snps.bed"
+
+# --- 2) Genes (GFF3) → BED using EG5 seqids (e.g., NC_025995.1) ---
+# Grab only 'gene' features; build a compact name field id|name|product (best-effort).
+awk -F'\t' 'BEGIN{OFS="\t"}
+  $3=="gene" {
+    chr=$1; start=$4-1; end=$5; attrs=$9;
+    id="NA"; name="NA"; prod="NA"; note="NA";
+    n=split(attrs,a,";");
     for(i=1;i<=n;i++){
-      split(a[i],kv,"=")
-      if(kv[1]=="ID")   id=kv[2]
-      if(kv[1]=="Name") name=kv[2]
-      if(kv[1]=="gene" && name=="NA") name=kv[2]
-      if(kv[1]=="product") prod=kv[2]     # often missing at gene level
+      split(a[i],kv,"=");
+      if(kv[1]=="ID" && kv[2]!="") id=kv[2];
+      if(kv[1]=="Name" && kv[2]!="") name=kv[2];
+      if(kv[1]=="gene" && name=="NA" && kv[2]!="") name=kv[2];
+      if(kv[1]=="product" && kv[2]!="") prod=kv[2];
+      if(kv[1]=="Note" && kv[2]!="") note=kv[2];
+      if(kv[1]=="description" && kv[2]!="") note=kv[2];
     }
-    print map[$1], $4-1, $5, id"|"name"|"prod
-  }' "$GENOME_GFF" "$GENOME_GFF" > "$OUTDIR/genes.chrLG.bed"
+    if(prod=="NA" && note!="NA") prod=note;
+    print chr, start, end, id "|" name "|" prod;
+  }' "$GENOME_GFF" > "$OUTDIR/genes.bed"
 
-# 3) Sort + bedtools (overlaps + nearest)
-sort -k1,1 -k2,2n "$OUTDIR/snps.chrLG.bed"  > "$OUTDIR/snps.sorted.bed"
-sort -k1,1 -k2,2n "$OUTDIR/genes.chrLG.bed" > "$OUTDIR/genes.sorted.bed"
+# --- 3) Sort & intersect/closest with BEDTools ---
+sort -k1,1 -k2,2n "$OUTDIR/top_snps.bed"  > "$OUTDIR/top_snps.sorted.bed"
+sort -k1,1 -k2,2n "$OUTDIR/genes.bed"     > "$OUTDIR/genes.sorted.bed"
+
 module load BEDTools
 
-bedtools intersect -a "$OUTDIR/snps.sorted.bed" -b "$OUTDIR/genes.sorted.bed" -wa -wb > "$OUTDIR/snps_in_genes.tsv"
-bedtools closest  -a "$OUTDIR/snps.sorted.bed" -b "$OUTDIR/genes.sorted.bed" -d -t first > "$OUTDIR/snps_nearest_genes.tsv"
+# Overlaps (SNP falls inside a gene)
+bedtools intersect -a "$OUTDIR/top_snps.sorted.bed" -b "$OUTDIR/genes.sorted.bed" -wa -wb \
+  > "$OUTDIR/snps_in_genes.tsv"
 
-# 4) Build gene_id -> product map from GTF (prefer transcript, fallback CDS)
-awk -F'\t' '
-  $3=="transcript" && $9~/gene_id/ && $9~/product/ {match($9,/gene_id "([^"]+)"/,g); match($9,/product "([^"]+)"/,p); if(g[1]&&p[1]&&!seen[g[1]]++){prod[g[1]]=p[1]}; next}
-  $3=="CDS"        && $9~/gene_id/ && $9~/product/ {match($9,/gene_id "([^"]+)"/,g); match($9,/product "([^"]+)"/,p); if(g[1]&&p[1]&&!(g[1] in prod)){prod[g[1]]=p[1]}; next}
-  END{for(k in prod) print k"\t"prod[k]}
-' "$GENOME_GTF" > "$OUTDIR/gene_products.tsv"
+# Nearest gene to each SNP (report first tie)
+bedtools closest -a "$OUTDIR/top_snps.sorted.bed" -b "$OUTDIR/genes.sorted.bed" -d -t first \
+  > "$OUTDIR/snps_nearest_genes.tsv"
 
-# 5) Fill product in col8 (id|name|product) for both outputs
-awk 'BEGIN{FS=OFS="\t"} NR==FNR{p[$1]=$2; next}{
-  split($8,f,"|"); id=f[1]; name=f[2]; pr=f[3]
-  if((pr=="NA"||pr==".") && (name in p)) pr=p[name]
-  $8=id"|"name"|"pr; print
-}' "$OUTDIR/gene_products.tsv" "$OUTDIR/snps_in_genes.tsv" > "$OUTDIR/snps_in_genes_with_product.tsv"
-
-awk 'BEGIN{FS=OFS="\t"} NR==FNR{p[$1]=$2; next}{
-  split($8,f,"|"); id=f[1]; name=f[2]; pr=f[3]
-  if((pr=="NA"||pr==".") && (name in p)) pr=p[name]
-  $8=id"|"name"|"pr; print
-}' "$OUTDIR/gene_products.tsv" "$OUTDIR/snps_nearest_genes.tsv" > "$OUTDIR/snps_nearest_genes_with_product.tsv"
-
-# Summary
 echo "Wrote:"
-echo "  $OUTDIR/snps_in_genes_with_product.tsv"
-echo "  $OUTDIR/snps_nearest_genes_with_product.tsv"
+echo "  $OUTDIR/top_snps.bed"
+echo "  $OUTDIR/genes.bed"
+echo "  $OUTDIR/snps_in_genes.tsv"
+echo "  $OUTDIR/snps_nearest_genes.tsv"
 ```
 
 ```bash
