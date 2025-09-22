@@ -38,6 +38,8 @@ PDAC255_Sin_S,21.24
 
 ---
 
+### Part 1 - Prepare data
+
 ### Step 0 — Prepare Genotypes, Phenotypes, and Covariates
 
 First create a folder for the file outputs of day 7 in your home directory:
@@ -149,104 +151,103 @@ sbatch 02_make_covariates.sh
 
 ---
 
-### Part 1 — GWAS QC (basic genotype-level filters)
+### Part 2 — GWAS for Disease Traits with PLINK (logistic and linear models)
 
-We’ll apply minimal QC commonly used before association:
+We’ll run:
+A **logistic regression** for the **binary trait** Infected_Status
+A **linear regression** for the **quantitative trait** AUDPC
 
-- **MAF filter**: remove very rare variants (e.g., MAF < 0.05)  
-- **Missingness per SNP**: remove poorly genotyped sites (e.g., >20% missing)  
+Both models include PC1–PC5 as covariates to control for population structure (ancestry/relatedness), which reduces false positives and helps detect true genotype–phenotype associations.
 
-> We apply MAF, missingness, and HWE filters to remove rare, error-prone, or inconsistent SNPs so GWAS tests high-quality markers, improving power and reducing false positives.
 
+### Which GWAS Regression to Use?
+
+Choose the regression model based on the type of your trait:
+
+#### 1. Linear Regression — `--linear`
+
+Use this when your trait is **quantitative** (i.e., numerical and continuous), such as measurements of disease severity, height, yield, or enzyme activity.  
+It estimates how the trait value changes depending on the number of copies of a genetic variant.
+
+#### 2. Logistic Regression — `--logistic`
+
+Use this when your trait is **binary**, with two categories such as infected vs. uninfected or resistant vs. susceptible.  
+It estimates how the probability of being in one category (e.g., infected) changes depending on the genetic variant.
+
+#### Summary Table
+
+| Trait            | Type          | PLINK Option | Output File           | Model    |
+|------------------|---------------|--------------|------------------------|----------|
+| `Infected_Status`| Binary (0/1)  | `--logistic` | `*.assoc.logistic`     | Logistic |
+| `AUDPC`          | Quantitative  | `--linear`   | `*.assoc.linear`       | Linear   |
+
+
+**Step 1 - Infected_Status → Logistic Regression**  
+
+Create the slurm file:
 ```bash
-vi 10_qc_make_subset.sh
+vi 20_run_gwas_infected.sh
 ```
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=gwas_qc
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
-#SBATCH --time=00:40:00
-#SBATCH -o gwas_qc.out
-#SBATCH -e gwas_qc.err
-
-module load PLINK
-
-plink --bfile ./plink/gwas_data \
-      --maf 0.05 \
-      --geno 0.20 \
-      --make-bed \
-      --allow-extra-chr \
-      --out ./plink/gwas_data_qc
-
-echo "QC subset: gwas_data_qc.*"
-```
-
-```bash
-sbatch 10_qc_make_subset.sh
-```
-
-> **Note:** Thresholds are dataset-dependent. For training we use pragmatic defaults.
-
----
-
-### Part 2 — GWAS for **SUC** with PLINK (linear model + PC covariates)
-
-We’ll run an **additive linear regression**, including **PC1–PC5** as covariates.
-
-**What is “additive linear regression” (for our plants)?**
-
-In GWAS, **additive linear regression** tests whether the trait changes in a straight-line way with the **number of alternate alleles** at a SNP for each **individual/plant**:
-- Genotype is coded **0, 1, or 2** (copies of the alternate allele).
-- We fit: `Trait ≈ Intercept + BETA × Genotype (+ covariates like PC1–PC5)`.
-- **BETA** is the **per-allele effect**: how much the trait (e.g., sucrose, g/100g) changes **for each extra copy** of the alternate allele.
-
-**Example:** If `BETA = +0.8`, then (on average)
-- Genotype **0** → baseline SUC  
-- Genotype **1** → baseline **+ 0.8**  
-- Genotype **2** → baseline **+ 1.6**
-
-This assumes **additivity** (heterozygotes are roughly halfway between the two homozygotes). If you suspect dominance/overdominance, you’d use a genotypic or dominance model—but the additive model is the standard, efficient default for genome-wide scans.
-
-```bash
-vi 20_run_gwas_suc.sh
-```
-
-```bash
-#!/bin/bash
-#SBATCH --job-name=gwas_suc
+#SBATCH --job-name=gwas_infected
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=2G
 #SBATCH --time=01:00:00
-#SBATCH -o gwas_suc.out
-#SBATCH -e gwas_suc.err
+#SBATCH -o gwas_infected.out
+#SBATCH -e gwas_infected.err
 
 module load PLINK
 
-plink --bfile ./plink/gwas_data_qc \
-      --pheno pheno_suc.txt \
-      --pheno-name SUC \
-      --covar covar_pcs.txt \
+plink --bfile ./plink/data_pruned \
+      --pheno ./pheno_infected.txt \
+      --covar ./plink/covar_pcs.txt \
       --covar-name PC1,PC2,PC3,PC4,PC5 \
-      --allow-extra-chr \
-      --linear hide-covar \
+      --logistic hide-covar \
       --allow-no-sex \
-      --out ./gwas/gwas_suc_linear
+      --out ./gwas/gwas_infected_logistic
 
-echo "Done: gwas_suc_linear.assoc.linear"
+echo "Done: gwas_infected_logistic.assoc.logistic"
 ```
 
 ```bash
-sbatch 20_run_gwas_suc.sh
+sbatch 20_run_gwas_infected.sh
 ```
 
-**Output:** `gwas_suc_linear.assoc.linear`  
-- Contains columns: `CHR BP SNP A1 TEST NMISS BETA STAT P ...`  
-- Use rows with `TEST == "ADD"` for additive model results.
+**Step 2 - AUDPC → Linear Regression**  
+Create the slurm file:
+```bash
+vi 21_run_gwas_audpc.sh
+```
 
-> **Tip:** If your trait is **non-normal**, consider rank-normalizing phenotypes or using robust models. For binary traits use `--logistic`.
->
+```bash
+#!/bin/bash
+#SBATCH --job-name=gwas_audpc
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=01:00:00
+#SBATCH -o gwas_audpc.out
+#SBATCH -e gwas_audpc.err
+
+module load PLINK
+
+plink --bfile ./plink/data_pruned \
+      --pheno ./pheno_audpc.txt \
+      --covar ./plink/covar_pcs.txt \
+      --covar-name PC1,PC2,PC3,PC4,PC5 \
+      --linear hide-covar \
+      --allow-no-sex \
+      --out ./gwas/gwas_audpc_linear
+
+echo "Done: gwas_audpc_linear.assoc.linear"
+```
+
+```bash
+vi 21_run_gwas_audpc.sh
+```
+
+
 > **Relevance of GWAS**
 > - Identifies **trait-linked markers** that can be turned into **KASP/SNP-chip assays**.
 > - Guides **parent selection** and **cross design** by highlighting favorable alleles/haplotypes.
