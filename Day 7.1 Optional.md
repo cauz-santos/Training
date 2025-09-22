@@ -708,10 +708,10 @@ This top SNP sits near HSFA2c, a transcription factor that boosts HSP70/HSP90 ch
 
 ### Optional Exercise: Map GWAS Peaks to Nearby Genes (±50 kb, Oil Palm EG5)
 
-## Goal
+#### Goal
 Take the lead **AUDPC** SNPs and list **all genes within ±50 kb** of each peak on the **oil palm EG5** reference. This bridges statistical association (SNPs) to biological candidates (genes/functions).
 
-## Why ±50 kb?
+#### Why ±50 kb?
 It’s a compact teaching window that usually captures the nearest causal candidates without dragging in too many distant genes. (You can tighten to ±25 kb or expand later; LD-based windows are an advanced follow-up.)
 
 ```bash
