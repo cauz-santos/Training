@@ -659,7 +659,7 @@ Two result files are available inside the `annotation/` folder:
 **1) SNPs located **inside genes****  
 
 ```bash
-cat annotation/snps_in_genes_with_product.tsv
+cat annotation_EG5/snps_in_genes_with_product.tsv
 ```
 
 Each line shows:  
@@ -671,7 +671,15 @@ This file tells us which SNPs directly fall within annotated genes.
 
 **2) The nearest gene to each SNP**  
 ```bash
-cat annotation/snps_nearest_genes_with_product.tsv
+cat annotation_EG5/snps_nearest_genes_with_product.tsv
+```
+
+Go to the Uniprot database and look for the potential function of these genes: 
+
+Search for:
+```bash
+LOC105042204 Elaeis guineensis
+LOC105042195 Elaeis guineensis
 ```
 
 Each line shows:  
@@ -681,6 +689,9 @@ Each line shows:
 - Distance in base pairs
 
 This file helps identify candidate genes near but not directly overlapping the SNP.
+
+**Interpretation:**  
+This top SNP sits near HSFA2c, a transcription factor that boosts HSP70/HSP90 chaperones. Those chaperones fold key immune receptors, so small changes in HSFA2 activity can indirectly tune disease resistance, especially under heat, when both the pathogen and host heat-responses are active.
 
 > **If function is missing:**  
 > - Your GFF annotation may not include `product`—try `Name`/`gene` attributes or consult the genome’s annotation README.  
