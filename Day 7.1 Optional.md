@@ -204,6 +204,7 @@ plink --bfile ./plink/data_pruned \
       --pheno ./pheno_infected.txt \
       --covar ./plink/covar_pcs.txt \
       --covar-name PC1,PC2,PC3,PC4,PC5 \
+      --allow-extra-chr \
       --logistic hide-covar \
       --allow-no-sex \
       --out ./gwas/gwas_infected_logistic
@@ -236,6 +237,7 @@ plink --bfile ./plink/data_pruned \
       --pheno ./pheno_audpc.txt \
       --covar ./plink/covar_pcs.txt \
       --covar-name PC1,PC2,PC3,PC4,PC5 \
+      --allow-extra-chr \
       --linear hide-covar \
       --allow-no-sex \
       --out ./gwas/gwas_audpc_linear
