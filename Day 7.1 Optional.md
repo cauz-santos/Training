@@ -212,23 +212,27 @@ vi 20_run_gwas_infected.sh
 ```bash
 #!/bin/bash
 #SBATCH --job-name=gwas_infected
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
-#SBATCH --time=01:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=6G
+#SBATCH --time=02:00:00
 #SBATCH -o gwas_infected.out
 #SBATCH -e gwas_infected.err
+
+set -euo pipefail
 
 module load PLINK
 mkdir -p ./gwas
 
-plink --bfile ./plink/data_pruned \
-      --pheno ./pheno_infected.txt \
-      --covar ./plink/covar_pcs10.txt \
-      --covar-name PC1-PC10  \
-      --logistic hide-covar \
-      --allow-no-sex \
-      --allow-extra-chr \  
-      --out ./gwas/gwas_infected_logistic
+plink \
+  --bfile ./plink/data_pruned \
+  --pheno ./pheno_infected_12.txt \
+  --covar ./plink/covar_pcs10.txt \
+  --covar-name PC1,PC2,PC3,PC4,PC5,PC6,PC7,PC8,PC9,PC10 \
+  --logistic hide-covar --ci 0.95 \
+  --allow-no-sex \
+  --allow-extra-chr \
+  --threads 8 \
+  --out ./gwas/gwas_infected_pc10
 
 echo "Done: gwas_infected_pc10.assoc.logistic"
 ```
@@ -246,23 +250,27 @@ vi 21_run_gwas_audpc.sh
 ```bash
 #!/bin/bash
 #SBATCH --job-name=gwas_audpc
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=2G
-#SBATCH --time=01:00:00
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=6G
+#SBATCH --time=02:00:00
 #SBATCH -o gwas_audpc.out
 #SBATCH -e gwas_audpc.err
+
+set -euo pipefail
 
 module load PLINK
 mkdir -p ./gwas
 
-plink --bfile ./plink/data_pruned \
-      --pheno ./pheno_audpc.txt \
-      --covar ./plink/covar_pcs10.txt \
-      --covar-name PC1,PC2,PC3,PC4,PC5 \
-      --linear hide-covar \
-      --allow-extra-chr \ 
-      --allow-no-sex \
-      --out ./gwas/gwas_audpc_linear
+plink \
+  --bfile ./plink/data_pruned \
+  --pheno ./pheno_audpc.txt \
+  --covar ./plink/covar_pcs10.txt \
+  --covar-name PC1,PC2,PC3,PC4,PC5,PC6,PC7,PC8,PC9,PC10 \
+  --linear hide-covar \
+  --allow-no-sex \
+  --allow-extra-chr \
+  --threads 8 \
+  --out ./gwas/gwas_audpc_pc10
 
 echo "Done: gwas_audpc_pc10.assoc.linear"
 ```
@@ -395,8 +403,8 @@ make_gwas_plots_top16 <- function(infile, trait_label, outdir = "./gwas") {
 }
 
 # Run interactively for each trait:
-make_gwas_plots_top16("./gwas/gwas_audpc_linear.assoc.linear", "AUDPC")
-make_gwas_plots_top16("./gwas/gwas_infected_logistic.assoc.logistic", "Infected_Status")
+make_gwas_plots_top16("./gwas/gwas_audpc_pc10.assoc.linear", "AUDPC")
+make_gwas_plots_top16("./gwas/gwas_infected_pc10.assoc.logistic", "Infected_Status")
 ```
 
 ### Inspecting GWAS Bonferroni Hits (AUDPC & Infected_Status)
