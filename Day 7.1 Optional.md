@@ -222,14 +222,13 @@ module load PLINK
 mkdir -p ./gwas
 
 plink --bfile ./plink/data_pruned \
-      --pheno ./pheno_infected_12.txt \
+      --pheno ./pheno_infected.txt \
       --covar ./plink/covar_pcs10.txt \
-      --covar-name PC1-PC10 \
-      --logistic hide-covar --ci 0.95 \
+      --covar-name PC1-PC10  \
+      --logistic hide-covar \
       --allow-no-sex \
-      --allow-extra-chr \        # <--- add this
-      --threads 8 \
-      --out ./gwas/gwas_infected_pc10
+      --allow-extra-chr \  
+      --out ./gwas/gwas_infected_logistic
 
 echo "Done: gwas_infected_pc10.assoc.logistic"
 ```
@@ -259,12 +258,11 @@ mkdir -p ./gwas
 plink --bfile ./plink/data_pruned \
       --pheno ./pheno_audpc.txt \
       --covar ./plink/covar_pcs10.txt \
-      --covar-name PC1-PC10 \
+      --covar-name PC1,PC2,PC3,PC4,PC5 \
       --linear hide-covar \
+      --allow-extra-chr \ 
       --allow-no-sex \
-      --allow-extra-chr \        # <--- add this
-      --threads 8 \
-      --out ./gwas/gwas_audpc_pc10
+      --out ./gwas/gwas_audpc_linear
 
 echo "Done: gwas_audpc_pc10.assoc.linear"
 ```
