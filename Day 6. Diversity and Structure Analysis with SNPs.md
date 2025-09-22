@@ -344,7 +344,7 @@ While PLINK is strong for data preparation and sample-level summaries, VCFtools 
 
    module load vcftools
 
-   IN_VCF=/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"  # same input used in Step 0.1
+   IN_VCF="/lisc/data/scratch/course/pgbiow/data/VCF/dataset120_chr18.vcf.gz"  # same input used in Step 0.1
 
    echo "Per-individual heterozygosity and inbreeding coefficient..."
    vcftools --gzvcf "${IN_VCF}" \
