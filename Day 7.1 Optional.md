@@ -16,25 +16,6 @@ This is a **hands-on** session; you will:
 > **Relevance:**  
 > GWAS uncovers **genomic regions** that control traits like plant disease response. These become **markers** for MAS, and inform **genome-wide prediction** in GS—shortening cycles and improving accuracy in breeding pipelines.
 
-### Input Data
-
-- `dataset120_chr18.vcf.gz` — high-quality, biallelic SNPs
-- `gwas_phen_table_120.csv` — phenotypes with **SUC** column (g/100g dry matter)
-
-**Example `phenotypes.csv` (CSV with header):**
-```
-IID,SUC
-PDAC253_Ram_S,17.88
-PDAC254_Rij_S,20.86
-PDAC255_Sin_S,21.24
-...
-```
-
-> **Assumptions:**  
-> - **IID** matches the **second column** of your PLINK `.fam` file (IID).  
-> - You can set **FID = IID** if family IDs are not used.  
-> - Missing phenotypes are `NA`.
-
 ---
 
 ### Part 1 - Prepare data
@@ -307,117 +288,135 @@ Open an **interactive R** session (with graphics) on the cluster or RStudio.
 
 ```r
 # ================================
-# GWAS Visualization: SUC (Manhattan plot)
+# GWAS Visualization: (Manhattan plot)
 # ================================
 
-library(data.table)
-library(ggplot2)
-library(ggrepel)
-library(dplyr)
+setwd("/lisc/scratch/course/pgbiow/GWAS")
 
-# --- Load PLINK linear results ---
-dt <- fread("./gwas/gwas_suc_linear.assoc.linear")
-table(dt$TEST, useNA = "ifany")
+suppressPackageStartupMessages({
+  library(data.table)
+  library(ggplot2)
+})
 
-# --- Keep only additive model and valid P-values ---
-dt <- dt[TEST == "ADD"]
-dt[, P := as.numeric(P)]
-dt <- dt[!is.na(P)]
+make_gwas_plots_top16 <- function(infile, trait_label, outdir = "./gwas") {
+  dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
 
-# --- Fix CHR column: extract numeric index from labels like "chrLG1", "chrLG2", etc. ---
-dt[, CHR := as.numeric(gsub("chrLG", "", CHR))]
-dt <- dt[!is.na(CHR) & !is.na(BP)]
+  dt <- fread(infile)
+  if ("TEST" %in% names(dt)) dt <- dt[TEST == "ADD"]
 
-# --- Genomic inflation (lambda) ---
-dt[, CHISQ := qchisq(1 - P, df = 1)]
-lambda <- median(dt$CHISQ, na.rm = TRUE) / 0.456
-cat("Genomic inflation factor (lambda):", round(lambda, 3), "\n")
+  stopifnot(all(c("CHR","BP","P") %in% names(dt)))
+  dt[, P := as.numeric(P)]
+  dt <- dt[!is.na(P) & !is.na(BP)]
 
-# --- Multiple testing thresholds ---
-M <- nrow(dt)
-bonf <- 0.05 / M
-dt[, FDR_BH := p.adjust(P, method = "BH")]
-cat("Bonferroni threshold (alpha = 0.05):", signif(bonf, 3), "\n")
+  # Numeric chromosome index (e.g., 'chr01' -> 1)
+  dt[, CHR_RAW := as.character(CHR)]
+  dt[, CHR_NUM := suppressWarnings(as.numeric(gsub("[^0-9]+", "", CHR_RAW)))]
+  if (all(is.na(dt$CHR_NUM))) dt[, CHR_NUM := suppressWarnings(as.numeric(as.character(CHR)))]
+  dt <- dt[!is.na(CHR_NUM)]
 
-# --- Cumulative position for Manhattan plot ---
-setorder(dt, CHR, BP)
-chr_sizes <- dt[, .(chr_len = max(BP)), by = CHR]
-chr_sizes[, chr_start := cumsum(shift(chr_len, fill = 0))]
-dt <- merge(dt, chr_sizes[, .(CHR, chr_start)], by = "CHR", all.x = TRUE)
-dt[, BPcum := BP + chr_start]
+  # Keep exactly the 16 largest chromosomes by span
+  chr_stats <- dt[, .(min_bp = min(BP), max_bp = max(BP)), by = .(CHR, CHR_NUM)]
+  chr_stats[, span := pmax(0, max_bp - min_bp)]
+  keep_chr <- chr_stats[order(-span)][1:min(16, .N), CHR]
+  kept <- dt[CHR %in% keep_chr]
+  dropped <- dt[!CHR %in% keep_chr]
+  message(sprintf("Keeping %d chromosomes (top by span), dropping %d.",
+                  uniqueN(kept$CHR), uniqueN(dropped$CHR)))
 
-# --- Axis positions (center of each chromosome block) ---
-axis_df <- dt[, .(center = (min(BPcum) + max(BPcum)) / 2), by = CHR]
+  # Lambda and thresholds
+  setorder(kept, CHR_NUM, BP)
+  kept[, CHISQ := qchisq(1 - P, df = 1)]
+  lambda <- median(kept$CHISQ, na.rm = TRUE) / 0.456
+  M <- nrow(kept)
+  bonf <- 0.05 / max(M, 1)
 
-# --- Manhattan plot ---
-dt[, logP := -log10(P)]
-dt[, color := as.factor(CHR %% 2)]
+  # Cumulative genomic position for Manhattan
+  chr_sizes <- kept[, .(chr_len = max(BP, na.rm = TRUE)), by = .(CHR, CHR_NUM)]
+  setorder(chr_sizes, CHR_NUM)
+  chr_sizes[, chr_start := cumsum(shift(chr_len, fill = 0))]
+  kept <- merge(kept, chr_sizes[, .(CHR, chr_start)], by = "CHR", all.x = TRUE)
+  kept[, BPcum := BP + chr_start]
 
-p_manhattan <- ggplot(dt, aes(x = BPcum, y = logP, color = color)) +
-  geom_point(alpha = 0.75, size = 1) +
-  scale_color_manual(values = c("steelblue", "darkgrey")) +
-  geom_hline(yintercept = -log10(bonf), linetype = "dashed", color = "red", linewidth = 0.7) +
-  scale_x_continuous(label = axis_df$CHR, breaks = axis_df$center) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
-  labs(x = "Chromosome", y = "-log10(p-value)",
-       title = "GWAS Manhattan Plot — Sucrose (SUC)") +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "none",
-        panel.grid.major.x = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1))
+  axis_df <- kept[, .(center = (min(BPcum) + max(BPcum)) / 2), by = .(CHR, CHR_NUM)][order(CHR_NUM)]
+  kept[, logP := -log10(P)]
+  kept[, color := as.factor(CHR_NUM %% 2)]
 
-# Preview plot
-print(p_manhattan)
+  # Manhattan
+  p_manhattan <- ggplot(kept, aes(BPcum, logP, color = color)) +
+    geom_point(alpha = 0.75, size = 0.8) +
+    geom_hline(yintercept = -log10(bonf), linetype = "dashed", color = "red", linewidth = 0.6) +
+    scale_x_continuous(breaks = axis_df$center, labels = axis_df$CHR_NUM) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+    labs(x = "Chromosome", y = "-log10(p)",
+         title = paste("GWAS Manhattan —", trait_label, "(top 16 chromosomes)")) +
+    theme_minimal(base_size = 13) +
+    theme(legend.position = "none",
+          panel.grid.major.x = element_blank(),
+          axis.text.x = element_text(angle = 45, hjust = 1))
 
-# --- QQ plot ---
-observed <- sort(dt$P)
-expected <- -log10(ppoints(length(observed)))
-observed_logp <- -log10(observed)
+  # QQ
+  observed <- sort(kept$P)
+  expected <- -log10(ppoints(length(observed)))
+  observed_logp <- -log10(observed)
+  p_qq <- ggplot(data.frame(Expected = expected, Observed = observed_logp),
+                 aes(Expected, Observed)) +
+    geom_point(size = 0.9, alpha = 0.6) +
+    geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+    labs(title = sprintf("GWAS QQ — %s (lambda = %.3f)", trait_label, lambda),
+         x = "Expected -log10(p)", y = "Observed -log10(p)") +
+    theme_minimal(base_size = 13)
 
-qq_df <- data.frame(Expected = expected, Observed = observed_logp)
+  # Show in RStudio
+  print(p_manhattan)
+  print(p_qq)
+  message(sprintf("Lambda: %.3f   Bonferroni: %.3g   SNPs plotted: %d", lambda, bonf, M))
 
-p_qq <- ggplot(qq_df, aes(x = Expected, y = Observed)) +
-  geom_point(size = 1, alpha = 0.6) +
-  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
-  labs(title = sprintf("GWAS QQ Plot (SUC) — lambda = %.3f", lambda),
-       x = "Expected -log10(p)",
-       y = "Observed -log10(p)") +
-  theme_minimal(base_size = 14)
+  # ---- Save plots to PDF ----
+  ggsave(file.path(outdir, paste0("GWAS_", trait_label, "_Manhattan.pdf")),
+         plot = p_manhattan, width = 10, height = 5)
+  ggsave(file.path(outdir, paste0("GWAS_", trait_label, "_QQ.pdf")),
+         plot = p_qq, width = 6, height = 6)
 
-# Preview plot
-print(p_qq)
+  # ---- Export top hits ----
+  kept_sorted <- copy(kept)[order(P)]
+  fwrite(kept_sorted[1:min(20, .N)],
+         file.path(outdir, paste0("top20_hits_", trait_label, ".tsv")), sep = "\t")
+  fwrite(kept_sorted[P <= bonf],
+         file.path(outdir, paste0("bonferroni_hits_", trait_label, ".tsv")), sep = "\t")
 
-# --- Save plots to PDF after inspection ---
-ggsave("./gwas/GWAS_SUC_Manhattan.pdf", plot = p_manhattan, width = 10, height = 5)
-ggsave("./gwas/GWAS_SUC_QQ.pdf", plot = p_qq, width = 6, height = 6)
+  cat(sprintf("PDFs saved: GWAS_%s_Manhattan.pdf, GWAS_%s_QQ.pdf\n", trait_label, trait_label))
+  cat(sprintf("Tables saved: top20_hits_%s.tsv, bonferroni_hits_%s.tsv\n", trait_label, trait_label))
 
-# --- Export top hits ---
-setorder(dt, P)
-fwrite(dt[1:20], "./gwas/top20_hits_SUC.tsv", sep = "\t")
-fwrite(dt[P <= bonf], "./gwas/bonferroni_hits_SUC.tsv", sep = "\t")
+  invisible(list(kept_chr = unique(kept$CHR), dropped_chr = unique(dropped$CHR),
+                 manhattan = p_manhattan, qq = p_qq,
+                 lambda = lambda, bonf = bonf))
+}
 
-cat("PDFs saved: GWAS_SUC_Manhattan.pdf, GWAS_SUC_QQ.pdf\n")
-cat("Tables saved: top20_hits_SUC.tsv, bonferroni_hits_SUC.tsv\n")
+# Run interactively for each trait:
+make_gwas_plots_top16("./gwas/gwas_audpc_linear.assoc.linear", "AUDPC")
+make_gwas_plots_top16("./gwas/gwas_infected_logistic.assoc.logistic", "Infected_Status")
 ```
 
-### Inspecting GWAS Bonferroni Hits (SUC)
+### Inspecting GWAS Bonferroni Hits (AUDPC & Infected_Status)
 
-After running the analysis, a TSV file with all SNPs passing the Bonferroni correction (α = 0.05) is saved at:
+After running the analyses, TSV files with SNPs passing Bonferroni (α = 0.05) are saved in `./gwas`:
+
+- `bonferroni_hits_AUDPC.tsv` (from linear GWAS)
+- `bonferroni_hits_Infected_Status.tsv` (from logistic GWAS)
+
+### Quick look
 
 ```bash
-cd ~/07_gwas_selection/gwas
+cd /path to your folder/07_gwas_selection/gwas
 
-# View the first 10 lines
-head bonferroni_hits_SUC.tsv
+# AUDPC (quantitative)
+head bonferroni_hits_AUDPC.tsv
+cut -f1,2,3,9 bonferroni_hits_AUDPC.tsv | head   # CHR BP SNP P
 
-# Scroll interactively
-less bonferroni_hits_SUC.tsv
-
-# View just SNP and p-value columns
-cut -f2,9 bonferroni_hits_SUC.tsv | head
+# Infected_Status (binary)
+head bonferroni_hits_Infected_Status.tsv
+cut -f1,2,3,9 bonferroni_hits_Infected_Status.tsv | head   # CHR BP SNP P
 ```
-
-This file contains a list of SNPs that are **significantly associated with sucrose (SUC) concentration** based on the additive model (`TEST == "ADD"`). Each row represents one SNP that passed the Bonferroni threshold for genome-wide significance.
 
 #### What’s in the file?
 
@@ -458,59 +457,77 @@ Now we’ll zoom into the strongest GWAS peak to inspect the local signal shape 
 Only change them if you want to zoom into a **specific SNP or region** (manual variants provided).
 
 ```r
-# --- Regional association plot around the top SNP (±250 kb) ---
-
+# ================================
+# Regional Association Plot (±250 kb) around the Top Hit
+# Works for *.assoc.linear or *.assoc.logistic
+# ================================
 library(data.table)
 library(ggplot2)
 library(ggrepel)
 
-# Load additive model GWAS results
-dt <- fread("gwas/gwas_suc_linear.assoc.linear")[TEST == "ADD" & !is.na(P)]
+regional_plot_tophit <- function(infile, trait_label, outdir = "./gwas", flank_kb = 250) {
+  dir.create(outdir, showWarnings = FALSE, recursive = TRUE)
+  dt <- fread(infile)
 
-# Extract numeric chromosome from "chrLG14" format
-dt[, CHR_NUM := as.numeric(gsub("chrLG", "", CHR))]
+  # Keep additive model only (PLINK outputs)
+  if ("TEST" %in% names(dt)) dt <- dt[TEST == "ADD"]
+  stopifnot(all(c("CHR","BP","P") %in% names(dt)))
 
-# Identify top SNP (lowest p-value)
-setorder(dt, P)
-lead <- dt[1]
-chr  <- lead$CHR_NUM
-pos  <- lead$BP
+  dt[, P := as.numeric(P)]
+  dt <- dt[!is.na(P) & !is.na(BP) & !is.na(CHR)]
+  setorder(dt, P)
+  lead <- dt[1]
+  chr  <- as.character(lead$CHR)
+  pos  <- as.integer(lead$BP)
 
-cat(sprintf("Top SNP: %s (CHR %s, POS %d, P = %.2e)\n", lead$SNP, chr, pos, lead$P))
+  message(sprintf("Top SNP: CHR=%s  BP=%s  P=%.3e", chr, format(pos, big.mark=","), lead$P))
 
-# Subset ±250 kb window around top SNP
-win <- dt[CHR_NUM == chr & BP >= (pos - 250000) & BP <= (pos + 250000)]
+  flank <- as.integer(flank_kb) * 1000L
+  win <- dt[CHR == chr & BP >= (pos - flank) & BP <= (pos + flank)]
 
-# Identify top SNP in the window
-top_win <- win[which.min(P)]
+  # If the window is too sparse, expand to ±500 kb automatically
+  if (nrow(win) < 50) {
+    flank <- 500000L
+    win <- dt[CHR == chr & BP >= (pos - flank) & BP <= (pos + flank)]
+    message(sprintf("Few points in window; expanded to ±%d kb", flank/1000L))
+  }
 
-# --- Plot to screen ---
-p_regional <- ggplot(win, aes(x = BP, y = -log10(P))) +
-  geom_point(alpha = 0.7) +
-  geom_vline(xintercept = pos, linetype = "dashed", color = "red") +
-  geom_text_repel(
-    data = top_win,
-    aes(label = SNP),
-    size = 3,
-    nudge_y = 0.5,
-    box.padding = 0.3,
-    segment.color = "grey50",
-    max.overlaps = Inf
-  ) +
-  labs(
-    title = sprintf("Regional Association: Chr %s ±250 kb around %s", chr, format(pos, big.mark = ",")),
-    x = "Genomic Position (bp)",
-    y = "-log10(P)"
-  ) +
-  theme_minimal(base_size = 14)
+  # Identify top SNP in the window (for label)
+  top_win <- win[which.min(P)]
 
-# Show the plot
-print(p_regional)
+  p_regional <- ggplot(win, aes(x = BP, y = -log10(P))) +
+    geom_point(alpha = 0.8, size = 1) +
+    geom_vline(xintercept = pos, linetype = "dashed", color = "red") +
+    geom_text_repel(
+      data = top_win,
+      aes(label = ifelse(SNP == ".", paste0(chr, ":", BP), SNP)),
+      size = 3,
+      box.padding = 0.3,
+      segment.color = "grey50",
+      max.overlaps = Inf
+    ) +
+    labs(
+      title = sprintf("Regional Association: %s — %s ±%d kb", trait_label, chr, flank/1000L),
+      subtitle = sprintf("Lead at %s:%s   p=%.2e", chr, format(pos, big.mark=","), top_win$P),
+      x = "Genomic Position (bp)",
+      y = "-log10(p)"
+    ) +
+    theme_minimal(base_size = 14)
 
-# --- Save to file after inspection ---
-ggsave("GWAS_SUC_RegionalTop_labeled.png", plot = p_regional, width = 10, height = 4, dpi = 150)
+  print(p_regional)
 
-cat("✅ Saved: GWAS_SUC_RegionalTop_labeled.png\n")
+  # Save PNG/PDF
+  base <- file.path(outdir, sprintf("GWAS_%s_Regional_%s_%s", trait_label, gsub("[^A-Za-z0-9_.-]","_", chr), pos))
+  ggsave(paste0(base, ".png"), plot = p_regional, width = 10, height = 4, dpi = 150)
+  ggsave(paste0(base, ".pdf"), plot = p_regional, width = 10, height = 4)
+
+  message(sprintf("Saved: %s.png and %s.pdf", base, base))
+  invisible(p_regional)
+}
+
+# Run interactively for your two results:
+regional_plot_tophit("./gwas/gwas_audpc_linear.assoc.linear", "AUDPC")            # hits ~49.4 Mb on NC_025995.1
+regional_plot_tophit("./gwas/gwas_infected_logistic.assoc.logistic", "Infected")  # hits ~52.38 Mb on NC_025995.1
 ```
 ---
 
