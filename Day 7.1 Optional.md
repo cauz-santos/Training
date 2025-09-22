@@ -4,22 +4,21 @@
 
 Welcome to Day 7!
 
-Today we connect **SNP genotypes** to a **quantitative trait** (sucrose content, **SUC**) using **Genome-Wide Association Studies (GWAS)**, and then interpret significant signals biologically by mapping top SNPs to **genes** and **functions**.
+Today we connect **SNP genotypes** to a **binary** and **quantitative trait** (plant disease infection response) using **Genome-Wide Association Studies (GWAS)**, and then interpret significant signals biologically by mapping top SNPs to **genes** and **functions**.
 
 This is a **hands-on** session; you will:
 - Prepare genotype/phenotype/covariates for GWAS
-- Run GWAS in **PLINK** (with population-structure correction via **PC covariates** from Day 6)
+- Run GWAS in **PLINK** (with population-structure correction via **PC covariates**)
 - Visualize results (**Manhattan** and **QQ** plots in R)
 - Identify **top SNPs**, map them to **genes** (GFF3), and extract **putative functions**
 - Discuss how hits feed into **Marker-Assisted Selection (MAS)** and **Genomic Selection (GS)**
 
 > **Relevance:**  
-> GWAS uncovers **genomic regions** that control traits like sucrose. These become **markers** for MAS, and inform **genome-wide prediction** in GS—shortening cycles and improving accuracy in breeding pipelines.
+> GWAS uncovers **genomic regions** that control traits like plant disease response. These become **markers** for MAS, and inform **genome-wide prediction** in GS—shortening cycles and improving accuracy in breeding pipelines.
 
 ### Input Data
 
 - `dataset120_chr18.vcf.gz` — high-quality, biallelic SNPs
-- `pca_results.eigenvec` — PCA eigenvectors (Day 6 output)  
 - `gwas_phen_table_120.csv` — phenotypes with **SUC** column (g/100g dry matter)
 
 **Example `phenotypes.csv` (CSV with header):**
@@ -77,29 +76,69 @@ set -euo pipefail
 PHENO_CSV="/lisc/scratch/course/pgbiow/data/phenotypes_variant_verdant.csv"  # columns: No.,ID,Infected_Status,AUDPC,Internal_Symptoms
 FAM="./plink/data_pruned.fam"
 
-# ---- Infected_Status ----
-echo -e "FID\tIID\tINFECTED_STATUS" > pheno_infected.txt
+# Ensure stable sort
+export LC_ALL=C
 
-awk -F, 'NR>1{ph[$2]=$3} END{for(k in ph) print k"\t"ph[k] }' "${PHENO_CSV}" \
-| sort -k1,1 > pheno_infected_tmp.tsv
+############################
+# Infected_Status (binary) #
+# PLINK expects: 1 = control, 2 = case, -9 = missing
+############################
+echo -e "FID\tIID\tINFECTED_STATUS" > pheno_infected_12.txt
 
-awk 'NR==FNR{ph[$1]=$2; next} {fid=$1; iid=$2; val=(iid in ph?ph[iid]:"NA"); print fid"\t"iid"\t"val}' \
-    pheno_infected_tmp.tsv "${FAM}" >> pheno_infected.txt
+# Map CSV -> (IID, code) with 1/2/-9 encoding
+awk -F',' 'NR>1 {
+  gsub(/\r$/,"")                        # strip CR if present
+  id=$2; v=$3
+  if (v=="" || v=="NA")      code=-9
+  else if (v==0)             code=1     # control
+  else if (v==1)             code=2     # case
+  else                       code=-9
+  print id "\t" code
+}' "${PHENO_CSV}" | sort -k1,1 > infected_map.tsv
 
-rm -f pheno_infected_tmp.tsv
+# Join to FAM order; FID=first col, IID=second col in .fam
+awk 'NR==FNR { ph[$1]=$2; next }
+     { fid=$1; iid=$2; val=(iid in ph ? ph[iid] : -9);
+       print fid "\t" iid "\t" val }' \
+    infected_map.tsv "${FAM}" >> pheno_infected_12.txt
 
-# ---- AUDPC ----
+rm -f infected_map.tsv
+
+################
+# AUDPC (quant) #
+# Use -9 for missing/non-numeric
+################
 echo -e "FID\tIID\tAUDPC" > pheno_audpc.txt
 
-awk -F, 'NR>1{ph[$2]=$4} END{for(k in ph) print k"\t"ph[k] }' "${PHENO_CSV}" \
-| sort -k1,1 > pheno_audpc_tmp.tsv
+# Map CSV -> (IID, value), sanitize to numeric; else -9
+awk -F',' 'NR>1 {
+  gsub(/\r$/,"")
+  id=$2; v=$4
+  if (v=="" || v=="NA") { val="-9" }
+  else if (v ~ /^-?[0-9]+(\.[0-9]+)?$/) { val=v }  # numeric
+  else { val="-9" }
+  print id "\t" val
+}' "${PHENO_CSV}" | sort -k1,1 > audpc_map.tsv
 
-awk 'NR==FNR{ph[$1]=$2; next} {fid=$1; iid=$2; val=(iid in ph?ph[iid]:"NA"); print fid"\t"iid"\t"val}' \
-    pheno_audpc_tmp.tsv "${FAM}" >> pheno_audpc.txt
+awk 'NR==FNR { ph[$1]=$2; next }
+     { fid=$1; iid=$2; val=(iid in ph ? ph[iid] : -9);
+       print fid "\t" iid "\t" val }' \
+    audpc_map.tsv "${FAM}" >> pheno_audpc.txt
 
-rm -f pheno_audpc_tmp.tsv
+rm -f audpc_map.tsv
 
-echo "Done: pheno_infected.txt and pheno_audpc.txt created"
+################
+# Summaries
+################
+echo "Done:"
+echo "  - pheno_infected_12.txt (FID IID INFECTED_STATUS; 1=control, 2=case, -9=missing)"
+echo "  - pheno_audpc.txt       (FID IID AUDPC; -9=missing)"
+
+# Quick counts (optional)
+echo "Counts (infected_12):"
+tail -n +2 pheno_infected_12.txt | awk '{c[$3]++} END{for(k in c) print k, c[k]}' | sort -k1,1
+echo "Missing in AUDPC:"
+tail -n +2 pheno_audpc.txt | awk '$3==-9{m++} END{print (m?m:0)}'
 ```
 
 ```bash
