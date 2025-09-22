@@ -197,95 +197,37 @@ What this produces:
 set -euo pipefail
 
 module purge
-module load samtools
-module load bcftools
 module load PLINK
 
 # ================= USER SETTINGS =================
-IN_VCF="/lisc/scratch/course/pgbiow/GWAS/Report_DOp25-10208_4.1.vcf"
-REF_FASTA="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference/EG5_reference_genomic.fna"
-OUT_DIR="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink"   # <-- set to your path
-OUT_BASENAME="my_data"   # final PLINK prefix will be ${OUT_DIR}/my_data
-
-# Site-level thresholds
-MIN_MAF="0.05"          # keep sites with MAF >= 0.05
-MAX_SITE_MISS="0.20"    # keep sites with F_MISSING <= 0.10 (<=10% missing across samples)
-
-# Sample-level threshold
-MAX_SAMPLE_MISS="0.20"  # drop samples with missingness > 10%
+# Use the CLEANED VCF produced by 00a_clean_vcf.sh
+IN_VCF="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink/my_data.vcf.gz"
+OUT_DIR="/lisc/data/scratch/course/pgbiow/06_diversity_structure/plink"
+OUT_BASENAME="my_data"        # final PLINK prefix: ${OUT_DIR}/my_data
+MAX_SAMPLE_MISS="0.20"        # drop samples with >20% missing genotypes
+THREADS="${SLURM_CPUS_PER_TASK:-1}"
 # =================================================
 
 mkdir -p "$OUT_DIR"
 
-# Ensure reference index (for contig lengths)
-[ -f "${REF_FASTA}.fai" ] || samtools faidx "$REF_FASTA"
-
-# Split header/body around the #CHROM line (operate on plain text VCF)
-chrom_line=$(grep -n '^#CHROM' "$IN_VCF" | cut -d: -f1)
-if [[ -z "$chrom_line" ]]; then
-  echo "ERROR: #CHROM line not found in $IN_VCF" >&2
-  exit 1
-fi
-
-HEADER="$OUT_DIR/header.orig.txt"
-BODY="$OUT_DIR/body.vcf"
-head -n $((chrom_line-1)) "$IN_VCF" > "$HEADER"
-tail -n +"$chrom_line" "$IN_VCF" > "$BODY"
-
-# 1) Fix GT header line: Type=Integer -> Type=String (required for '0/1' etc.)
-HEADER_FIXED="$OUT_DIR/header.fixed.txt"
-sed -E 's/^(##FORMAT=<ID=GT,Number=1,Type=)Integer(,Description="Genotype">)/\1String\2/' \
-  "$HEADER" > "$HEADER_FIXED"
-
-# 2) Append ##contig lines from reference .fai (must be before #CHROM)
-CONTIGS_HDR="$OUT_DIR/contigs.hdr"
-awk 'BEGIN{OFS=""} {print "##contig=<ID=" $1 ",length=" $2 ">"}' "${REF_FASTA}.fai" > "$CONTIGS_HDR"
-cat "$CONTIGS_HDR" >> "$HEADER_FIXED"
-
-# 3) Recombine fixed header + body into a new VCF (uncompressed)
-FIXED_VCF="$OUT_DIR/${OUT_BASENAME}.fixed.vcf"
-cat "$HEADER_FIXED" "$BODY" > "$FIXED_VCF"
-
-# 4) Pre-clean: keep only biallelic A/C/G/T SNPs
-CLEAN_VCF_GZ="$OUT_DIR/${OUT_BASENAME}.clean.vcf.gz"
-bcftools view -i 'TYPE="snp" && N_ALT=1 && REF~"^[ACGT]$" && ALT~"^[ACGT]$"' \
-  -Oz -o "$CLEAN_VCF_GZ" "$FIXED_VCF"
-bcftools index -t "$CLEAN_VCF_GZ"
-
-# 5) Fill INFO tags for MAF and F_MISSING
-TAGGED_VCF_GZ="$OUT_DIR/${OUT_BASENAME}.tags.vcf.gz"
-bcftools +fill-tags "$CLEAN_VCF_GZ" -Oz -o "$TAGGED_VCF_GZ" -- -t MAF,AC,AN,NS,F_MISSING
-bcftools index -t "$TAGGED_VCF_GZ"
-
-# 6) Filter sites by MAF and site missingness
-SITE_FILT_VCF_GZ="$OUT_DIR/${OUT_BASENAME}.sitefilt.vcf.gz"
-bcftools view -i "MAF >= ${MIN_MAF} && F_MISSING <= ${MAX_SITE_MISS}" \
-  -Oz -o "$SITE_FILT_VCF_GZ" "$TAGGED_VCF_GZ"
-bcftools index -t "$SITE_FILT_VCF_GZ"
-
-# 7) Convert to PLINK bed (pre-sample filter)
-#    Use a temporary prefix to avoid overwriting the final name.
-PLINK_TMP="${OUT_DIR}/${OUT_BASENAME}.tmp"
-plink --vcf "$SITE_FILT_VCF_GZ" \
+echo "[$(date)] Converting cleaned VCF -> PLINK, and filtering high-missing samples ..."
+plink --vcf "$IN_VCF" \
       --make-bed \
       --double-id \
       --allow-extra-chr \
-      --out "$PLINK_TMP"
-
-# 8) Filter samples by missingness (per-sample), write FINAL files as ${OUT_BASENAME}.*
-plink --bfile "$PLINK_TMP" \
-      --allow-extra-chr \
       --mind "$MAX_SAMPLE_MISS" \
-      --make-bed \
+      --threads "$THREADS" \
       --out "${OUT_DIR}/${OUT_BASENAME}"
 
-echo "Done."
+echo "[$(date)] Done."
 echo "Outputs:"
-echo "  - Fixed VCF:            $FIXED_VCF"
-echo "  - Clean SNP VCF:        $CLEAN_VCF_GZ"
-echo "  - Tagged VCF (+MAF):    $TAGGED_VCF_GZ"
-echo "  - Site-filtered VCF:    $SITE_FILT_VCF_GZ   (MAF >= $MIN_MAF, F_MISSING <= $MAX_SITE_MISS)"
-echo "  - PLINK (final):        ${OUT_DIR}/${OUT_BASENAME}.{bed,bim,fam}   (sample miss <= $MAX_SAMPLE_MISS)"
+echo "  - ${OUT_DIR}/${OUT_BASENAME}.bed"
+echo "  - ${OUT_DIR}/${OUT_BASENAME}.bim"
+echo "  - ${OUT_DIR}/${OUT_BASENAME}.fam"
+
+# Quick sanity prints (optional):
+echo -n "Samples: " && wc -l < "${OUT_DIR}/${OUT_BASENAME}.fam"
+echo -n "SNPs:    " && wc -l < "${OUT_DIR}/${OUT_BASENAME}.bim"
 ```
 4. Press `Esc`, type `:wq` and press `Enter` to save and exit.  
 5. Submit the job:
