@@ -863,7 +863,7 @@ vi 50_gs_lite_audpc.sh
 set -euo pipefail
 
 OUTDIR="gs-lite"
-GWAS_HITS="./gwas/bonferroni_hits_AUDPC.tsv"   # GWAS results
+GWAS_HITS="./gwas/top20_hits_AUDPC.tsv"   # GWAS results
 BFILE="plink/data_pruned"                      # PLINK prefix (bed/bim/fam)
 PHENO="pheno_audpc.txt"                        # phenotype file (FID IID AUDPC)
 
