@@ -54,7 +54,7 @@ vi 01_make_pheno.sh
 
 set -euo pipefail
 
-PHENO_CSV="/lisc/scratch/course/pgbiow/data/phenotypes_variant_verdant.csv"  # columns: No.,ID,Infected_Status,AUDPC,Internal_Symptoms
+PHENO_CSV="/lisc/scratch/course/pgbiow/GWAS/phenotypes_variant_verdant.csv"  # columns: No.,ID,Infected_Status,AUDPC,Internal_Symptoms
 FAM="./plink/data_pruned.fam"
 
 # Ensure stable sort
