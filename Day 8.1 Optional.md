@@ -56,7 +56,7 @@ Create the following SLURM script:
 #SBATCH --time=00:05:00
 #SBATCH --mem=4G
 
-module load plink
+module load PLINK
 
 plink \
   --bfile data_pruned \
