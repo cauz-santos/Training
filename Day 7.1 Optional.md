@@ -150,16 +150,27 @@ vi 02_make_covariates.sh
 #SBATCH -o make_covariates.out
 #SBATCH -e make_covariates.err
 
-EIGENVEC="/lisc/scratch/course/pgbiow/GWAS/plink/cov_pca.eigenvec"
+set -euo pipefail
 
-# pca_results.eigenvec: FID IID PC1 PC2 ...
-# Keep first 5 PCs (adjust if needed)
-{ 
-  echo -e "FID\tIID\tPC1\tPC2\tPC3\tPC4\tPC5"
-  awk '{print $1"\t"$2"\t"$3"\t"$4"\t"$5"\t"$6"\t"$7}' "${EIGENVEC}"
-} > covar_pcs.txt
+EIGENVEC="/lisc/scratch/course/pgbiow/GWAS/plink/cov_pca.eigenvec"   # FID IID PC1 PC2 ...
+NUM_PCS=10                                                           # <-- change to 20 if you like
+OUTFILE="covar_pcs${NUM_PCS}.txt"
 
-echo "Done: covar_pcs.txt (PC1..PC5)"
+# Build header + rows: FID IID PC1..PCk
+awk -v k="${NUM_PCS}" 'BEGIN{
+  OFS="\t";
+  printf "FID\tIID";
+  for(i=1;i<=k;i++) printf "\tPC%d", i;
+  printf "\n";
+}
+{
+  OFS="\t";
+  out = $1 OFS $2;
+  for(i=1;i<=k;i++) out = out OFS $(2+i);
+  print out;
+}' "${EIGENVEC}" > "${OUTFILE}"
+
+echo "Done: ${OUTFILE} (PC1..PC${NUM_PCS})"
 ```
 
 ```bash
