@@ -678,7 +678,7 @@ Two result files are available inside the `annotation/` folder:
 **1) SNPs located **inside genes****  
 
 ```bash
-cat annotation_EG5/snps_in_genes_with_product.tsv
+cat annotation_EG5/snps_in_genes.tsv
 ```
 
 Each line shows:  
@@ -690,7 +690,7 @@ This file tells us which SNPs directly fall within annotated genes.
 
 **2) The nearest gene to each SNP**  
 ```bash
-cat annotation_EG5/snps_nearest_genes_with_product.tsv
+cat annotation_EG5/snps_nearest_genes.tsv"
 ```
 
 Go to the Uniprot database and look for the potential function of these genes: 
