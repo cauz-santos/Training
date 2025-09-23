@@ -842,128 +842,61 @@ vi 50_gs_lite_audpc.sh
 #SBATCH -e gs_lite_audpc.err
 
 set -euo pipefail
-export LC_ALL=C
 
-# --- Paths (edit only if your layout differs) ---
-BFILE="./plink/data_pruned"
-PHENO="./pheno_audpc.txt"                        # FID IID AUDPC
-ASSOC="./gwas/gwas_audpc_pc10.assoc.linear"      # PLINK linear output
-BONF="./gwas/bonferroni_hits_AUDPC.tsv"
-TOP20="./gwas/top20_hits_AUDPC.tsv"
 OUTDIR="gs-lite"
-mkdir -p "${OUTDIR}"
+GWAS_HITS="./gwas/bonferroni_hits_AUDPC.tsv"   # from your GWAS results
+BFILE="plink/data_pruned"                      # PLINK prefix (bed/bim/fam)
+PHENO="pheno_audpc.txt"                        # FID IID AUDPC
 
-# --- Pick marker source: Bonferroni > top20 > fallback from assoc file ---
-MARKERS_TSV="${OUTDIR}/markers_source.tsv"
-if [[ -s "${BONF}" ]]; then
-  cp "${BONF}" "${MARKERS_TSV}"
-  echo "[GS-lite] Using Bonferroni hits for weights: ${BONF}"
-elif [[ -s "${TOP20}" ]]; then
-  cp "${TOP20}" "${MARKERS_TSV}"
-  echo "[GS-lite] Using top-20 hits for weights: ${TOP20}"
-else
-  echo "[GS-lite] No bonf/top20 tables found; deriving from ${ASSOC}"
-  # Take top 50 ADD rows as a minimal fallback
-  awk 'BEGIN{FS=OFS="\t"} NR==1||$5=="ADD"' "${ASSOC}" \
-    | sort -k9,9g | head -n 51 > "${MARKERS_TSV}" || true
-fi
+mkdir -p "$OUTDIR"
 
-# --- Build weights file for PLINK --score: columns = SNP  A1  BETA ---
-AWK_WEIGHTS='
-BEGIN{FS=OFS="\t"}
-NR==1{
-  for(i=1;i<=NF;i++){h[$i]=i}
-  if(!( "SNP" in h) || !("A1" in h) || !("BETA" in h)){
-    print "[GS-lite] ERROR: Could not find SNP/A1/BETA in header." > "/dev/stderr"; exit 2
-  }
-  next
-}
-{
-  snp=$h["SNP"]; a1=$h["A1"]; beta=$h["BETA"]
-  if($snp!="." && $snp!="" && $a1!="" && $beta!="" && $beta!="NA"){
-     print $snp, $a1, $beta
-  }
-}'
-awk "${AWK_WEIGHTS}" "${MARKERS_TSV}" > "${OUTDIR}/gs_weights.tsv" || {
-  echo "[GS-lite] Failed to build weights from ${MARKERS_TSV}" >&2; exit 2;
-}
-echo "[GS-lite] Wrote weights: ${OUTDIR}/gs_weights.tsv (SNP, A1, BETA)"
+echo "[GS-lite] Using Bonferroni hits for weights: $GWAS_HITS"
 
-# --- If SNP IDs are '.', switch genotype set to position-based IDs (CHR:BP) ---
-NEED_POSIDS=0
-if awk 'NR>1 && $1=="."' "${OUTDIR}/gs_weights.tsv" | head -1 | grep -q '.'; then
-  NEED_POSIDS=1
-fi
-if (( NEED_POSIDS == 1 )); then
-  echo "[GS-lite] Detected '.' SNP IDs in weights; creating position-based IDs in BFILE and weights."
-  module load PLINK
-  plink --bfile "${BFILE}" \
-        --set-missing-var-ids @:# \
-        --make-bed --allow-extra-chr \
-        --out "${OUTDIR}/data_posids"
-  BFILE="${OUTDIR}/data_posids"
+# 1) Build PLINK --score weights: SNP  A1(effect)  BETA
+awk 'BEGIN{FS=OFS="\t"} NR>1 {print $2,$4,$7}' "$GWAS_HITS" > "$OUTDIR/gs_weights.tsv"
+echo "[GS-lite] Wrote: $OUTDIR/gs_weights.tsv (SNP  A1  BETA)"
 
-  # Rebuild weights with SNP column as CHR:BP from the markers source
-  awk 'BEGIN{FS=OFS="\t"} NR==1{
-         for(i=1;i<=NF;i++) h[$i]=i; next
-       }
-       {
-         chr=$h["CHR"]; bp=$h["BP"]; a1=$h["A1"]; beta=$h["BETA"];
-         if(chr!="" && bp~ /^[0-9]+$/ && a1!="" && beta!="" && beta!="NA"){
-           print chr ":" bp, a1, beta
-         }
-       }' "${MARKERS_TSV}" > "${OUTDIR}/gs_weights.tsv"
-  echo "[GS-lite] Rewrote weights with CHR:BP IDs."
-fi
-
-# --- Compute PGS with PLINK ---
+# 2) Compute PGS with PLINK
 module load PLINK
-plink --bfile "${BFILE}" \
+plink --bfile "$BFILE" \
       --allow-extra-chr \
-      --score "${OUTDIR}/gs_weights.tsv" 1 2 3 header sum \
-      --out "${OUTDIR}/gs_pgs"
+      --score "$OUTDIR/gs_weights.tsv" 1 2 3 header sum \
+      --out "$OUTDIR/gs_pgs"
 
-# --- Join with AUDPC phenotype and rank ---
+# 3) Rank and correlate with phenotype in R
 module load R
-R --vanilla <<'RS'
-# Read PGS profile
-prof <- read.table("gs-lite/gs_pgs.profile", header=TRUE, sep="", stringsAsFactors=FALSE)
+R --vanilla <<'EOF'
+prof <- read.table("gs-lite/gs_pgs.profile", header=TRUE, stringsAsFactors=FALSE)
 score_col <- grep("^SCORE", names(prof), value=TRUE)[1]
 pgs <- prof[, c("FID","IID", score_col)]
 names(pgs) <- c("FID","IID","PGS")
 pgs$PGS <- suppressWarnings(as.numeric(pgs$PGS))
 
-# Read AUDPC phenotype (format: FID IID AUDPC; allow optional header)
-ph <- read.table("pheno_audpc.txt", header=FALSE, sep="", stringsAsFactors=FALSE, fill=TRUE, quote="")
-if (nrow(ph)>0 && (grepl("FID", ph[1,1], ignore.case=TRUE) || grepl("IID", ph[1,2], ignore.case=TRUE))) {
-  ph <- ph[-1,,drop=FALSE]
+ph <- read.table("pheno_audpc.txt", header=FALSE, stringsAsFactors=FALSE)
+if (nrow(ph) > 0 && (grepl("FID", ph[1,1], ignore.case=TRUE) || grepl("IID", ph[1,2], ignore.case=TRUE))) {
+  ph <- ph[-1, , drop=FALSE]
 }
-ph <- ph[,1:3,drop=FALSE]; names(ph) <- c("FID","IID","AUDPC")
+ph <- ph[,1:3]
+names(ph) <- c("FID","IID","AUDPC")
 ph$AUDPC <- suppressWarnings(as.numeric(ph$AUDPC))
 
-# Merge, save, rank
 m <- merge(pgs, ph, by=c("FID","IID"), all.x=TRUE)
 write.table(m, "gs-lite/pgs_with_audpc.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 mr <- m[order(-m$PGS), ]
 write.table(mr, "gs-lite/pgs_ranked.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 write.table(head(mr, 20), "gs-lite/top20_by_PGS.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 
-# Plot
 png("gs-lite/PGS_vs_AUDPC.png", width=1000, height=800, res=150)
 plot(m$PGS, m$AUDPC, xlab="Polygenic Score (PGS)", ylab="AUDPC",
-     main="PGS vs AUDPC (GS-lite)")
+     main="PGS vs AUDPC (quick check)")
 abline(lm(AUDPC ~ PGS, data=m), col="black")
 r <- suppressWarnings(cor(m$PGS, m$AUDPC, use="complete.obs"))
 if (!is.na(r)) legend("topleft", bty="n", legend=paste0("r = ", round(r, 3)))
 dev.off()
-RS
+EOF
 
 echo "[GS-lite] Done."
-echo "Tables:"
-echo "  gs-lite/pgs_ranked.tsv"
-echo "  gs-lite/top20_by_PGS.tsv"
-echo "Plot:"
-echo "  gs-lite/PGS_vs_AUDPC.png"
+echo "[GS-lite] Results in: $OUTDIR/"
 ```
 
 Submit the job:
