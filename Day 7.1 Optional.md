@@ -863,22 +863,35 @@ vi 50_gs_lite_audpc.sh
 set -euo pipefail
 
 OUTDIR="gs-lite"
-GWAS_HITS="./gwas/bonferroni_hits_AUDPC.tsv"   # from your GWAS results
+GWAS_HITS="./gwas/bonferroni_hits_AUDPC.tsv"   # GWAS results
 BFILE="plink/data_pruned"                      # PLINK prefix (bed/bim/fam)
-PHENO="pheno_audpc.txt"                        # FID IID AUDPC
+PHENO="pheno_audpc.txt"                        # phenotype file (FID IID AUDPC)
 
 mkdir -p "$OUTDIR"
 
 echo "[GS-lite] Using Bonferroni hits for weights: $GWAS_HITS"
 
+# 0) Fix BIM IDs if they are '.' → replace with CHR:BP
+if [ -f "${BFILE}.bim" ]; then
+  cp "${BFILE}.bim" "${BFILE}.bim.bak"
+  awk 'BEGIN{OFS="\t"} { if($2==".") $2=$1":"$4; print }' \
+    "${BFILE}.bim.bak" > "${BFILE}.bim"
+  echo "[GS-lite] Fixed BIM IDs: replaced '.' with CHR:BP"
+fi
+
 # 1) Build PLINK --score weights: SNP  A1(effect)  BETA
-awk 'BEGIN{FS=OFS="\t"} NR>1 {print $2,$4,$7}' "$GWAS_HITS" > "$OUTDIR/gs_weights.tsv"
+# Columns in bonferroni_hits_AUDPC.tsv: CHR SNP BP A1 TEST NMISS BETA ...
+awk 'BEGIN{FS=OFS="\t"} NR>1 {id=($2=="." ? $1":"$3 : $2); print id,$4,$7}' \
+  "$GWAS_HITS" > "$OUTDIR/gs_weights.tsv"
 echo "[GS-lite] Wrote: $OUTDIR/gs_weights.tsv (SNP  A1  BETA)"
 
 # 2) Compute PGS with PLINK
 module load PLINK
 plink --bfile "$BFILE" \
       --allow-extra-chr \
+      --allow-no-sex \
+      --pheno "$PHENO" \
+      --pheno-name AUDPC \
       --score "$OUTDIR/gs_weights.tsv" 1 2 3 header sum \
       --out "$OUTDIR/gs_pgs"
 
@@ -891,12 +904,8 @@ pgs <- prof[, c("FID","IID", score_col)]
 names(pgs) <- c("FID","IID","PGS")
 pgs$PGS <- suppressWarnings(as.numeric(pgs$PGS))
 
-ph <- read.table("pheno_audpc.txt", header=FALSE, stringsAsFactors=FALSE)
-if (nrow(ph) > 0 && (grepl("FID", ph[1,1], ignore.case=TRUE) || grepl("IID", ph[1,2], ignore.case=TRUE))) {
-  ph <- ph[-1, , drop=FALSE]
-}
-ph <- ph[,1:3]
-names(ph) <- c("FID","IID","AUDPC")
+ph <- read.table("pheno_audpc.txt", header=TRUE, stringsAsFactors=FALSE)
+names(ph)[1:3] <- c("FID","IID","AUDPC")
 ph$AUDPC <- suppressWarnings(as.numeric(ph$AUDPC))
 
 m <- merge(pgs, ph, by=c("FID","IID"), all.x=TRUE)
