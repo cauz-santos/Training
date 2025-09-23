@@ -320,7 +320,7 @@ Open an **interactive R** session (with graphics) on the cluster or RStudio.
 # GWAS Visualization: (Manhattan plot)
 # ================================
 
-setwd("/lisc/scratch/course/pgbiow/GWAS")
+setwd("/path to your home directory/07_gwas_selection/")
 
 suppressPackageStartupMessages({
   library(data.table)
