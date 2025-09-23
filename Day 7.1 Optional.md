@@ -803,261 +803,223 @@ column -t -s $'\t' annotation_EG5/genes_in_50kb_around_peaks.tsv | less -S
 
 ### Part 5 — From GWAS to Selection Decisions
 
-Now that we have GWAS hits and candidate genes, we’ll take the final step: show how these results translate into breeding tools through MAS (diagnostic markers) and GS-lite (genomic scores).
+### Quick GS: Compute a Polygenic Score (PGS) for Oil Palm (EG5) — AUDPC (Infection, Quantitative Trait)  
+After GWAS, we know which SNPs are significantly associated with our trait. In **Marker-Assisted Selection (MAS)** we could take a few diagnostic SNPs. But in **Genomic Selection (GS)** we want to use many SNPs together to rank lines.  
 
-You will:  
-1) build a **MAS marker table** from your top SNPs  
-2) compute a quick **polygenic (GS-lite) score** to rank lines  
-*Everything below assumes you already ran Part 3 and have: `gwas_suc_linear.assoc.linear`, `bonferroni_hits_SUC.tsv` and/or `top20_hits_SUC.tsv`, plus your genotype set `gwas_data_qc.*` and `phenotypes.csv` (IID,SUC).
+Here we build a **Polygenic Score (PGS)** for **AUDPC**: for each plant, we multiply its genotype (0/1/2 copies of the effect allele) by the SNP’s estimated effect size (**BETA**) from the AUDPC GWAS, and sum across selected SNPs. This yields one number per line—the **genomic score**. If the PGS correlates with observed **AUDPC**, we can prioritize candidates accordingly. **Because lower AUDPC means less disease, lines with *lower* PGS are preferred** (when BETA was fit to raw AUDPC and positive BETAs increase AUDPC). If you transformed AUDPC or defined the effect differently, interpret the sign accordingly.
 
 
-**A) Make a MAS-ready marker table (effect allele, effect size, p-value)**  
-We will build a script that collects the top SNPs from GWAS results (Bonferroni-significant or top 20), joins them with PLINK’s BIM file to add chromosome, position, and alleles, and outputs a ready-to-use marker list for marker-assisted selection (MAS).
+####  Prerequisites
+
+- Genotypes (PLINK bed/bim/fam) after QC and pruning:
+  - `./plink/data_pruned.{bed,bim,fam}` (oil palm; chromosome names like `NC_025995.1`)
+- Phenotype (AUDPC):
+  - `./pheno_audpc.txt` with **3 columns**: `FID IID AUDPC`
+- GWAS results (linear model with PC1–PC10):
+  - `./gwas/gwas_audpc_pc10.assoc.linear`
+  - Helper tables produced earlier: 
+    - `./gwas/bonferroni_hits_AUDPC.tsv` (preferred) **or** 
+    - `./gwas/top20_hits_AUDPC.tsv` (fallback)
+
+> We assume you’re working in `/path to your home directory/07_gwas_selection`. Adjust paths if needed.
+
+
+### Step 1 — Run GS-lite script (build weights, compute PGS, join with AUDPC)
+
+Create the file and submit **`50_gs_lite_audpc.sh`**:
 
 ```bash
-vi 40_build_mas_markers.sh
+vi 50_gs_lite_audpc.sh
 ```
-
-Paste the following content:
 
 ```bash
 #!/bin/bash
-#SBATCH --job-name=mas_markers
-#SBATCH --cpus-per-task=1
-#SBATCH --mem=1G
-#SBATCH --time=00:05:00
-#SBATCH -o mas_markers.out
-#SBATCH -e mas_markers.err
-
-set -euo pipefail
-
-# Make sort/join deterministic
-export LC_ALL=C
-export LANG=C
-
-# ====== EDIT THESE PATHS IF NEEDED ======
-GWAS_DIR="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas"               # has bonferroni_hits_SUC.tsv / top20_hits_SUC.tsv
-PLINK_BIM="/lisc/scratch/course/pgbiow/07_gwas_selection/gwas_data_qc.bim"  # your .bim
-OUTDIR="/lisc/scratch/course/pgbiow/07_gwas_selection/mas_markers"          # output folder
-# ========================================
-
-mkdir -p "$OUTDIR"
-
-# 1) Pick the GWAS source (prefer Bonferroni, else Top20)
-if [ -s "$GWAS_DIR/bonferroni_hits_SUC.tsv" ]; then
-  SRC="$GWAS_DIR/bonferroni_hits_SUC.tsv"
-else
-  SRC="$GWAS_DIR/top20_hits_SUC.tsv"
-fi
-
-# 2) BIM lookup: SNP -> CHR BP A1 A2
-#                 SNP    CHR   BP    A1    A2
-awk 'BEGIN{OFS="\t"}{print $2,   $1,   $4,   $5,   $6}' \
-  "$PLINK_BIM" > "$OUTDIR/bim.lookup"
-
-# 3) GWAS slim (NO HEADER here): SNP  P  BETA
-awk 'BEGIN{FS=OFS="\t"}
-  NR==1 {for(i=1;i<=NF;i++) h[$i]=i; next}
-  {print $h["SNP"], $h["P"], $h["BETA"]}
-' "$SRC" > "$OUTDIR/assoc.slim"
-
-# 4) Sort both by key (col 1 = SNP)
-sort -t $'\t' -k1,1 "$OUTDIR/assoc.slim"  > "$OUTDIR/a"
-sort -t $'\t' -k1,1 "$OUTDIR/bim.lookup" > "$OUTDIR/b"
-
-# (Optional) show any SNPs present in GWAS but missing in BIM
-join -t $'\t' -1 1 -2 1 -v1 "$OUTDIR/a" "$OUTDIR/b" | cut -f1 > "$OUTDIR/missing_in_bim.snps" || true
-
-# 5) Join and reorder columns → SNP CHR BP A1 A2 BETA P
-# join columns after key: a has [P BETA], b has [CHR BP A1 A2]
-join -t $'\t' -1 1 -2 1 "$OUTDIR/a" "$OUTDIR/b" \
-| awk 'BEGIN{OFS="\t"}{print $1, $4, $5, $6, $7, $3, $2}' \
-> "$OUTDIR/mas_markers.body.tsv"
-
-# Add header
-{
-  echo -e "SNP\tCHR\tBP\tA1(effect)\tA2\tBETA\tP"
-  cat "$OUTDIR/mas_markers.body.tsv"
-} > "$OUTDIR/mas_markers.tsv"
-
-# 6) (Optional) plain SNP list (no header)
-tail -n +2 "$OUTDIR/mas_markers.tsv" | cut -f1 > "$OUTDIR/mas_markers.snplist"
-
-# Cleanup temps
-rm -f "$OUTDIR/a" "$OUTDIR/b" "$OUTDIR/assoc.slim" "$OUTDIR/bim.lookup" "$OUTDIR/mas_markers.body.tsv"
-
-echo "Created:"
-echo "  $OUTDIR/mas_markers.tsv        (SNP, CHR, BP, A1, A2, BETA, P)"
-echo "  $OUTDIR/mas_markers.snplist    (just SNP IDs)"
-[ -s "$OUTDIR/missing_in_bim.snps" ] && echo "Note: $(wc -l < "$OUTDIR/missing_in_bim.snps") SNP(s) missing in BIM → $OUTDIR/missing_in_bim.snps" || true
-```
-
-Save and submit:
-
-```bash
-sbatch 40_build_mas_markers.sh
-```
-
-### MAS markers (top GWAS SNPs for SUC)
-Show the table:
-
-```bash
-cat mas_markers/mas_markers.tsv
-```
-
-**Example columns you’ll see:**  
-`SNP` – variant ID (e.g., chrLG14:3182914:C:T)  
-`CHR / BP` – chromosome and 1-based position  
-`A1(effect) / A2 – alleles`; BETA is the additive effect per copy of A1  
-`BETA` – effect size from the linear model (units depend on how SUC was measured/scaled)  
-`BETA` > 0: A1 increases SUC  
-`BETA` < 0: A1 decreases SUC  
-`P` – p-value for association (smaller = stronger evidence)  
-
-**How to interpret a row:**  
-```bash
-chrLG14:3182914:C:T  chrLG14  3182914  T  C  20.81  8.097e-12
-```
-
-The effect allele is T (A1).
-Each additional T allele is associated with a +20.81 change in SUC (in your phenotype’s units).
-P = 8.1×10⁻¹² is genome-wide significant (very strong signal).
-
-Sort the results by significance:
-
-```bash
-(head -n1 mas_markers/mas_markers.tsv && tail -n +2 mas_markers/mas_markers.tsv | sort -k7,7g) | column -t
-```
-
-> Relevance: A clean list of deployable markers (effect allele, effect size, position) to design assays and screen parents/progeny.
-
-### B) Quick GS-lite: Compute a Polygenic Score (PGS) and Rank Lines
-After GWAS, we know which SNPs are significantly associated with sucrose and their estimated effect sizes (**BETA**). In **Marker-Assisted Selection (MAS)** we could take a few diagnostic SNPs. But in **Genomic Selection (GS)** we want to use many SNPs together to rank lines.  
-
-Here we build a **Polygenic Score (PGS)**: for each plant, we multiply the genotype (0/1/2 copies of the allele) by the SNP’s effect size (BETA) and sum across top SNPs. This gives one number per line = the “genomic score.” If PGS correlates with observed sucrose, we can already prioritize top candidates. "Plants with higher scores should, on average, have higher sucrose. This is a mini version of Genomic Selection (GS)."
-
-Create the file `50_gs_lite_min.sh`using `vi`:
-
-```bash
-#!/bin/bash
-#SBATCH --job-name=gs_lite_min
+#SBATCH --job-name=gs_lite_audpc
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=2G
-#SBATCH --time=00:05:00
-#SBATCH -o gs_lite_min.out
-#SBATCH -e gs_lite_min.err
+#SBATCH --time=00:10:00
+#SBATCH -o gs_lite_audpc.out
+#SBATCH -e gs_lite_audpc.err
 
 set -euo pipefail
+export LC_ALL=C
 
+# --- Paths (edit only if your layout differs) ---
+BFILE="./plink/data_pruned"
+PHENO="./pheno_audpc.txt"                        # FID IID AUDPC
+ASSOC="./gwas/gwas_audpc_pc10.assoc.linear"      # PLINK linear output
+BONF="./gwas/bonferroni_hits_AUDPC.tsv"
+TOP20="./gwas/top20_hits_AUDPC.tsv"
 OUTDIR="gs-lite"
-MARKERS="mas_markers/mas_markers.tsv"   # columns: SNP, CHR, BP, A1(effect), A2, BETA, P
-BFILE="plink/gwas_data_qc"                    # PLINK prefix (bed/bim/fam)
-PHENO="pheno_suc.txt"                   # should contain: FID IID SUC (may have a header)
+mkdir -p "${OUTDIR}"
 
-mkdir -p "$OUTDIR"
+# --- Pick marker source: Bonferroni > top20 > fallback from assoc file ---
+MARKERS_TSV="${OUTDIR}/markers_source.tsv"
+if [[ -s "${BONF}" ]]; then
+  cp "${BONF}" "${MARKERS_TSV}"
+  echo "[GS-lite] Using Bonferroni hits for weights: ${BONF}"
+elif [[ -s "${TOP20}" ]]; then
+  cp "${TOP20}" "${MARKERS_TSV}"
+  echo "[GS-lite] Using top-20 hits for weights: ${TOP20}"
+else
+  echo "[GS-lite] No bonf/top20 tables found; deriving from ${ASSOC}"
+  # Take top 50 ADD rows as a minimal fallback
+  awk 'BEGIN{FS=OFS="\t"} NR==1||$5=="ADD"' "${ASSOC}" \
+    | sort -k9,9g | head -n 51 > "${MARKERS_TSV}" || true
+fi
 
-# 1) Build PLINK --score weights: SNP  A1(effect)  BETA
-awk 'BEGIN{FS=OFS="\t"} NR>1 {print $1,$4,$6}' "$MARKERS" > "$OUTDIR/gs_weights.tsv"
-echo "Wrote: $OUTDIR/gs_weights.tsv (SNP  A1  BETA)"
+# --- Build weights file for PLINK --score: columns = SNP  A1  BETA ---
+AWK_WEIGHTS='
+BEGIN{FS=OFS="\t"}
+NR==1{
+  for(i=1;i<=NF;i++){h[$i]=i}
+  if(!( "SNP" in h) || !("A1" in h) || !("BETA" in h)){
+    print "[GS-lite] ERROR: Could not find SNP/A1/BETA in header." > "/dev/stderr"; exit 2
+  }
+  next
+}
+{
+  snp=$h["SNP"]; a1=$h["A1"]; beta=$h["BETA"]
+  if($snp!="." && $snp!="" && $a1!="" && $beta!="" && $beta!="NA"){
+     print $snp, $a1, $beta
+  }
+}'
+awk "${AWK_WEIGHTS}" "${MARKERS_TSV}" > "${OUTDIR}/gs_weights.tsv" || {
+  echo "[GS-lite] Failed to build weights from ${MARKERS_TSV}" >&2; exit 2;
+}
+echo "[GS-lite] Wrote weights: ${OUTDIR}/gs_weights.tsv (SNP, A1, BETA)"
 
-# 2) Compute PGS with PLINK
+# --- If SNP IDs are '.', switch genotype set to position-based IDs (CHR:BP) ---
+NEED_POSIDS=0
+if awk 'NR>1 && $1=="."' "${OUTDIR}/gs_weights.tsv" | head -1 | grep -q '.'; then
+  NEED_POSIDS=1
+fi
+if (( NEED_POSIDS == 1 )); then
+  echo "[GS-lite] Detected '.' SNP IDs in weights; creating position-based IDs in BFILE and weights."
+  module load PLINK
+  plink --bfile "${BFILE}" \
+        --set-missing-var-ids @:# \
+        --make-bed --allow-extra-chr \
+        --out "${OUTDIR}/data_posids"
+  BFILE="${OUTDIR}/data_posids"
+
+  # Rebuild weights with SNP column as CHR:BP from the markers source
+  awk 'BEGIN{FS=OFS="\t"} NR==1{
+         for(i=1;i<=NF;i++) h[$i]=i; next
+       }
+       {
+         chr=$h["CHR"]; bp=$h["BP"]; a1=$h["A1"]; beta=$h["BETA"];
+         if(chr!="" && bp~ /^[0-9]+$/ && a1!="" && beta!="" && beta!="NA"){
+           print chr ":" bp, a1, beta
+         }
+       }' "${MARKERS_TSV}" > "${OUTDIR}/gs_weights.tsv"
+  echo "[GS-lite] Rewrote weights with CHR:BP IDs."
+fi
+
+# --- Compute PGS with PLINK ---
 module load PLINK
-plink --bfile "$BFILE" \
+plink --bfile "${BFILE}" \
       --allow-extra-chr \
-      --score "$OUTDIR/gs_weights.tsv" 1 2 3 header sum \
-      --out "$OUTDIR/gs_pgs"
+      --score "${OUTDIR}/gs_weights.tsv" 1 2 3 header sum \
+      --out "${OUTDIR}/gs_pgs"
 
-# 3) Rank and correlate (robust R: coerce numerics, drop any header rows)
+# --- Join with AUDPC phenotype and rank ---
 module load R
-R --vanilla <<'EOF'
-# Read PLINK profile and pick the SCORE column
+R --vanilla <<'RS'
+# Read PGS profile
 prof <- read.table("gs-lite/gs_pgs.profile", header=TRUE, sep="", stringsAsFactors=FALSE)
 score_col <- grep("^SCORE", names(prof), value=TRUE)[1]
 pgs <- prof[, c("FID","IID", score_col)]
 names(pgs) <- c("FID","IID","PGS")
-# Force numeric PGS (in case of weird formatting)
 pgs$PGS <- suppressWarnings(as.numeric(pgs$PGS))
 
-# Read phenotype (allow optional header; take first 3 columns as FID IID SUC)
-ph <- read.table("pheno_suc.txt", header=FALSE, sep="", stringsAsFactors=FALSE, fill=TRUE, quote="")
-# If the first row looks like a header, drop it
-if (nrow(ph) > 0 && (grepl("FID", ph[1,1], ignore.case=TRUE) || grepl("IID", ph[1,2], ignore.case=TRUE))) {
-  ph <- ph[-1, , drop=FALSE]
+# Read AUDPC phenotype (format: FID IID AUDPC; allow optional header)
+ph <- read.table("pheno_audpc.txt", header=FALSE, sep="", stringsAsFactors=FALSE, fill=TRUE, quote="")
+if (nrow(ph)>0 && (grepl("FID", ph[1,1], ignore.case=TRUE) || grepl("IID", ph[1,2], ignore.case=TRUE))) {
+  ph <- ph[-1,,drop=FALSE]
 }
-# Keep only first 3 cols; name them
-ph <- ph[, 1:3, drop=FALSE]
-names(ph) <- c("FID","IID","SUC")
-# Coerce types
-ph$FID <- as.character(ph$FID); ph$IID <- as.character(ph$IID)
-# Handle possible comma decimals, blanks, or "NA" strings
-ph$SUC <- suppressWarnings(as.numeric(gsub(",", ".", ph$SUC)))
+ph <- ph[,1:3,drop=FALSE]; names(ph) <- c("FID","IID","AUDPC")
+ph$AUDPC <- suppressWarnings(as.numeric(ph$AUDPC))
 
-# Merge and write tables
+# Merge, save, rank
 m <- merge(pgs, ph, by=c("FID","IID"), all.x=TRUE)
-write.table(m, "gs-lite/pgs_with_suc.tsv", sep="\t", row.names=FALSE, quote=FALSE)
-
+write.table(m, "gs-lite/pgs_with_audpc.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 mr <- m[order(-m$PGS), ]
 write.table(mr, "gs-lite/pgs_ranked.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 write.table(head(mr, 20), "gs-lite/top20_by_PGS.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 
-# Plot (only if SUC numeric & available)
-png("gs-lite/PGS_vs_SUC.png", width=1000, height=800, res=150)
-plot(m$PGS, m$SUC, xlab="Polygenic Score (PGS)", ylab="Sucrose (SUC)",
-     main="PGS vs SUC (quick check)")
-abline(lm(SUC ~ PGS, data=m), col="black")
-r <- suppressWarnings(cor(m$PGS, m$SUC, use="complete.obs"))
+# Plot
+png("gs-lite/PGS_vs_AUDPC.png", width=1000, height=800, res=150)
+plot(m$PGS, m$AUDPC, xlab="Polygenic Score (PGS)", ylab="AUDPC",
+     main="PGS vs AUDPC (GS-lite)")
+abline(lm(AUDPC ~ PGS, data=m), col="black")
+r <- suppressWarnings(cor(m$PGS, m$AUDPC, use="complete.obs"))
 if (!is.na(r)) legend("topleft", bty="n", legend=paste0("r = ", round(r, 3)))
 dev.off()
-EOF
+RS
 
-echo "Done."
-echo "Show tables:"
-echo "  cat gs-lite/pgs_ranked.tsv"
+echo "[GS-lite] Done."
+echo "Tables:"
+echo "  gs-lite/pgs_ranked.tsv"
+echo "  gs-lite/top20_by_PGS.tsv"
 echo "Plot:"
-echo "  gs-lite/PGS_vs_SUC.png"
+echo "  gs-lite/PGS_vs_AUDPC.png"
 ```
 
 Submit the job:
 ```bash
-sbatch 50_gs_lite_min.sh
+sbatch 50_gs_lite_audpc.sh
 ```
 
-**Interpretation:**  
-`pgs_ranked.tsv` → all lines ranked by genomic score.  
-`PGS_vs_SUC.png` → scatterplot showing how well the genomic score predicts sucrose.  
-If correlation (`r`) is positive and strong, even this “lite” version shows promise.  
 
-
-### Results: Polygenic Scores (PGS) for SUC
-
-The folder (`gs-lite/`) contains the outputs from the simple PGS run. Use the commands below to **view** the results right in the terminal.
-
-**What’s there**  
-
-- `gs_pgs.profile` — per-line PGS from PLINK (`SCORE*` column)
-- `pgs_with_suc.tsv` — PGS joined with observed SUC (unsorted)
-- `pgs_ranked.tsv` — **ranked by PGS** (highest first)
-- `top20_by_PGS.tsv` — the top 20 lines by PGS
-- `PGS_vs_SUC.png` — scatter plot + regression line
-- `gs_weights.tsv` — SNP weights used by PLINK (`SNP`, `A1`, `BETA`)
-- `gs_pgs.log` / `gs_pgs.nosex` — PLINK logs
-
-
-**Quick look (just print to screen)**  
+### Step 2 — Inspect outputs
 
 ```bash
-# Show the per-line PGS file (look for the SCORE column)
+# The per-line PGS file (look for a SCORE* column)
 head -n 30 gs-lite/gs_pgs.profile
 
-# Show the ranked table (PGS + observed SUC), already sorted
+# Ranked table of lines by PGS (descending)
 head -n 30 gs-lite/pgs_ranked.tsv
 
 # Top 20 lines by PGS
 cat gs-lite/top20_by_PGS.tsv
+
+# Quick check of the plot
+ls -lh gs-lite/PGS_vs_AUDPC.png
 ```
 
-> Relevance GS-lite:
-> This gives a fast, interpretable genomic ranking you can already use today for pre-selection, while waiting for larger training sets and more advanced GS models. It shows how GWAS results can directly feed into breeding decisions.
+**Files produced**  
+
+- `gs-lite/gs_pgs.profile` — PLINK’s per-individual score file (has one `SCORE*` column).
+- `gs-lite/pgs_with_audpc.tsv` — merged table with `FID IID PGS AUDPC` (unsorted).
+- `gs-lite/pgs_ranked.tsv` — same, **sorted by PGS** (highest first).
+- `gs-lite/top20_by_PGS.tsv` — top 20 individuals by PGS.
+- `gs-lite/PGS_vs_AUDPC.png` — scatter + regression line, with correlation `r` (if computable).
+- `gs-lite/gs_pgs.log` — PLINK log for the scoring step.
+- If your BIM needed position-based IDs: `gs-lite/data_posids.*` — an auto-converted copy used by the script.
+
+
+### Step 3 - Interpreting results for breeding decisions
+
+- **PGS sign and magnitude:** A **higher PGS** indicates the individual carries more alleles with **positive BETA** for **AUDPC**. Depending on how AUDPC is defined in your experiment (larger values = **more disease**), you’ll either select **low-PGS** (if high AUDPC is bad) or **high-PGS** (if high AUDPC is good).  
+  - *Most disease contexts:* **Lower AUDPC is better** → **prefer lower PGS** (if BETA was fit to raw AUDPC).  
+  - If you transformed AUDPC (e.g., inverse-normal) or reversed the trait, align interpretation accordingly.
+- **Ranking vs. phenotype:** If the **PGS vs. AUDPC plot** shows a clear relationship (|r| appreciable), even a small marker set gives you **triage power**: shortlist candidates **before** full phenotyping.
+- **Genomic selection mindset:** This GS-lite uses only a handful of GWAS SNPs. For **production GS**, you’ll typically use **many thousands** of markers and a **predictive model** (e.g., GBLUP/RR-BLUP/Bayesian) with **train/test** partitions or cross-validation.
+- **Stacking with other traits:** You can compute separate PGS for **yield/quality** traits, then make a **multi-trait index** (weighted sum) to balance **disease** vs **productivity**.
+- **Environment and G×E:** If disease pressure varies with **heat** or **humidity**, you may re-estimate BETA in environment-specific subsets or include **weather covariates**, then recompute PGS for environment-tailored selection.
+
+**Actionable summary:**  
+1. Use `pgs_ranked.tsv` to identify the **top-N candidates** consistent with your breeding goal (e.g., **lowest PGS** if lower AUDPC is better).  
+2. Cross-reference with **field performance** and **other key traits**.  
+3. Consider **validation** in an independent block/year.  
+4. Graduate to a **full GS model** as soon as you have enough training data.
+
+#### Notes / Gotchas  
+- If **no Bonferroni hits**, the script falls back to **top-20 p-values** (or top-50 from the GWAS file). This still yields a teaching-ready PGS but expect a weaker correlation.
+- If your `.bim` has many `.` SNP IDs, the script **auto-relabels** them to `CHR:BP` and rewrites the weights to match, ensuring PLINK’s `--score` can find them.
+- Always confirm that the **effect allele (A1)** in the weights matches the allele coding in your GWAS file (we use your tables’ `A1` directly).
+
 
 ## You have completed **Day 7**!
 
