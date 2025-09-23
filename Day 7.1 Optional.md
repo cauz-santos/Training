@@ -863,26 +863,19 @@ vi 50_gs_lite_audpc.sh
 set -euo pipefail
 
 OUTDIR="gs-lite"
-GWAS_HITS="./gwas/top20_hits_AUDPC.tsv"   # GWAS results
-BFILE="plink/data_pruned"                      # PLINK prefix (bed/bim/fam)
-PHENO="pheno_audpc.txt"                        # phenotype file (FID IID AUDPC)
+GWAS_HITS="./gwas/top20_hits_AUDPC.tsv"   # use top20 hits instead of Bonferroni
+BFILE="plink/data_pruned"                 # PLINK prefix (bed/bim/fam)
+PHENO="pheno_audpc.txt"                   # FID IID AUDPC
 
 mkdir -p "$OUTDIR"
 
-echo "[GS-lite] Using Bonferroni hits for weights: $GWAS_HITS"
-
-# 0) Fix BIM IDs if they are '.' → replace with CHR:BP
-if [ -f "${BFILE}.bim" ]; then
-  cp "${BFILE}.bim" "${BFILE}.bim.bak"
-  awk 'BEGIN{OFS="\t"} { if($2==".") $2=$1":"$4; print }' \
-    "${BFILE}.bim.bak" > "${BFILE}.bim"
-  echo "[GS-lite] Fixed BIM IDs: replaced '.' with CHR:BP"
-fi
+echo "[GS-lite] Using top hits for weights: $GWAS_HITS"
 
 # 1) Build PLINK --score weights: SNP  A1(effect)  BETA
-# Columns in bonferroni_hits_AUDPC.tsv: CHR SNP BP A1 TEST NMISS BETA ...
-awk 'BEGIN{FS=OFS="\t"} NR>1 {id=($2=="." ? $1":"$3 : $2); print id,$4,$7}' \
-  "$GWAS_HITS" > "$OUTDIR/gs_weights.tsv"
+awk 'BEGIN{FS=OFS="\t"} NR>1 {
+  snp=$2; if(snp==".") snp=$1":"$3;
+  print snp,$4,$7
+}' "$GWAS_HITS" > "$OUTDIR/gs_weights.tsv"
 echo "[GS-lite] Wrote: $OUTDIR/gs_weights.tsv (SNP  A1  BETA)"
 
 # 2) Compute PGS with PLINK
@@ -904,22 +897,30 @@ pgs <- prof[, c("FID","IID", score_col)]
 names(pgs) <- c("FID","IID","PGS")
 pgs$PGS <- suppressWarnings(as.numeric(pgs$PGS))
 
+# Read phenotype
 ph <- read.table("pheno_audpc.txt", header=TRUE, stringsAsFactors=FALSE)
-names(ph)[1:3] <- c("FID","IID","AUDPC")
 ph$AUDPC <- suppressWarnings(as.numeric(ph$AUDPC))
 
+# Merge
 m <- merge(pgs, ph, by=c("FID","IID"), all.x=TRUE)
-write.table(m, "gs-lite/pgs_with_audpc.tsv", sep="\t", row.names=FALSE, quote=FALSE)
-mr <- m[order(-m$PGS), ]
-write.table(mr, "gs-lite/pgs_ranked.tsv", sep="\t", row.names=FALSE, quote=FALSE)
-write.table(head(mr, 20), "gs-lite/top20_by_PGS.tsv", sep="\t", row.names=FALSE, quote=FALSE)
 
-png("gs-lite/PGS_vs_AUDPC.png", width=1000, height=800, res=150)
-plot(m$PGS, m$AUDPC, xlab="Polygenic Score (PGS)", ylab="AUDPC",
-     main="PGS vs AUDPC (quick check)")
-abline(lm(AUDPC ~ PGS, data=m), col="black")
-r <- suppressWarnings(cor(m$PGS, m$AUDPC, use="complete.obs"))
-if (!is.na(r)) legend("topleft", bty="n", legend=paste0("r = ", round(r, 3)))
+# Flip sign so higher = more resistant
+m$Resistance_PGS <- -m$PGS
+
+# Save outputs
+write.table(m, "gs-lite/pgs_with_audpc.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+
+mr <- m[order(-m$Resistance_PGS), ]  # rank by resistance
+write.table(mr, "gs-lite/pgs_ranked.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+write.table(head(mr, 20), "gs-lite/top20_by_ResistancePGS.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+
+# Plot
+png("gs-lite/ResistancePGS_vs_AUDPC.png", width=1000, height=800, res=150)
+plot(m$Resistance_PGS, m$AUDPC, xlab="Resistance Polygenic Score (higher=better)", 
+     ylab="AUDPC", main="Resistance-PGS vs AUDPC")
+abline(lm(AUDPC ~ Resistance_PGS, data=m), col="black")
+r <- suppressWarnings(cor(m$Resistance_PGS, m$AUDPC, use="complete.obs"))
+if (!is.na(r)) legend("topright", bty="n", legend=paste0("r = ", round(r, 3)))
 dev.off()
 EOF
 
@@ -936,47 +937,41 @@ sbatch 50_gs_lite_audpc.sh
 ### Step 2 — Inspect outputs
 
 ```bash
-# The per-line PGS file (look for a SCORE* column)
+# The per-line PGS file (look for a SCORE* column; raw PGS still there)
 head -n 30 gs-lite/gs_pgs.profile
 
-# Ranked table of lines by PGS (descending)
+# Ranked table of lines by Resistance_PGS (descending, higher = more resistant)
 head -n 30 gs-lite/pgs_ranked.tsv
 
-# Top 20 lines by PGS
-cat gs-lite/top20_by_PGS.tsv
+# Top 20 most resistant lines
+cat gs-lite/top20_by_ResistancePGS.tsv
 
-# Quick check of the plot
-ls -lh gs-lite/PGS_vs_AUDPC.png
+# Quick check of the resistance plot
+ls -lh gs-lite/ResistancePGS_vs_AUDPC.png
 ```
 
-**Files produced**  
+### Files produced
+- `gs-lite/gs_pgs.profile` — PLINK’s per-individual score file (raw `SCORESUM`, unflipped).  
+- `gs-lite/pgs_with_audpc.tsv` — merged table with `FID IID PGS Resistance_PGS AUDPC` (unsorted).  
+- `gs-lite/pgs_ranked.tsv` — same, **sorted by Resistance_PGS** (highest first = more resistant).  
+- `gs-lite/top20_by_ResistancePGS.tsv` — top 20 individuals by Resistance_PGS.  
+- `gs-lite/ResistancePGS_vs_AUDPC.png` — scatter + regression line showing relationship between Resistance_PGS and AUDPC, with correlation `r`.  
+- `gs-lite/gs_pgs.log` — PLINK log for the scoring step.  
+- If your BIM needed position-based IDs: `gs-lite/data_posids.*` — auto-converted copy used by the script.  
 
-- `gs-lite/gs_pgs.profile` — PLINK’s per-individual score file (has one `SCORE*` column).
-- `gs-lite/pgs_with_audpc.tsv` — merged table with `FID IID PGS AUDPC` (unsorted).
-- `gs-lite/pgs_ranked.tsv` — same, **sorted by PGS** (highest first).
-- `gs-lite/top20_by_PGS.tsv` — top 20 individuals by PGS.
-- `gs-lite/PGS_vs_AUDPC.png` — scatter + regression line, with correlation `r` (if computable).
-- `gs-lite/gs_pgs.log` — PLINK log for the scoring step.
-- If your BIM needed position-based IDs: `gs-lite/data_posids.*` — an auto-converted copy used by the script.
+### Interpretation
+- **PGS** = raw polygenic score from GWAS betas (can sometimes track *susceptibility*).  
+- **Resistance_PGS = –PGS** = re-scaled so that **higher values indicate greater resistance** (lower disease AUDPC).  
+- Individuals ranked at the top of `pgs_ranked.tsv` or `top20_by_ResistancePGS.tsv` are the **most resistant candidates**.  
+- The scatterplot (`ResistancePGS_vs_AUDPC.png`) is a quick check: a **negative correlation** between raw PGS and AUDPC should flip to a **positive correlation** between Resistance_PGS and resistance.  
 
-
-### Step 3 - Interpreting results for breeding decisions
-
-- **PGS sign and magnitude:** A **higher PGS** indicates the individual carries more alleles with **positive BETA** for **AUDPC**. Depending on how AUDPC is defined in your experiment (larger values = **more disease**), you’ll either select **low-PGS** (if high AUDPC is bad) or **high-PGS** (if high AUDPC is good).  
-  - *Most disease contexts:* **Lower AUDPC is better** → **prefer lower PGS** (if BETA was fit to raw AUDPC).  
-  - If you transformed AUDPC (e.g., inverse-normal) or reversed the trait, align interpretation accordingly.
-- **Ranking vs. phenotype:** If the **PGS vs. AUDPC plot** shows a clear relationship (|r| appreciable), even a small marker set gives you **triage power**: shortlist candidates **before** full phenotyping.
-- **Genomic selection mindset:** This GS-lite uses only a handful of GWAS SNPs. For **production GS**, you’ll typically use **many thousands** of markers and a **predictive model** (e.g., GBLUP/RR-BLUP/Bayesian) with **train/test** partitions or cross-validation.
-- **Stacking with other traits:** You can compute separate PGS for **yield/quality** traits, then make a **multi-trait index** (weighted sum) to balance **disease** vs **productivity**.
-- **Environment and G×E:** If disease pressure varies with **heat** or **humidity**, you may re-estimate BETA in environment-specific subsets or include **weather covariates**, then recompute PGS for environment-tailored selection.
-
-**Actionable summary:**  
-1. Use `pgs_ranked.tsv` to identify the **top-N candidates** consistent with your breeding goal (e.g., **lowest PGS** if lower AUDPC is better).  
-2. Cross-reference with **field performance** and **other key traits**.  
-3. Consider **validation** in an independent block/year.  
-4. Graduate to a **full GS model** as soon as you have enough training data.
-
-#### Notes / Gotchas  
+### Breeding decisions
+Breeders can now:
+- Select individuals with **high Resistance_PGS** as promising lines for crossing or advancement.  
+- Use `top20_by_ResistancePGS.tsv` for a fast shortlist.  
+- Keep in mind this is **GS-lite** — it uses only significant GWAS hits, not genome-wide models. Still, it provides **immediate actionable ranking** while waiting for larger training sets and full genomic prediction models.
+  
+### Notes / Gotchas  
 - If **no Bonferroni hits**, the script falls back to **top-20 p-values** (or top-50 from the GWAS file). This still yields a teaching-ready PGS but expect a weaker correlation.
 - If your `.bim` has many `.` SNP IDs, the script **auto-relabels** them to `CHR:BP` and rewrites the weights to match, ensuring PLINK’s `--score` can find them.
 - Always confirm that the **effect allele (A1)** in the weights matches the allele coding in your GWAS file (we use your tables’ `A1` directly).
