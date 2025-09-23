@@ -182,6 +182,14 @@ sbatch 02_make_covariates.sh
 
 ---
 
+## Copying PLINK Files to Your User Folder
+
+To copy all necessary PLINK files from the course directory to your own PLINK working directory, use the command below:
+
+```bash
+cp /lisc/scratch/course/pgbiow/GWAS/plink/* ./plink/
+```
+
 ### Part 2 — GWAS for Disease Traits with PLINK (logistic and linear models)
 
 We’ll run:
