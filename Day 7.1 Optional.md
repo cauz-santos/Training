@@ -925,6 +925,79 @@ dev.off()
 EOF
 
 echo "[GS-lite] Done."
+echo "[GS-lite] Results in: $OUTDIR/"#!/bin/bash
+#SBATCH --job-name=gs_lite_audpc
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=2G
+#SBATCH --time=00:10:00
+#SBATCH -o gs_lite_audpc.out
+#SBATCH -e gs_lite_audpc.err
+
+set -euo pipefail
+
+OUTDIR="gs-lite"
+GWAS_HITS="./gwas/top20_hits_AUDPC.tsv"   # use top20 hits instead of Bonferroni
+BFILE="plink/data_pruned"                 # PLINK prefix (bed/bim/fam)
+PHENO="pheno_audpc.txt"                   # FID IID AUDPC
+
+mkdir -p "$OUTDIR"
+
+echo "[GS-lite] Using top hits for weights: $GWAS_HITS"
+
+# 1) Build PLINK --score weights: SNP  A1(effect)  BETA
+awk 'BEGIN{FS=OFS="\t"} NR>1 {
+  snp=$2; if(snp==".") snp=$1":"$3;
+    print snp,$4,$7
+}' "$GWAS_HITS" > "$OUTDIR/gs_weights.tsv"
+echo "[GS-lite] Wrote: $OUTDIR/gs_weights.tsv (SNP  A1  BETA)"
+
+# 2) Compute PGS with PLINK
+module load PLINK
+plink --bfile "$BFILE" \
+	      --allow-extra-chr \
+	            --allow-no-sex \
+		          --pheno "$PHENO" \
+			        --pheno-name AUDPC \
+				      --score "$OUTDIR/gs_weights.tsv" 1 2 3 header sum \
+				            --out "$OUTDIR/gs_pgs"
+
+# 3) Rank and correlate with phenotype in R
+module load R
+R --vanilla <<'EOF'
+prof <- read.table("gs-lite/gs_pgs.profile", header=TRUE, stringsAsFactors=FALSE)
+score_col <- grep("^SCORE", names(prof), value=TRUE)[1]
+pgs <- prof[, c("FID","IID", score_col)]
+names(pgs) <- c("FID","IID","PGS")
+pgs$PGS <- suppressWarnings(as.numeric(pgs$PGS))
+
+# Read phenotype
+ph <- read.table("pheno_audpc.txt", header=TRUE, stringsAsFactors=FALSE)
+ph$AUDPC <- suppressWarnings(as.numeric(ph$AUDPC))
+
+# Merge
+m <- merge(pgs, ph, by=c("FID","IID"), all.x=TRUE)
+
+# Flip sign so higher = more resistant
+m$Resistance_PGS <- -m$PGS
+
+# Save outputs
+write.table(m, "gs-lite/pgs_with_audpc.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+
+mr <- m[order(-m$Resistance_PGS), ]  # rank by resistance
+write.table(mr, "gs-lite/pgs_ranked.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+write.table(head(mr, 20), "gs-lite/top20_by_ResistancePGS.tsv", sep="\t", row.names=FALSE, quote=FALSE)
+
+# Plot
+png("gs-lite/ResistancePGS_vs_AUDPC.png", width=1000, height=800, res=150)
+plot(m$Resistance_PGS, m$AUDPC, xlab="Resistance Polygenic Score (higher=better)", 
+     ylab="AUDPC", main="Resistance-PGS vs AUDPC")
+abline(lm(AUDPC ~ Resistance_PGS, data=m), col="black")
+r <- suppressWarnings(cor(m$Resistance_PGS, m$AUDPC, use="complete.obs"))
+if (!is.na(r)) legend("topright", bty="n", legend=paste0("r = ", round(r, 3)))
+dev.off()
+EOF
+
+echo "[GS-lite] Done."
 echo "[GS-lite] Results in: $OUTDIR/"
 ```
 
