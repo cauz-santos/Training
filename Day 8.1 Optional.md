@@ -21,12 +21,40 @@ In plant breeding, **homozygosity** patterns across the genome can reveal:
 - Working directory: `/lisc/scratch/course/pgbiow/GWAS/plink`
 
 
+# 🧬 Genome-wide Homozygosity Landscape for SNP Selection in Plant Breeding
+
+**Author:** Luiz A. C. dos Santos  
+**Context:** Training in bioinformatics for plant breeding  
+**Objective:** Visualize genome-wide homozygosity distribution using SNP data to guide marker selection for a DArTseq panel.
+
+---
+
+### Step 0: Prepare Your Working Directory
+
+Each student should create their own folder for this activity:
+
+```bash
+mkdir -p 08_genome_selection/plink
+cd 08_genome_selection/plink
+```
+
+Then copy all required genotype files from the shared directory:
+
+```bash
+cp /lisc/scratch/course/pgbiow/GWAS/plink/data_pruned.* .
+```
+
+This ensures they are working with:
+- `data_pruned.bed`
+- `data_pruned.bim`
+- `data_pruned.fam`
+
 
 ### Step 1: Compute Genotype Counts per SNP using PLINK
 
 Create the following SLURM script:
 
-#### `01_compute_snp_counts.sh`
+### `01_compute_snp_counts.sh`
 ```bash
 #!/bin/bash
 #SBATCH --job-name=snpcounts
@@ -61,8 +89,9 @@ bedtools makewindows \
   -w 1000000 -s 500000 > genome_1Mb_windows.bed
 ```
 
+---
 
-### Step 3: Convert SNP Counts to BED Format
+## ✅ Step 3: Convert SNP Counts to BED Format
 
 Extract relevant columns from PLINK output:
 
@@ -77,7 +106,6 @@ Columns:
 - $7 = Heterozygous
 - $8 = Homozygous ALT
 
----
 
 ### Step 4: Aggregate Homozygosity per Window
 
@@ -91,7 +119,6 @@ bedtools map \
 
 This computes the total number of homozygous and heterozygous genotypes in each window.
 
----
 
 ### Step 5: Visualize Homozygosity in Rstudio
 
@@ -121,9 +148,8 @@ ggplot(df, aes(x = midpoint, y = homozygosity)) +
   theme_minimal()
 ```
 
----
 
-## 🔍 Interpretation in Plant Breeding
+### Interpretation in Plant Breeding
 
 - **Peaks of homozygosity** may indicate:
   - Historical selection (selective sweeps)
@@ -134,14 +160,14 @@ ggplot(df, aes(x = midpoint, y = homozygosity)) +
   - Highly polymorphic regions
   - Good targets for SNP panel design
 
-### 🧠 Key Takeaways:
+### Key Takeaways:
 - Choose SNPs from regions with **moderate homozygosity** (not fully fixed)
 - Avoid markers that fall in **highly homozygous blocks**
 - This ensures better resolution and avoids redundant markers in DArTseq panels
 
 ---
 
-## 📁 Final Outputs
+### Final Outputs
 
 | File                         | Description                              |
 |------------------------------|------------------------------------------|
@@ -152,10 +178,11 @@ ggplot(df, aes(x = midpoint, y = homozygosity)) +
 | `02_plot_homozygosity.R`     | R script for genome-wide visualization   |
 | `homozygosity_plot.pdf`      | Final plot for teaching and selection    |
 
----
 
-## 🧪 Optional Extensions
+### Optional Extensions
 
 - Compare homozygosity across **populations**
 - Combine with **LD decay plots** or **GWAS hits**
 - Link to **QTL regions** for trait-targeted panel design
+
+
