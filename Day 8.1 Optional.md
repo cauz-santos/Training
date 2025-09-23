@@ -20,13 +20,6 @@ In plant breeding, **homozygosity** patterns across the genome can reveal:
 - Genome index: `EG5_reference_genomic.fna.fai`
 - Working directory: `/lisc/scratch/course/pgbiow/GWAS/plink`
 
-
-# 🧬 Genome-wide Homozygosity Landscape for SNP Selection in Plant Breeding
-
-**Author:** Luiz A. C. dos Santos  
-**Context:** Training in bioinformatics for plant breeding  
-**Objective:** Visualize genome-wide homozygosity distribution using SNP data to guide marker selection for a DArTseq panel.
-
 ---
 
 ### Step 0: Prepare Your Working Directory
