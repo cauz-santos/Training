@@ -734,7 +734,7 @@ Take the lead **AUDPC** SNPs and list **all genes within ±50 kb** of each peak 
 It’s a compact teaching window that usually captures the nearest causal candidates without dragging in too many distant genes. (You can tighten to ±25 kb or expand later; LD-based windows are an advanced follow-up.)
 
 ```bash
-vi genes_50kb.sh
+vi genes_100kb.sh
 ```
 
 ```bash
@@ -743,8 +743,8 @@ vi genes_50kb.sh
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=1G
 #SBATCH --time=00:02:00
-#SBATCH -o genes_50kb.out
-#SBATCH -e genes_50kb.err
+#SBATCH -o genes_100kb.out
+#SBATCH -e genes_100kb.err
 
 set -euo pipefail
 export LC_ALL=C
@@ -754,7 +754,7 @@ GENOME_GFF="/lisc/scratch/course/pgbiow/data/genomes/EG5_reference/EG5_genomic.g
 OUTDIR="annotation_EG5"
 mkdir -p "${OUTDIR}"
 
-# --- 1) Define the SNP peaks (CHR  POS); 50 kb window each
+# --- 1) Define the SNP peaks (CHR  POS); 100 kb window each
 cat > "${OUTDIR}/snps_peaks.tsv" <<EOF
 NC_025995.1	49444165
 NC_025995.1	49444188
@@ -783,16 +783,16 @@ fi
 
 # --- 3) Build 50 kb windows around SNPs; merge overlapping windows
 awk 'BEGIN{OFS="\t"}
-     {chr=$1; pos=$2; start=pos-50000; if(start<0) start=0; end=pos+50000; print chr,start,end,chr":"pos}' \
+     {chr=$1; pos=$2; start=pos-100000; if(start<0) start=0; end=pos+100000; print chr,start,end,chr":"pos}' \
     "${OUTDIR}/snps_peaks.tsv" \
-  | sort -k1,1 -k2,2n > "${OUTDIR}/windows_50kb.bed"
+  | sort -k1,1 -k2,2n > "${OUTDIR}/windows_100kb.bed"
 
 module load BEDTools
-bedtools merge -i "${OUTDIR}/windows_50kb.bed" -c 4 -o collapse > "${OUTDIR}/windows_50kb.merged.bed"
+bedtools merge -i "${OUTDIR}/windows_100kb.bed" -c 4 -o collapse > "${OUTDIR}/windows_100kb.merged.bed"
 
 # --- 4) Intersect windows with genes → pretty table
-bedtools intersect -a "${OUTDIR}/windows_50kb.merged.bed" -b "${OUTDIR}/genes.sorted.bed" -wb \
-  > "${OUTDIR}/genes_in_50kb_raw.tsv"
+bedtools intersect -a "${OUTDIR}/windows_100kb.merged.bed" -b "${OUTDIR}/genes.sorted.bed" -wb \
+  > "${OUTDIR}/genes_in_100kb_raw.tsv"
 
 # Format: region_chr  region_start  region_end  snps_in_window  gene_chr  gene_start  gene_end  gene_id  gene_name  product
 awk 'BEGIN{OFS="\t"; print "window_chr","window_start","window_end","snps","gene_chr","gene_start","gene_end","gene_id","gene_name","product"}
@@ -800,17 +800,17 @@ awk 'BEGIN{OFS="\t"; print "window_chr","window_start","window_end","snps","gene
        split($4, s, ","); snps=$4;                 # collapsed SNP list for the window
        split($8, f, "|"); gid=f[1]; gname=f[2]; prod=f[3];
        print $1, $2, $3, snps, $5, $6, $7, gid, gname, prod;
-     }' "${OUTDIR}/genes_in_50kb_raw.tsv" \
+     }' "${OUTDIR}/genes_in_100kb_raw.tsv" \
   | sort -k5,5 -k6,6n -k8,8 \
   | uniq \
-  > "${OUTDIR}/genes_in_50kb_around_peaks.tsv"
+  > "${OUTDIR}/genes_in_100kb_around_peaks.tsv"
 
-echo "Wrote ${OUTDIR}/genes_in_50kb_around_peaks.tsv"
+echo "Wrote ${OUTDIR}/genes_in_100kb_around_peaks.tsv"
 ```
 
 Submit the job:
 ```bash
-sbatch genes_50kb.sh
+sbatch genes_100kb.sh
 ```
 
 Check the output results:
