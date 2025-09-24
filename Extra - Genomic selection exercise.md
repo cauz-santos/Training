@@ -4,6 +4,30 @@ In this exercise, we will use **genomic selection (GS)** to predict sucrose cont
 Unlike the PCA classification exercise (High vs Low sucrose), this is a **regression task**: we predict the actual sucrose values.
 
 ---
+## Step 0 - Installing the `randomForest` package in RStudio**  
+
+Before running the exercise, make sure the `randomForest` package is installed in your **personal R library**.  
+This is necessary because the global R installation on the cluster is read-only, and each user must install their own copy of additional packages.
+
+In RStudio, run the following once:
+
+```r
+# Create a personal library path (only needed once)
+dir.create("/lisc/home/user/<your_username>/R/x86_64-pc-linux-gnu-library/4.5",
+           recursive = TRUE, showWarnings = FALSE)
+
+# Tell R to use your personal library
+.libPaths("/lisc/home/user/<your_username>/R/x86_64-pc-linux-gnu-library/4.5")
+
+# Install randomForest into your library
+install.packages("randomForest", repos = "https://cloud.r-project.org",
+                 lib = "/lisc/home/user/<your_username>/R/x86_64-pc-linux-gnu-library/4.5")
+
+# Load the package to test installation
+library(randomForest)
+```
+
+---
 
 ## **Step 1 — Input data**
 
