@@ -666,7 +666,7 @@ suppressMessages({
 g2go_file <- "/lisc/scratch/course/pgbiow/data/genomes/gene2go.tsv"
 up_file   <- "/path to your user/09_rnaseq_expression/trinity/Pminus_vs_Pplus.DE_up.genes"
 down_file <- "/path to your user/09_rnaseq_expression/trinity/Pminus_vs_Pplus.DE_down.genes"
-bg_file   <- "/path to your user/09_rnaseq_expression/all_genes.background"
+bg_file   <- "/path to your user/09_rnaseq_expression/trinity/all_genes.background"
 
 # --------------------------
 # Read input
