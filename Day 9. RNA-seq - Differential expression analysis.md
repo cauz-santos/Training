@@ -215,7 +215,7 @@ module load SAMtools/1.20
 # Paths
 IDX="/lisc/scratch/course/pgbiow/09_rnaseq_expression/reference/STAR_index"
 FASTQ_DIR="/lisc/scratch/course/pgbiow/data/RNAseq"
-OUT_BASE="/lisc/scratch/course/pgbiow/09_rnaseq_expression/star"
+OUT_BASE="/path to your user/09_rnaseq_expression/star"
 
 # Sample (change if needed)
 SAMPLE=${SAMPLE:-Pminus_28d_rep1}
@@ -299,7 +299,7 @@ module load subread
 GTF="/lisc/scratch/course/pgbiow/09_rnaseq_expression/reference/annotation.gtf"
 
 # Output directory
-OUT="/lisc/scratch/course/pgbiow/09_rnaseq_expression/counts"
+OUT="/path to your user/09_rnaseq_expression/counts"
 mkdir -p "$OUT"
 
 # Collect all BAMs
@@ -317,13 +317,13 @@ featureCounts -T 16 -p -B -C -s ${STRAND} \
 # Clean genes x samples matrix
 python - << 'PY'
 import pandas as pd
-fc = pd.read_csv('/lisc/scratch/course/pgbiow/09_rnaseq_expression/counts/featureCounts.txt', sep='\t', comment='#')
+fc = pd.read_csv('/path to your user/09_rnaseq_expression/counts/featureCounts.txt', sep='\t', comment='#')
 cts = fc.iloc[:, [0] + list(range(6, fc.shape[1]))].copy()
 cts.rename(columns={'Geneid':'gene_id'}, inplace=True)
-cts.to_csv('/lisc/scratch/course/pgbiow/09_rnaseq_expression/counts/counts_matrix.tsv', sep='\t', index=False)
+cts.to_csv('/path to your user/09_rnaseq_expression/counts/counts_matrix.tsv', sep='\t', index=False)
 # gene lengths for GOseq
 fc[['Geneid','Length']].rename(columns={'Geneid':'gene_id','Length':'length'}) \
-  .to_csv('/lisc/scratch/course/pgbiow/09_rnaseq_expression/counts/gene_lengths.txt', sep='\t', index=False, header=False)
+  .to_csv('/path to your user/09_rnaseq_expression/counts/gene_lengths.txt', sep='\t', index=False, header=False)
 PY
 ```
 
