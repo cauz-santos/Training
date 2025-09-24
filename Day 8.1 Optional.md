@@ -1,14 +1,9 @@
 ---
-title: "Genomic Selection Practical: Predicting Heterosis & Choosing Parent Combinations (Simulated Data)"
-output:
-  html_document:
-    toc: true
-    toc_depth: 3
-    toc_float: true
-    number_sections: true
+# title: "Genomic Selection Practical: Predicting Heterosis & Choosing Parent Combinations (Simulated Data)"
+
 ---
 
-# Overview
+## Overview
 
 **Goal:** hands-on practical to (1) train a genomic prediction model (GBLUP) on simulated data, (2) obtain genomic estimated breeding values (GEBVs) for inbred parents, (3) predict hybrid performance for all possible crosses, (4) compute heterosis (MPH and BPH), and (5) select the best parent combinations.
 
@@ -19,9 +14,7 @@ This notebook is **self-contained**: it **simulates** genotypes and phenotypes f
 - A **heatmap** of predicted heterosis for the full crossing matrix.
 - A ranked table of the **top crosses**.
 
-> ✅ Default model is **additive GBLUP** via `rrBLUP`. An optional **additive + dominance** section using `sommer` is provided at the end if you want to go one step further.
-
----
+> Default model is **additive GBLUP** via `rrBLUP`. An optional **additive + dominance** section using `sommer` is provided at the end if you want to go one step further.
 
 # Setup
 
@@ -38,15 +31,14 @@ library(reshape2)
 set.seed(123)
 ```
 
----
 
 # 1) Simulate genotypes for 30 inbred parents
 
-We simulate **M=1000 bi-allelic SNPs** for **N=30** fully-inbred parents (genotypes coded as 0/2 for homozygotes; 1 rarely appears due to inbreeding). Minor allele frequencies (MAF) are sampled to get realistic variation.
+We simulate **M=10000 bi-allelic SNPs** for **N=30** fully-inbred parents (genotypes coded as 0/2 for homozygotes; 1 rarely appears due to inbreeding). Minor allele frequencies (MAF) are sampled to get realistic variation.
 
 ```r
 N <- 30    # number of parents
-M <- 1000  # number of SNPs
+M <- 10000  # number of SNPs
 
 # Draw minor allele frequencies
 maf <- runif(M, min = 0.05, max = 0.5)
