@@ -208,9 +208,9 @@ vi 02_star_map_one.sh
 set -euo pipefail
 
 module purge
-module load Trinity/2.15.2-foss-2023a
-module load STAR/2.7.10a
-module load SAMtools/1.20
+module load Trinity
+module load STAR
+module load samtools
 
 # Paths
 IDX="/lisc/scratch/course/pgbiow/backup/09_rnaseq_expression/reference/STAR_index"
