@@ -71,9 +71,9 @@ Pplus_28d_rep3,plus,B2
 ```bash
 module purge
 module load Trinity/2.15.2-foss-2023a   # or: module load trinityrnaseq/2.15.2-5.40.2-5.3.28
-module load STAR/2.7.10a                # use the closest STAR available
-module load SAMtools/1.20
-module load Subread/2.0.3               # provides featureCounts
+module load STAR                # use the closest STAR available
+module load samtools
+module load subread               # provides featureCounts
 export TRINITY_HOME=${TRINITY_HOME:-$EBROOTTRINITY}
 ```
 
@@ -213,7 +213,7 @@ module load STAR/2.7.10a
 module load SAMtools/1.20
 
 # Paths
-IDX="/lisc/scratch/course/pgbiow/09_rnaseq_expression/reference/STAR_index"
+IDX="/lisc/scratch/course/pgbiow/backup/09_rnaseq_expression/reference/STAR_index"
 FASTQ_DIR="/lisc/scratch/course/pgbiow/data/RNAseq"
 OUT_BASE="/path to your user/09_rnaseq_expression/star"
 
