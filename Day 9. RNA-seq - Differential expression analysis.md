@@ -199,9 +199,9 @@ vi 02_star_map_one.sh
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 2
+#SBATCH -c 4
 #SBATCH --mem=4G
-#SBATCH -t 00:35:00
+#SBATCH -t 01:00:00
 #SBATCH -J day9_star_map1
 #SBATCH -o logs/%x_%j.out
 #SBATCH -e logs/%x_%j.err
