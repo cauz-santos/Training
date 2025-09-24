@@ -417,8 +417,8 @@ Press **`i`**, paste, then **`Esc` → `:wq`**:
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 2
-#SBATCH --mem=2G
+#SBATCH -c 8
+#SBATCH --mem=60G
 #SBATCH -t 00:45:00
 #SBATCH -J day9_edgeR
 #SBATCH -o logs/%x_%j.out
@@ -595,8 +595,8 @@ Save as `prepare_gene_lists.sh`:
 ```bash
 #!/usr/bin/env bash
 #SBATCH -p standard
-#SBATCH -c 2
-#SBATCH --mem=4G
+#SBATCH -c 4
+#SBATCH --mem=20G
 #SBATCH -t 00:05:00
 #SBATCH -J prep_gene_lists
 #SBATCH -o logs/%x_%j.out
