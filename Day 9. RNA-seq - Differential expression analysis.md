@@ -296,7 +296,7 @@ module load Trinity/2.15.2-foss-2023a
 module load subread
 
 # Reference annotation
-GTF="/lisc/scratch/course/pgbiow/backup/09_rnaseq_expression/reference/annotation.gtf"
+GTF="/lisc/scratch/course/pgbiow/backup/09_rnaseq_expression/reference/Elaeis_guineensis_genomic.gtf"
 
 # Output directory
 OUT="/path to your user/09_rnaseq_expression/counts"
