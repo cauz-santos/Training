@@ -607,7 +607,7 @@ set -euo pipefail
 # --------------------------
 # INPUTS
 # --------------------------
-TRINITY_DIR="/lisc/scratch/course/pgbiow/09_rnaseq_expression/trinity"
+TRINITY_DIR="/path to your user/09_rnaseq_expression/trinity"
 CONTRAST="Pminus_vs_Pplus"
 
 # DE results from edgeR (already filtered by p-value and logFC in Trinity pipeline)
@@ -664,9 +664,9 @@ suppressMessages({
 # Input files (full paths)
 # --------------------------
 g2go_file <- "/lisc/scratch/course/pgbiow/data/genomes/gene2go.tsv"
-up_file   <- "/lisc/scratch/course/pgbiow/09_rnaseq_expression/trinity/Pminus_vs_Pplus.DE_up.genes"
-down_file <- "/lisc/scratch/course/pgbiow/09_rnaseq_expression/trinity/Pminus_vs_Pplus.DE_down.genes"
-bg_file   <- "/lisc/scratch/course/pgbiow/09_rnaseq_expression/all_genes.background"
+up_file   <- "/path to your user/09_rnaseq_expression/trinity/Pminus_vs_Pplus.DE_up.genes"
+down_file <- "/path to your user/09_rnaseq_expression/trinity/Pminus_vs_Pplus.DE_down.genes"
+bg_file   <- "/path to your user/09_rnaseq_expression/all_genes.background"
 
 # --------------------------
 # Read input
@@ -715,11 +715,11 @@ run_topgo <- function(sig_genes, bg_genes, geneID2GO, outprefix) {
 # --------------------------
 cat("Running enrichment for UP genes\n")
 run_topgo(up_genes, bg_genes, geneID2GO,
-          "/lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_up")
+          "/path to your user/09_rnaseq_expression/results_topGO_up")
 
 cat("Running enrichment for DOWN genes\n")
 run_topgo(down_genes, bg_genes, geneID2GO,
-          "/lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_down")
+          "/path to your user/09_rnaseq_expression/results_topGO_down")
 
 ```
 Submit:
@@ -733,18 +733,18 @@ Rscript run_topGO.R
 After running run_topGO.R, two result files are created:
 
 **UP-regulated DEGs:**  
-`/lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_up_GO.tsv`
+`/path to your user/09_rnaseq_expression/results_topGO_up_GO.tsv`
 
 **DOWN-regulated DEGs:**  
-`/lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_down_GO.tsv`
+`/path to your user/09_rnaseq_expression/results_topGO_down_GO.tsv`
 
 To quickly inspect the top terms, just do:
 ```bash
 # View the first 20 GO terms enriched in UP genes
-cat /lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_up_GO.tsv | head -n 20
+cat /path to your user/09_rnaseq_expression/results_topGO_up_GO.tsv | head -n 20
 
 # View the first 20 GO terms enriched in DOWN genes
-cat /lisc/scratch/course/pgbiow/09_rnaseq_expression/results_topGO_down_GO.tsv | head -n 20
+cat /path to your user/09_rnaseq_expression/results_topGO_down_GO.tsv | head -n 20
 ```
 
 > *Breeding note:* Enrichment pinpoints processes (e.g., **phosphate transport**, **root development**, **ABA signaling**) to prioritize for selection and validation.
