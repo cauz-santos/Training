@@ -1,292 +1,233 @@
----
-# title: "Genomic Selection Practical: Predicting Heterosis & Choosing Parent Combinations (Simulated Data)"
+# Genomic Selection and Heterosis Prediction
 
----
+## Introduction
 
-## Overview
+In this practical, we will perform **genomic selection (GS)** and **heterosis prediction** using the provided Verdant datasets of parents and offspring.  
+The goal is to learn how to train GS models on **offspring SNP + phenotype data**, and then use these models to predict the **best parent combinations** that maximize heterosis.
 
-**Goal:** hands-on practical to (1) train a genomic prediction model (GBLUP) on simulated data, (2) obtain genomic estimated breeding values (GEBVs) for inbred parents, (3) predict hybrid performance for all possible crosses, (4) compute heterosis (MPH and BPH), and (5) select the best parent combinations.
+Each participant should run this practical inside their own folder:
 
-This notebook is **self-contained**: it **simulates** genotypes and phenotypes for 30 inbred parents and walks through the pipeline.
+Please create the folder for:
 
-**You’ll produce:**
-- A table of **predicted hybrid values** and **heterosis** (MPH and BPH).
-- A **heatmap** of predicted heterosis for the full crossing matrix.
-- A ranked table of the **top crosses**.
+```
+mkdir 08_genomic_selection/
+```
 
-> Default model is **additive GBLUP** via `rrBLUP`. An optional **additive + dominance** section using `sommer` is provided at the end if you want to go one step further.
 
-# Setup
+### Step 1 - Prepare the Environment
 
-```r
-# Install (run once if needed)
-# install.packages(c("rrBLUP", "ggplot2", "dplyr", "tidyr", "Matrix", "reshape2"))
+Load required R packages:
 
-library(rrBLUP)
-library(ggplot2)
+```{r setup, message=FALSE}
 library(dplyr)
+library(readr)
 library(tidyr)
-library(Matrix)
-library(reshape2)
-set.seed(123)
+library(stringr)
+library(ggplot2)
+library(rrBLUP)
+library(purrr)
+```
+
+Define the working directory (adapt if needed):
+
+```{r paths}
+base <- "/lisc/scratch/course/pgbiow/data/GS_Heterosis/Heterosis_prediction_verdant"
+out_dir <- file.path(base, "results")
+dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 ```
 
 
-# 1) Simulate genotypes for 30 inbred parents
+### Step 2 - Input Data
 
-We simulate **M=10000 bi-allelic SNPs** for **N=30** fully-inbred parents (genotypes coded as 0/2 for homozygotes; 1 rarely appears due to inbreeding). Minor allele frequencies (MAF) are sampled to get realistic variation.
+We will use:
 
-```r
-N <- 30    # number of parents
-M <- 10000  # number of SNPs
+- **Parent genotypes** from: `training_sets/parents/parents.raw`
+- **Offspring genotypes** from: `training_sets/offsprings/offsprings.raw`
+- **Offspring phenotypes** from: `testing_sets/list_input_parent_pairs_offsprings_*.csv`
+- **Parent phenotypes** from: `training_sets/ind_names_phenotypes_heterosis_Sf_30.csv`
 
-# Draw minor allele frequencies
-maf <- runif(M, min = 0.05, max = 0.5)
+```{r input-files}
+offspring_raw <- file.path(base, "training_sets/offsprings/offsprings.raw")
+parents_raw   <- file.path(base, "training_sets/parents/parents.raw")
+pairs_csv     <- list.files(file.path(base, "testing_sets"),
+                            pattern="^list_input_parent_pairs_offsprings_.*\\.csv$", full.names=TRUE)[1]
+parents_pheno_csv <- file.path(base, "training_sets", "ind_names_phenotypes_heterosis_Sf_30.csv")
 
-# Simulate inbred genotypes: 0 or 2, with probability by maf
-# P(genotype=2) ~ maf, P(genotype=0) ~ 1-maf; (simple model for inbreds)
-G <- matrix(0, nrow = N, ncol = M)
-for (j in 1:M) {
-  G[, j] <- rbinom(N, size = 1, prob = maf[j]) * 2  # 0 or 2
-}
-colnames(G) <- paste0("SNP", 1:M)
-rownames(G) <- paste0("P", sprintf("%02d", 1:N))
-
-# Quick MAF check (empirical)
-emp_maf <- colMeans(G)/2
-summary(emp_maf)
+TRAIT <- "MBW-MA"   # <-- change this to target other traits if needed
 ```
 
----
 
-# 2) Simulate true additive marker effects and parent phenotypes
+### Step 3 - Load and Harmonize Data
 
-We draw **true additive effects** for markers and compute the **true genetic value** (TGV) for each parent as `G_centered %*% beta` with some noise to create **observed phenotypes**. This becomes the training data for GBLUP.
-
-```r
-# Center genotypes to mean 0 for modeling (common for rrBLUP)
-G_centered <- scale(G, center = TRUE, scale = FALSE)
-
-# Simulate sparse-ish additive effects
-p_causal <- 0.2
-beta <- rnorm(M, mean = 0, sd = 0.05) * rbinom(M, 1, p_causal)
-
-# True genetic value (additive)
-TGV <- as.vector(G_centered %*% beta)
-
-# Add environmental noise
-h2_true <- 0.6
-var_g <- var(TGV)
-var_e <- var_g * (1 - h2_true)/h2_true
-Epsilon <- rnorm(N, mean = 0, sd = sqrt(var_e))
-
-# Observed phenotypes for parents
-Y <- TGV + Epsilon
-
-parents <- data.frame(ID = rownames(G), Phenotype = Y, TGV = TGV)
-head(parents)
-summary(parents$Phenotype)
-```
-
-> **Interpretation:** We will try to recover the genetic signal from phenotypes using GBLUP and then predict hybrids from the parental GEBVs.
-
----
-
-# 3) Train additive GBLUP and compute GEBVs for parents
-
-We fit an **additive GBLUP** using `rrBLUP::mixed.solve` with the marker matrix as a random effect design. It returns **marker effects** `u`, from which we compute **GEBV = G_centered %*% u` for each parent.
-
-```r
-# rrBLUP expects Z = marker design (individuals x markers)
-fit <- mixed.solve(y = parents$Phenotype, Z = G_centered)
-
-marker_effects <- as.vector(fit$u)            # effects for each SNP
-names(marker_effects) <- colnames(G_centered)
-
-GEBV_parents <- as.vector(G_centered %*% marker_effects)
-names(GEBV_parents) <- rownames(G_centered)
-
-gebv_df <- data.frame(ID = names(GEBV_parents), GEBV = GEBV_parents) %>%
-  left_join(parents, by = "ID")
-
-head(gebv_df)
-cor(gebv_df$GEBV, gebv_df$Phenotype)  # sanity check
-```
-
-> **Note:** The correlation above gives a rough sense of how well GBLUP recovered the (noisy) phenotypes.
-
----
-
-# 4) Predict hybrid performance for all possible crosses (additive model)
-
-For inbred parents, a simple **additive-only** hybrid prediction is the **mid-parent value**:
-\(
-\hat{H}_{ij} = \frac{\text{GEBV}_i + \text{GEBV}_j}{2}
-\)
-
-We compute all pairwise crosses \(i<j\).
-
-```r
-parents_vec <- gebv_df$ID
-K <- length(parents_vec)
-
-# All unique crosses i<j
-pairs <- t(combn(parents_vec, 2)) %>% as.data.frame()
-colnames(pairs) <- c("Parent1", "Parent2")
-
-# Predicted hybrid value under additive model
-id_to_gebv <- setNames(gebv_df$GEBV, gebv_df$ID)
-pairs$Hybrid_pred <- (id_to_gebv[pairs$Parent1] + id_to_gebv[pairs$Parent2]) / 2
-
-# Compute parental baselines (using observed phenotypes for heterosis reference)
-id_to_pheno <- setNames(gebv_df$Phenotype, gebv_df$ID)
-pairs$MP <- (id_to_pheno[pairs$Parent1] + id_to_pheno[pairs$Parent2]) / 2
-pairs$BP <- pmax(id_to_pheno[pairs$Parent1], id_to_pheno[pairs$Parent2])
-
-# Heterosis metrics (relative)
-pairs$MPH <- (pairs$Hybrid_pred - pairs$MP) / pairs$MP
-pairs$BPH <- (pairs$Hybrid_pred - pairs$BP) / pairs$BP
-
-# Also keep absolute versions (optional)
-pairs$MPH_abs <- pairs$Hybrid_pred - pairs$MP
-pairs$BPH_abs <- pairs$Hybrid_pred - pairs$BP
-
-head(pairs)
-summary(pairs$MPH)
-```
-
-> **Tip:** If you prefer a fully “predicted” pipeline, you can use **parental GEBVs** instead of observed phenotypes in MP and BP. Here we use observed parental phenotypes as the baseline, which is common in practice.
-
----
-
-# 5) Visualize the crossing matrix as a heterosis heatmap
-
-We’ll build an \(N \times N\) matrix where cell \((i,j)\) contains the predicted **MPH**. We’ll show only the upper triangle since crosses are symmetric.
-
-```r
-# Prepare a square matrix of MPH
-mp <- matrix(NA, nrow = N, ncol = N, dimnames = list(parents_vec, parents_vec))
-for (k in 1:nrow(pairs)) {
-  i <- pairs$Parent1[k]; j <- pairs$Parent2[k]
-  mp[i, j] <- pairs$MPH[k]
+```{r load-data}
+read_raw <- function(path) {
+  x <- read_table(path, show_col_types = FALSE, na = c("NA"))
+  x %>% mutate(ID = as.character(IID)) %>% select(-FID, -IID, -PAT, -MAT, -SEX, -PHENOTYPE)
 }
 
-# Melt to long format for ggplot
-mp_long <- melt(mp, varnames = c("Parent1", "Parent2"), value.name = "MPH") %>%
+offs_raw <- read_raw(offspring_raw)
+pars_raw <- read_raw(parents_raw)
+
+# Intersect SNPs
+snps <- intersect(setdiff(names(offs_raw), "ID"), setdiff(names(pars_raw), "ID"))
+offs <- offs_raw %>% select(ID, all_of(snps))
+pars <- pars_raw %>% select(ID, all_of(snps))
+
+# Offspring phenotypes
+pairs_raw <- read_csv(pairs_csv, show_col_types = FALSE)
+offs_pheno <- pairs_raw %>%
+  transmute(ID = as.character(id),
+            Trait = as.numeric(.data[[TRAIT]]),
+            Female = as.character(`Female.Parents`),
+            Male   = as.character(`Male.Parents`)) %>%
+  filter(!is.na(ID), !is.na(Trait))
+
+offs <- offs %>% semi_join(offs_pheno, by = "ID")
+offs_pheno <- offs_pheno %>% semi_join(offs, by = "ID")
+```
+
+
+### Step 4 - Build Additive and Dominance Codes
+
+```{r add-dom-codes}
+G_offs <- as.matrix(offs %>% select(-ID))
+col_means <- colMeans(G_offs, na.rm = TRUE)
+p <- col_means / 2
+for (j in seq_len(ncol(G_offs))) {
+  G_offs[is.na(G_offs[,j]), j] <- col_means[j]
+}
+Z_A <- sweep(G_offs, 2, 2*p, "-")
+Z_D <- (G_offs == 1) * 1.0
+EH  <- 2 * p * (1 - p)
+Z_D <- sweep(Z_D, 2, EH, "-")
+rownames(Z_A) <- offs$ID; rownames(Z_D) <- offs$ID
+```
+
+
+### Step 5 - Train rrBLUP (Additive + Dominance)
+
+```{r rrblup-train}
+y <- offs_pheno$Trait
+idx <- match(offs_pheno$ID, rownames(Z_A))
+ZA <- Z_A[idx, , drop=FALSE]; ZD <- Z_D[idx, , drop=FALSE]
+Z  <- cbind(ZA, ZD)
+
+fit <- mixed.solve(y = y, Z = Z)
+beta <- as.vector(fit$u)
+beta_A <- beta[seq_len(ncol(ZA))]
+beta_D <- beta[seq_len(ncol(ZD)) + ncol(ZA)]
+names(beta_A) <- colnames(ZA); names(beta_D) <- colnames(ZD)
+```
+
+
+### Step 6 - Predict Parent × Parent Crosses
+
+```{r predict-crosses}
+# Helper function for dominance probabilities
+het_prob <- function(g1, g2) {
+  if (is.na(g1) || is.na(g2)) return(NA_real_)
+  if (g1==g2 && (g1==0 || g1==2)) return(0)
+  if ((g1==0 && g2==2) || (g1==2 && g2==0)) return(1)
+  if ((g1==1 && g2 %in% c(0,2)) || (g2==1 && g1 %in% c(0,2)) || (g1==1 && g2==1)) return(0.5)
+  return(NA_real_)
+}
+het_prob_vec <- function(v1, v2) vapply(seq_along(v1), function(i) het_prob(v1[i], v2[i]), numeric(1))
+
+G_par <- as.matrix(pars %>% select(-ID))
+for (j in seq_len(ncol(G_par))) {
+  G_par[is.na(G_par[,j]), j] <- col_means[j]
+}
+rownames(G_par) <- pars$ID
+
+parents_vec <- rownames(G_par)
+pair_idx <- t(combn(seq_along(parents_vec), 2))
+Parent1 <- parents_vec[pair_idx[,1]]
+Parent2 <- parents_vec[pair_idx[,2]]
+
+A_ij <- (G_par[Parent1, , drop=FALSE] + G_par[Parent2, , drop=FALSE]) / 2
+D_ij <- matrix(NA_real_, nrow = nrow(A_ij), ncol = ncol(A_ij),
+               dimnames = list(NULL, colnames(A_ij)))
+for (k in seq_len(nrow(A_ij))) {
+  g1 <- G_par[Parent1[k], ]
+  g2 <- G_par[Parent2[k], ]
+  D_ij[k, ] <- het_prob_vec(g1, g2)
+}
+
+A_ij_c <- sweep(A_ij, 2, 2*p, "-")
+D_ij_c <- sweep(D_ij, 2, EH, "-")
+
+hyb_pred <- as.vector(A_ij_c %*% beta_A + D_ij_c %*% beta_D)
+
+pred_df <- tibble(
+  Parent1 = Parent1,
+  Parent2 = Parent2,
+  Hybrid_pred = hyb_pred
+)
+```
+
+### Step 7 - Compute Heterosis
+
+```{r heterosis}
+parents_ph <- read_csv(parents_pheno_csv, show_col_types = FALSE)
+id_col <- intersect(names(parents_ph), c("ID","Id","id","name","Name","ind","individual","genotype"))[1]
+trait_par <- setdiff(names(parents_ph), c(id_col, grep("heterosis|MPH|BPH|pop|group|population", names(parents_ph), ignore.case=TRUE, value=TRUE)))[1]
+
+parents_ph <- parents_ph %>%
+  transmute(ID = as.character(.data[[id_col]]),
+            Trait = as.numeric(.data[[trait_par]])) %>%
+  distinct()
+
+id2p <- setNames(parents_ph$Trait, parents_ph$ID)
+
+pred_df <- pred_df %>%
+  mutate(P1 = id2p[Parent1],
+         P2 = id2p[Parent2]) %>%
+  filter(!is.na(P1), !is.na(P2)) %>%
+  mutate(MP = (P1 + P2)/2,
+         BP = pmax(P1, P2),
+         MPH = (Hybrid_pred - MP)/MP,
+         BPH = (Hybrid_pred - BP)/BP,
+         MPH_abs = Hybrid_pred - MP,
+         BPH_abs = Hybrid_pred - BP)
+
+best <- pred_df %>% arrange(desc(MPH)) %>%
+  mutate(Rank = row_number())
+```
+
+
+### Step 8 - Save Results
+
+```{r save-results}
+write_csv(best, file.path(out_dir, paste0("Verdant_crosses_ranked_", TRAIT, ".csv")))
+
+# Heatmap
+parents_all <- sort(unique(c(best$Parent1, best$Parent2)))
+mat <- matrix(NA_real_, nrow=length(parents_all), ncol=length(parents_all),
+              dimnames=list(parents_all, parents_all))
+for (k in seq_len(nrow(best))) {
+  i <- best$Parent1[k]; j <- best$Parent2[k]
+  mat[i, j] <- best$MPH[k]
+}
+dfh <- as.data.frame(as.table(mat)) %>%
+  rename(Parent1=Var1, Parent2=Var2, MPH=Freq) %>%
   filter(!is.na(MPH))
 
-ggplot(mp_long, aes(x = Parent1, y = Parent2, fill = MPH)) +
+p <- ggplot(dfh, aes(x=Parent1, y=Parent2, fill=MPH)) +
   geom_tile() +
-  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
-  theme_minimal(base_size = 12) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-  labs(title = "Predicted Mid-Parent Heterosis (MPH) Heatmap",
-       x = "Parent 1", y = "Parent 2", fill = "MPH")
+  scale_fill_gradient2(low="blue", mid="white", high="red", midpoint=0) +
+  theme_minimal(base_size=10) +
+  theme(axis.text.x = element_text(angle=90, hjust=1, vjust=0.5)) +
+  labs(title=paste0("Predicted MPH (", TRAIT, ")"), fill="MPH")
+
+ggsave(file.path(out_dir, paste0("MPH_heatmap_", TRAIT, ".png")), p, width=12, height=10, dpi=220)
 ```
 
----
 
-# 6) Rank and display the best crosses
+## Conclusion
 
-We rank crosses by **MPH** (and also show BPH). You can change `top_k` to any number.
+You have now:
 
-```r
-top_k <- 15
-best_crosses <- pairs %>%
-  arrange(desc(MPH)) %>%
-  mutate(Rank = row_number()) %>%
-  select(Rank, Parent1, Parent2, Hybrid_pred, MP, BP, MPH, BPH, MPH_abs, BPH_abs) %>%
-  head(top_k)
-
-best_crosses
-```
-
----
-
-# 7) (Optional) Add a quick dominance-aware approximation
-
-Dominance effects contribute to heterosis via **heterozygosity** in the hybrid. A simple approximation is:
-
-\(
-\hat{H}^{(A+D)}_{ij} \approx \frac{GEBV_i + GEBV_j}{2} + \bar{d} \cdot H_{ij}
-\)
-
-where \(H_{ij}\) is the **proportion of loci** where the two parents differ (i.e., expected heterozygote in the F1 if parents are inbred) and \(\bar{d}\) is an **average dominance effect** estimated from data (here we estimate it by regressing `Phenotype` residuals on heterozygosity). This is **very simplified**, but useful for teaching intuition.
-
-```r
-# 7.1) Compute pairwise expected heterozygosity between inbred parents
-# For inbreds with genotypes 0/2, hybrid is heterozygote when parents differ at a locus.
-het_prop <- function(g1, g2) mean(abs(g1 - g2) == 2)
-
-Hprop <- matrix(NA, nrow = N, ncol = N, dimnames = list(parents_vec, parents_vec))
-for (i in 1:N) for (j in 1:N) {
-  if (i != j) Hprop[i, j] <- het_prop(G[i, ], G[j, ])
-}
-
-# 7.2) Estimate an average dominance effect (bar_d) from data (very rough!)
-# Regress phenotype residual (after removing additive GEBV) on individual's inbreeding (which is ~0 here)
-# Instead, we use cross-level regression: (Hybrid_pred - MP based on GEBV) ~ Hprop
-# Build a data frame for all i<j
-pairs2 <- t(combn(parents_vec, 2)) %>% as.data.frame()
-colnames(pairs2) <- c("Parent1", "Parent2")
-pairs2$Hprop <- mapply(function(i,j) Hprop[i, j], pairs2$Parent1, pairs2$Parent2)
-
-# Use additive-only hybrid based on GEBV for both hybrid and MP baselines
-pairs2$Hybrid_A <- (id_to_gebv[pairs2$Parent1] + id_to_gebv[pairs2$Parent2]) / 2
-pairs2$MP_A     <- (id_to_gebv[pairs2$Parent1] + id_to_gebv[pairs2$Parent2]) / 2
-
-# Empirically regress (Hybrid_A - MP_A) on Hprop: the LHS is 0 by construction,
-# so we approximate bar_d simply from the relationship with observed phenotypes as a proxy.
-# For a toy illustration, we estimate bar_d by relating (observed mid-parent phenotype) residuals to Hprop.
-pairs2$MP_obs <- (id_to_pheno[pairs2$Parent1] + id_to_pheno[pairs2$Parent2]) / 2
-lm_d <- lm((pairs2$MP_obs - mean(parents$Phenotype)) ~ pairs2$Hprop)
-bar_d <- coef(lm_d)[2]
-bar_d
-```
-
-With this (very crude) \(\bar{d}\), we can create a **dominance-adjusted** hybrid prediction and recompute heterosis.
-
-```r
-pairs2$Hybrid_AD <- pairs2$Hybrid_A + bar_d * pairs2$Hprop
-
-# Recompute heterosis relative to observed parents
-pairs2$BP_obs <- pmax(id_to_pheno[pairs2$Parent1], id_to_pheno[pairs2$Parent2])
-pairs2$MPH_AD <- (pairs2$Hybrid_AD - pairs2$MP_obs) / pairs2$MP_obs
-pairs2$BPH_AD <- (pairs2$Hybrid_AD - pairs2$BP_obs) / pairs2$BP_obs
-
-best_crosses_AD <- pairs2 %>%
-  arrange(desc(MPH_AD)) %>%
-  mutate(Rank = row_number()) %>%
-  select(Rank, Parent1, Parent2, Hybrid_AD, MP_obs, BP_obs, MPH_AD, BPH_AD) %>%
-  head(10)
-
-best_crosses_AD
-```
-
-> ⚠️ **Caveat:** This dominance section is **for intuition only**. For serious work, use explicit additive + dominance models (e.g., `sommer::mmer` with additive and dominance kernels) or hybrid performance models with dominance terms at the marker level.
-
----
-
-# 8) What to hand in (for students)
-
-1. Correlation between **GEBV** and **phenotypes** across parents.  
-2. **Heatmap** of predicted **MPH** for all crosses.  
-3. A table of the **Top 10 crosses** by **MPH** (and BPH if desired).  
-4. (Optional) Repeat using the **dominance-aware** approximation and compare rankings.
-
----
-
-# 9) Extensions & discussion prompts
-
-- Cross-validation: split parents into train/test; evaluate prediction of test phenotypes by GBLUP.  
-- Try different `M` and `N` to see how marker density and sample size affect accuracy.  
-- Replace observed parental phenotypes in MP/BP with **parental GEBVs** to see differences.  
-- Discuss when **BPH** is a more relevant metric than **MPH**.
-
----
-
-# Session info
-
-```r
-sessionInfo()
-```
+- Trained a **GS model with additive + dominance effects** on the offspring data  
+- Predicted **all possible parent × parent crosses**  
+- Computed **heterosis measures (MPH, BPH)**  
+- Produced a **ranked CSV** and a **heatmap** for visualization  
