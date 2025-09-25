@@ -502,7 +502,8 @@ for (i in seq_along(chroms)) {
   chr_map <- true_map[true_map$Chromosome == chr, ]
   lines(c(i, i), c(0, max(chr_map$cM)), lwd = 3, col = "grey40")
   points(rep(i, nrow(chr_map)), chr_map$cM, pch = 19, col = "red")
-  text(rep(i + 0.15, nrow(chr_map$cM)), chr_map$Marker, cex = 0.7, pos = 4)
+  text(rep(i + 0.15, nrow(chr_map)), chr_map$cM,
+       labels = chr_map$Marker, cex = 0.7, pos = 4)
 }
 dev.off()
 
@@ -536,7 +537,10 @@ LD reflects **correlations between SNPs** due to shared ancestry, drift, or sele
 
 **1) Convert PLINK data to allele dosage format**  
 We need SNP genotypes coded as **0, 1, 2** (number of alternate alleles).  
-Remember to change in the command lines the `/path/to/your/home/folder/`
+
+```bash
+cd linkage
+```
 
 Run:
 ```bash
@@ -578,7 +582,7 @@ The values (0, 1, 2, NA) are genotypes coded as allele counts:
 PLINK can directly compute LD between SNP pairs:
 
 ```bash
-plink --bfile /path/to/your/home/folder/07_gwas_selection/plink/gwas_data_qc --r2 --ld-window 99999 --ld-window-kb 1000 --ld-window-r2 0 --allow-extra-chr --out gwas_ld
+plink --bfile /lisc/scratch/course/pgbiow/backup/07_gwas_selection/plink/gwas_data_qc --r2 --ld-window 99999 --ld-window-kb 1000 --ld-window-r2 0 --allow-extra-chr --out gwas_ld
 ```
 
 **Outputs:**  
