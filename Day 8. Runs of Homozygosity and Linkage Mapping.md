@@ -544,7 +544,7 @@ module load PLINK
 ```
 
 ```bash
-plink --bfile /path/to/your/home/folder/07_gwas_selection/plink/gwas_data_qc --recodeA --allow-extra-chr --out gwas_for_linkage
+plink --bfile /lisc/scratch/course/pgbiow/backup/07_gwas_selection/plink/gwas_data_qc --recodeA --allow-extra-chr --out gwas_for_linkage
 ```
 
 **Output:**  
