@@ -39,8 +39,8 @@ Script: vi run_bwa_map.sh
 #SBATCH --output=logs/bwa_map_%j.out
 #SBATCH --error=logs/bwa_map_%j.err
 #SBATCH --time=01:00:00
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=6G
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=100G
 
 # Load modules
 module load bwa
