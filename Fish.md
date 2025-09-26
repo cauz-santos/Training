@@ -42,44 +42,59 @@ Script: vi run_bwa_map.sh
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=6G
 
-# Load required modules
+# Load modules
 module load bwa
 module load samtools
-module load seqkit  # optional
 
-# INPUTS
-FASTA="kmers_50bp.fasta"                     # your converted FASTA
-REF="/lisc/scratch/course/pgbiow/data/genomes/Elaeis_guinensis_genomic.fna"          # CHANGE this to your actual BWA index path
+# Define paths
+FASTA="kmers_50bp.fasta"
+ORIG_REF="/lisc/scratch/course/pgbiow/data/genomes/Elaeis_guinensis_genomic.fna"
+REF_DIR="$HOME/ref"
+REF="$REF_DIR/Elaeis_guinensis_genomic.fna"
 OUTDIR="results"
 PREFIX="kmers_mapped"
 
-mkdir -p $OUTDIR
+# Prepare output folders
+mkdir -p $OUTDIR $REF_DIR
 
-echo "Aligning kmers..."
+# Copy and index reference if not already done
+if [ ! -f "$REF.bwt" ]; then
+    echo "Copying reference genome..."
+    cp $ORIG_REF $REF
+
+    echo "Indexing reference genome..."
+    bwa index $REF
+else
+    echo "Reference genome and index already exist."
+fi
+
+# Step 1: Alignment
+echo "Running BWA alignment..."
 bwa aln -t 4 $REF $FASTA > $OUTDIR/$PREFIX.sai
 
-echo "Generating SAM..."
+echo "Generating SAM file..."
 bwa samse $REF $OUTDIR/$PREFIX.sai $FASTA > $OUTDIR/$PREFIX.sam
 
-echo "Sorting and indexing..."
+# Step 2: Convert SAM to sorted BAM
+echo "Converting SAM to sorted BAM..."
 samtools view -bS $OUTDIR/$PREFIX.sam | samtools sort -o $OUTDIR/$PREFIX.sorted.bam
 samtools index $OUTDIR/$PREFIX.sorted.bam
 
-echo "Filtering uniquely mapped kmers on chr2 (MAPQ ≥ 60)..."
+# Step 3: Filter uniquely mapped reads on chr2
+echo "Filtering for unique mappings on chr2..."
 samtools view -h $OUTDIR/$PREFIX.sorted.bam chr2 | \
   awk '$0 ~ /^@/ || $5 >= 60' > $OUTDIR/${PREFIX}_chr2_unique.sam
 
-echo "Extracting unique read IDs..."
+# Step 4: Extract unique read IDs
+echo "Extracting read IDs..."
 awk '$1 !~ /^@/ {print $1}' $OUTDIR/${PREFIX}_chr2_unique.sam | sort | uniq > $OUTDIR/chr2_unique_ids.txt
 
-if command -v seqkit &> /dev/null; then
-    echo "Extracting FASTA entries for unique chr2 probes..."
-    seqkit grep -f $OUTDIR/chr2_unique_ids.txt $FASTA > $OUTDIR/chr2_unique_kmers.fasta
-else
-    echo "seqkit not found – skipping FASTA extraction."
-fi
+# Step 5: Extract FASTA sequences from original input
+echo "Extracting FASTA entries..."
+awk 'NR==FNR {ids[$1]; next} /^>/ {header=$0; id=substr($0, 2); show=(id in ids)} show' \
+    $OUTDIR/chr2_unique_ids.txt $FASTA > $OUTDIR/chr2_unique_kmers.fasta
 
-echo  "Finished."
+echo "✅ Mapping and extraction complete. Results in $OUTDIR"
 ```
 Submit to SLURM
 sbatch run_bwa_map.sh
