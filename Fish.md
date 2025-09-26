@@ -49,7 +49,7 @@ module load seqkit  # optional
 
 # INPUTS
 FASTA="kmers_50bp.fasta"                     # your converted FASTA
-REF="/path/to/indexed/reference.fa"          # CHANGE this to your actual BWA index path
+REF="/lisc/scratch/course/pgbiow/data/genomes/Elaeis_guinensis_genomic.fna"          # CHANGE this to your actual BWA index path
 OUTDIR="results"
 PREFIX="kmers_mapped"
 
